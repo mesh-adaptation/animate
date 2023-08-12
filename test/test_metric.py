@@ -1,4 +1,5 @@
-from animate import *
+from animate import *  # noqa
+
 
 # TODO: This will be a test file
 
