@@ -31,6 +31,7 @@ jobs:
         run: |
           . /home/firedrake/firedrake/bin/activate
           python -m pip uninstall -y animate
+          python -m pip install -r requirements.txt
           python -m pip install -e .
       - name: Test Animate
         run: |
@@ -43,4 +44,4 @@ jobs:
         if: ${{ always() }}
         run: |
           . /home/firedrake/firedrake/bin/activate
-          make lint
+          flake8 --ignore=E501,E226,E402,E741,F403,F405,W503
