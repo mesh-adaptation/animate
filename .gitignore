@@ -1,0 +1,11 @@
+animate.egg-info/
+outputs/
+plots/
+__pycache__/
+
+*.jpg
+*.jpeg
+*.pdf
+*.png
+*.pvd
+*.vtu
