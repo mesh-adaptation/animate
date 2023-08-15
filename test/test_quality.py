@@ -1,6 +1,7 @@
 from firedrake import *
 from animate.quality import QualityMeasure
 from parameterized import parameterized
+import numpy as np
 import pytest
 import unittest
 from utility import uniform_mesh
