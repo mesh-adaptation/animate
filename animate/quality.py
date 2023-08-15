@@ -3,13 +3,10 @@ Functions for computing mesh quality measures.
 """
 import os
 import firedrake
-from firedrake import Function, FunctionSpace, interpolate
-from firedrake.mesh import MeshGeometry
 from firedrake.petsc import PETSc
 from pyop2 import op2
 from pyop2.utils import get_petsc_dir
 import ufl
-
 
 PETSC_DIR, PETSC_ARCH = get_petsc_dir()
 include_dir = ["%s/include/eigen3" % PETSC_ARCH]
@@ -46,9 +43,7 @@ class QualityMeasure:
     )
 
     @PETSc.Log.EventDecorator()
-    def __init__(
-        self, mesh: MeshGeometry, metric: Function = None, python: bool = False
-    ):
+    def __init__(self, mesh, metric=None, python=False):
         """
         :arg mesh: the input mesh to do computations on
         :arg metric: the tensor field representing the metric space transformation
@@ -59,7 +54,7 @@ class QualityMeasure:
         self.python = python
         self.dim = mesh.topological_dimension()
         self.coords = mesh.coordinates
-        self.P0 = FunctionSpace(mesh, "DG", 0)
+        self.P0 = firedrake.FunctionSpace(mesh, "DG", 0)
         src_dir = os.path.join(os.path.dirname(__file__), "cxx")
         self.fname = os.path.join(src_dir, f"quality{self.dim}d.cxx")
 
@@ -73,7 +68,7 @@ class QualityMeasure:
         return dats
 
     @PETSc.Log.EventDecorator()
-    def __call__(self, name: str) -> Function:
+    def __call__(self, name):
         if name not in QualityMeasure._measures:
             raise ValueError(f"Quality measure '{name}' not recognised.")
         msg = (
@@ -87,21 +82,21 @@ class QualityMeasure:
             raise NotImplementedError(msg)
         with open(self.fname, "r") as f:
             code = f.read()
-        func = Function(self.P0, name=name)
+        func = firedrake.Function(self.P0, name=name)
         kwargs = dict(cpp=True, include_dirs=include_dir)
         kernel = op2.Kernel(code, f"get_{name}", **kwargs)
         op2.par_loop(kernel, self.mesh.cell_set, *self._get_dats(func))
         return func
 
     @PETSc.Log.EventDecorator()
-    def _call_python(self, name: str) -> Function:
+    def _call_python(self, name):
         if name in ("area", "volume"):
-            return interpolate(ufl.CellVolume(self.mesh), self.P0)
+            return firedrake.interpolate(ufl.CellVolume(self.mesh), self.P0)
         elif name == "facet_area":
-            HDivTrace = FunctionSpace(self.mesh, "HDiv Trace", 0)
+            HDivTrace = firedrake.FunctionSpace(self.mesh, "HDiv Trace", 0)
             v = firedrake.TestFunction(HDivTrace)
             u = firedrake.TrialFunction(HDivTrace)
-            facet_area = Function(HDivTrace, name="Facet areas")
+            facet_area = firedrake.Function(HDivTrace, name="Facet areas")
             mass_term = v("+") * u("+") * ufl.dS + v * u * ufl.ds
             rhs = (
                 v("+") * ufl.FacetArea(self.mesh) * ufl.dS
@@ -116,19 +111,19 @@ class QualityMeasure:
             return facet_area
         elif name == "aspect_ratio" and self.dim == 2:
             P0_ten = firedrake.TensorFunctionSpace(self.mesh, "DG", 0)
-            J = interpolate(ufl.Jacobian(self.mesh), P0_ten)
+            J = firedrake.interpolate(ufl.Jacobian(self.mesh), P0_ten)
             edge1 = ufl.as_vector([J[0, 0], J[1, 0]])
             edge2 = ufl.as_vector([J[0, 1], J[1, 1]])
             edge3 = edge1 - edge2
             a = ufl.sqrt(ufl.dot(edge1, edge1))
             b = ufl.sqrt(ufl.dot(edge2, edge2))
             c = ufl.sqrt(ufl.dot(edge3, edge3))
-            ar = Function(self.P0)
+            ar = firedrake.Function(self.P0)
             ar.interpolate(a * b * c / ((a + b - c) * (b + c - a) * (c + a - b)))
             return ar
         elif name == "scaled_jacobian" and self.dim == 2:
             P0_ten = firedrake.TensorFunctionSpace(self.mesh, "DG", 0)
-            J = interpolate(ufl.Jacobian(self.mesh), P0_ten)
+            J = firedrake.interpolate(ufl.Jacobian(self.mesh), P0_ten)
             edge1 = ufl.as_vector([J[0, 0], J[1, 0]])
             edge2 = ufl.as_vector([J[0, 1], J[1, 1]])
             edge3 = edge1 - edge2
@@ -141,7 +136,7 @@ class QualityMeasure:
                 ufl.max_value(ufl.max_value(a * b, a * c), ufl.max_value(b * c, b * a)),
                 ufl.max_value(c * a, c * b),
             )
-            return interpolate(detJ / max_product * jacobian_sign, self.P0)
+            return firedrake.interpolate(detJ / max_product * jacobian_sign, self.P0)
         else:
             raise NotImplementedError(
                 f"Quality measure '{name}' not implemented in the {self.dim}D case in Python."
