@@ -1,3 +1,4 @@
+from .quality import include_dir
 from collections.abc import Iterable
 import firedrake
 import firedrake.function as ffunc
@@ -5,9 +6,24 @@ import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc, OptionsManager
 import numpy as np
+import os
+from pyop2 import op2
 import ufl
 
 __all__ = ["RiemannianMetric"]
+
+
+def get_metric_kernel(func: str, dim: int) -> op2.Kernel:
+    """
+    Helper function to easily pass Eigen kernels
+    for metric utilities to Firedrake via PyOP2.
+
+    :arg func: function name
+    :arg dim: spatial dimension
+    """
+    pwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
+    with open(os.path.join(pwd, f"metric{dim}d.cxx"), "r") as code:
+        return op2.Kernel(code.read(), func, cpp=True, include_dirs=include_dir)
 
 
 class RiemannianMetric(ffunc.Function):
