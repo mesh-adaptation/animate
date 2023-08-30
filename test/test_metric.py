@@ -7,7 +7,7 @@ def bowl(*coords):
     """
     Quadratic bowl sensor function in arbitrary dimensions.
     """
-    return 0.5 * sum([xi ** 2 for xi in coords])
+    return 0.5 * sum([xi**2 for xi in coords])
 
 
 def hyperbolic(x, y):
@@ -56,7 +56,7 @@ def test_set_parameters():
 
     # Check the defaults
     assert np.isclose(metric._plex.metricGetMinimumMagnitude(), 1e-30)
-    assert np.isclose(metric._plex.metricGetMaximumMagnitude(), 1e+30)
+    assert np.isclose(metric._plex.metricGetMaximumMagnitude(), 1e30)
 
     # Check h_max is applied correctly
     hmax = 1.0
@@ -134,9 +134,8 @@ def test_symmetric():
     metric = RiemannianMetric(P1_ten)
     metric.compute_hessian(f)
     metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
-    err = (
-        assemble(abs(det(metric - transpose(metric))) * dx)
-        / assemble(abs(det(metric)) * dx)
+    err = assemble(abs(det(metric - transpose(metric))) * dx) / assemble(
+        abs(det(metric)) * dx
     )
     assert err < 1.0e-08
 

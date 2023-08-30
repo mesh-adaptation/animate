@@ -1,8 +1,7 @@
 """
 Test interpolation schemes.
 """
-from firedrake import *
-from animate import *
+from utility import *
 from parameterized import parameterized
 import unittest
 

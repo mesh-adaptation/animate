@@ -1,4 +1,8 @@
-from .quality import include_dir
+from .recovery import (
+    recover_gradient_l2,
+    recover_hessian_clement,
+    recover_boundary_hessian,
+)
 from collections.abc import Iterable
 import firedrake
 import firedrake.function as ffunc
@@ -6,24 +10,9 @@ import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc, OptionsManager
 import numpy as np
-import os
-from pyop2 import op2
 import ufl
 
 __all__ = ["RiemannianMetric"]
-
-
-def get_metric_kernel(func: str, dim: int) -> op2.Kernel:
-    """
-    Helper function to easily pass Eigen kernels
-    for metric utilities to Firedrake via PyOP2.
-
-    :arg func: function name
-    :arg dim: spatial dimension
-    """
-    pwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
-    with open(os.path.join(pwd, f"metric{dim}d.cxx"), "r") as code:
-        return op2.Kernel(code.read(), func, cpp=True, include_dirs=include_dir)
 
 
 class RiemannianMetric(ffunc.Function):
@@ -45,6 +34,7 @@ class RiemannianMetric(ffunc.Function):
     For details, see the PETSc manual entry:
       https://petsc.org/release/docs/manual/dmplex/#metric-based-mesh-adaptation
     """
+
     @PETSc.Log.EventDecorator()
     def __init__(self, function_space, *args, **kwargs):
         r"""
@@ -65,14 +55,10 @@ class RiemannianMetric(ffunc.Function):
         mesh = fs.mesh()
         tdim = mesh.topological_dimension()
         if tdim not in (2, 3):
-            raise ValueError(
-                f"Riemannian metric should be 2D or 3D, not {tdim}D"
-            )
+            raise ValueError(f"Riemannian metric should be 2D or 3D, not {tdim}D")
         self._check_space()
         if isinstance(fs.dof_count, Iterable):
-            raise ValueError(
-                "Riemannian metric cannot be built in a mixed space"
-            )
+            raise ValueError("Riemannian metric cannot be built in a mixed space")
         rank = len(fs.dof_dset.dim)
         if rank != 2:
             raise ValueError(
@@ -91,15 +77,13 @@ class RiemannianMetric(ffunc.Function):
 
         # Adjust the section
         entity_dofs = np.zeros(tdim + 1, dtype=np.int32)
-        entity_dofs[0] = tdim ** 2
+        entity_dofs[0] = tdim**2
         plex.setSection(mesh.create_section(entity_dofs))
 
     def _check_space(self):
         el = self.function_space().ufl_element()
         if (el.family(), el.degree()) != ("Lagrange", 1):
-            raise ValueError(
-                f"Riemannian metric should be in P1 space, not '{el}'."
-            )
+            raise ValueError(f"Riemannian metric should be in P1 space, not '{el}'.")
 
     @staticmethod
     def _process_parameters(metric_parameters):
@@ -173,18 +157,46 @@ class RiemannianMetric(ffunc.Function):
         return metric
 
     @PETSc.Log.EventDecorator()
-    def compute_hessian(self, field, **kwargs):
+    def compute_hessian(self, field, method="mixed_L2", **kwargs):
         """
-        Recover the Hessian of a scalar field using a double :math:`L^2` projection.
+        Recover the Hessian of a scalar field.
 
-        :param field: the scalar :class:`~.Function` whose second derivatives we seek to
-            recover
-        :param solver_parameters: solver parameter dictionary to pass to PETSc
-        :return: the recovered Hessian, as a :class:`~.RiemannianMetric`, modified
-            in-place
+        :arg f: the scalar field whose Hessian we seek to recover
+        :kwarg method: recovery method
+
+        All other keyword arguments are passed to the chosen recovery routine.
+
+        In the case of the `'L2'` method, the `target_space` keyword argument is used
+        for the gradient recovery. The target space for the Hessian recovery is
+        inherited from the metric itself.
         """
-        self.interpolate(self._compute_gradient_and_hessian(field, **kwargs)[1])
-        return self
+        if method == "L2":
+            gradient = recover_gradient_l2(
+                field, target_space=kwargs.get("target_space")
+            )
+            return self.assign(recover_gradient_l2(gradient))
+        elif method == "mixed_L2":
+            return self.interpolate(
+                self._compute_gradient_and_hessian(field, **kwargs)[1]
+            )
+        elif method == "Clement":
+            return self.assign(recover_hessian_clement(field, **kwargs)[1])
+        elif method == "ZZ":
+            raise NotImplementedError(
+                "Zienkiewicz-Zhu recovery not yet implemented."
+            )  # TODO
+        else:
+            raise ValueError(f"Recovery method '{method}' not recognised.")
+
+    @PETSc.Log.EventDecorator()
+    def compute_boundary_hessian(self, f, method="mixed_L2", **kwargs):
+        """
+        Recover the Hessian of a scalar field on the domain boundary.
+
+        :arg f: field to recover over the domain boundary
+        :kwarg method: choose from 'mixed_L2' and 'Clement'
+        """
+        return self.assign(recover_boundary_hessian(f, method=method, **kwargs))
 
     def _compute_gradient_and_hessian(self, field, solver_parameters=None):
         mesh = self.function_space().mesh()
@@ -278,9 +290,7 @@ class RiemannianMetric(ffunc.Function):
             d -= 1
         p = self.metric_parameters.get("dm_plex_metric_p", 1.0)
         if not np.isinf(p) and p < 1.0:
-            raise ValueError(
-                f"Metric normalisation order must be at least 1, not {p}."
-            )
+            raise ValueError(f"Metric normalisation order must be at least 1, not {p}.")
         target = self.metric_parameters.get("dm_plex_metric_target_complexity")
         if target is None:
             raise ValueError("dm_plex_metric_target_complexity must be set.")

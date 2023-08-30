@@ -1,10 +1,8 @@
-from firedrake import *
-from animate.quality import QualityMeasure
+from utility import *
 from parameterized import parameterized
 import numpy as np
 import pytest
 import unittest
-from utility import uniform_mesh
 
 
 @pytest.fixture(params=[2, 3])

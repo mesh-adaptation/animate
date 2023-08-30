@@ -24,7 +24,7 @@ def test_project(dim):
     V = FunctionSpace(mesh, "CG", 1)
     x = SpatialCoordinate(mesh)
     f1 = interpolate(x[0], V)
-    g1 = interpolate(2*x[1], V)
+    g1 = interpolate(2 * x[1], V)
 
     # Project them onto the new mesh
     f2 = adaptor.project(f1)
@@ -35,5 +35,5 @@ def test_project(dim):
     assert g1.ufl_element() == g2.ufl_element()
 
     # Check that mass is conserved
-    assert np.isclose(assemble(f1*dx), assemble(f2*dx))
-    assert np.isclose(assemble(g1*dx), assemble(g2*dx))
+    assert np.isclose(assemble(f1 * dx), assemble(f2 * dx))
+    assert np.isclose(assemble(g1 * dx), assemble(g2 * dx))
