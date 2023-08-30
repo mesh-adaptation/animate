@@ -166,11 +166,11 @@ def test_enforce_spd_h_min(dim):
     """
     mesh = uniform_mesh(dim)
     h = 0.1
-    metric = uniform_metric(mesh, a=-(1 / h ** 2))
+    metric = uniform_metric(mesh, a=-(1 / h**2))
 
     # Test that negative eigenvalues are flipped
     metric.enforce_spd(restrict_sizes=False)
-    expected = uniform_metric(mesh, a=1 / h ** 2)
+    expected = uniform_metric(mesh, a=1 / h**2)
     assert np.isclose(errornorm(metric, expected), 0.0)
     newmesh = try_adapt(mesh, metric)
     num_vertices = newmesh.coordinates.vector().gather().shape[0]
@@ -180,7 +180,7 @@ def test_enforce_spd_h_min(dim):
     metric.set_parameters({"dm_plex_metric_h_min": hmin})
     assert np.isclose(metric._plex.metricGetMinimumMagnitude(), hmin)
     metric.enforce_spd(restrict_sizes=True)
-    expected = uniform_metric(mesh, a=1 / hmin ** 2)
+    expected = uniform_metric(mesh, a=1 / hmin**2)
     assert np.isclose(errornorm(metric, expected), 0.0)
 
     # Check that the number of vertices decreases, as expected
@@ -194,7 +194,7 @@ def test_enforce_spd_h_max(dim):
     """
     mesh = uniform_mesh(dim)
     h = 0.1
-    metric = uniform_metric(mesh, a=1 / h ** 2)
+    metric = uniform_metric(mesh, a=1 / h**2)
     newmesh = try_adapt(mesh, metric)
     num_vertices = newmesh.coordinates.vector().gather().shape[0]
 
@@ -203,7 +203,7 @@ def test_enforce_spd_h_max(dim):
     metric.set_parameters({"dm_plex_metric_h_max": hmax})
     assert np.isclose(metric._plex.metricGetMaximumMagnitude(), hmax)
     metric.enforce_spd(restrict_sizes=True)
-    expected = uniform_metric(mesh, a=1 / hmax ** 2)
+    expected = uniform_metric(mesh, a=1 / hmax**2)
     assert np.isclose(errornorm(metric, expected), 0.0)
 
     # Check that the number of vertices increases, as expected
