@@ -2,15 +2,28 @@
 Driver functions for derivative recovery.
 """
 from .interpolation import clement_interpolant
-from .metric import get_metric_kernel
-from .quality import QualityMeasure
+from .quality import QualityMeasure, include_dir
 from .math import construct_basis
 import firedrake
 from firedrake.petsc import PETSc
+import os
 from pyop2 import op2
 import ufl
 
 __all__ = ["recover_gradient_l2", "recover_hessian_clement", "recover_boundary_hessian"]
+
+
+def get_metric_kernel(func: str, dim: int) -> op2.Kernel:
+    """
+    Helper function to easily pass Eigen kernels
+    for metric utilities to Firedrake via PyOP2.
+
+    :arg func: function name
+    :arg dim: spatial dimension
+    """
+    pwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
+    with open(os.path.join(pwd, f"metric{dim}d.cxx"), "r") as code:
+        return op2.Kernel(code.read(), func, cpp=True, include_dirs=include_dir)
 
 
 @PETSc.Log.EventDecorator()
