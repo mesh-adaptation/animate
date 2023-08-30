@@ -14,6 +14,7 @@ class AdaptorBase(abc.ABC):
     """
     Abstract base class that defines the API for all mesh adaptors.
     """
+
     def __init__(self, mesh):
         """
         :param mesh: mesh to be adapted
@@ -71,13 +72,17 @@ class MetricBasedAdaptor(AdaptorBase):
         """
         self.metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
         size = self.metric.dat.dataset.layout_vec.getSizes()
-        data = self.metric.dat._data[:size[0]]
-        v = PETSc.Vec().createWithArray(data, size=size, bsize=self.metric.dat.cdim, comm=self.mesh.comm)
+        data = self.metric.dat._data[: size[0]]
+        v = PETSc.Vec().createWithArray(
+            data, size=size, bsize=self.metric.dat.cdim, comm=self.mesh.comm
+        )
         reordered = to_petsc_local_numbering(v, self.metric.function_space())
         v.destroy()
         newplex = self.metric._plex.adaptMetric(reordered, "Face Sets", "Cell Sets")
         reordered.destroy()
-        return fmesh.Mesh(newplex, distribution_parameters={"partition": False}, name=self.name)
+        return fmesh.Mesh(
+            newplex, distribution_parameters={"partition": False}, name=self.name
+        )
 
     @PETSc.Log.EventDecorator()
     def project(self, f):
