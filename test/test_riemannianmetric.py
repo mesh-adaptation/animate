@@ -1,4 +1,4 @@
-from utility import *
+from test_setup import *
 from animate.metric import P0Metric
 from parameterized import parameterized
 import numpy as np
