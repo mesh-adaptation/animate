@@ -2,7 +2,7 @@ from firedrake import *
 from animate import *
 
 
-def uniform_mesh(dim, n=5, l=1, recentre=False):
+def uniform_mesh(dim, n=5, l=1, recentre=False, **kwargs):
     """
     Create a uniform mesh of a specified dimension and size.
 
@@ -10,11 +10,14 @@ def uniform_mesh(dim, n=5, l=1, recentre=False):
     :kwarg n: the number of subdivisions in each coordinate direction
     :kwarg l: extent in each direction
     :kwarg recentre: if ``True``, the mesh is re-centred on the origin
+
+    All other keyword arguments are passed to the :func:`SquareMesh` or :func:`CubeMesh`
+    constructor.
     """
     if dim == 2:
-        mesh = SquareMesh(n, n, l)
+        mesh = SquareMesh(n, n, l, **kwargs)
     elif dim == 3:
-        mesh = CubeMesh(n, n, n, l)
+        mesh = CubeMesh(n, n, n, l, **kwargs)
     else:
         raise ValueError(f"Can only adapt in 2D or 3D, not {dim}D")
     if recentre:
@@ -29,13 +32,17 @@ def uniform_metric(mesh, a=100.0, metric_parameters={}):
     Create a metric which is just the identity
     matrix scaled by `a` at each vertex.
 
-    :param mesh: the mesh to define the metric upon
+    :param mesh: the mesh or function space to define the metric upon
     :param a: the scale factor for the identity
     :param: parameters to pass to PETSc's Riemannian metric
     """
+    if isinstance(mesh, firedrake.mesh.MeshGeometry):
+        function_space = TensorFunctionSpace(mesh, "CG", 1)
+    else:
+        function_space = mesh
+        mesh = function_space.mesh()
     dim = mesh.topological_dimension()
-    P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-    metric = RiemannianMetric(P1_ten)
+    metric = RiemannianMetric(function_space)
     metric.interpolate(a * Identity(dim))
     metric.set_parameters(metric_parameters)
     return metric

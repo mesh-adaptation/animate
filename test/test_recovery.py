@@ -1,7 +1,7 @@
 """
 Test derivative recovery techniques.
 """
-from utility import *
+from test_setup import *
 from sensors import bowl, mesh_for_sensors
 from parameterized import parameterized
 import unittest

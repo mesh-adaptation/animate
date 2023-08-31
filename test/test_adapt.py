@@ -1,4 +1,4 @@
-from utility import *
+from test_setup import *
 from petsc4py import PETSc
 import pytest
 import numpy as np
