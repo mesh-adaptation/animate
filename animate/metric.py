@@ -13,9 +13,10 @@ import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc, OptionsManager
 import numpy as np
 from pyop2 import op2
+import sympy
 import ufl
 
-__all__ = ["RiemannianMetric"]
+__all__ = ["RiemannianMetric", "determine_metric_complexity"]
 
 
 class RiemannianMetric(ffunc.Function):
@@ -762,3 +763,51 @@ class P0Metric(RiemannianMetric):
         el = self.function_space().ufl_element()
         if (el.family(), el.degree()) != ("Discontinuous Lagrange", 0):
             raise ValueError(f"P0 metric should be in P0 space, not '{el}'.")
+
+
+@PETSc.Log.EventDecorator()
+def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
+    """
+    Solve an algebraic problem to obtain coefficients for the interior and boundary
+    metrics to obtain a given metric complexity.
+
+    See :cite:`LDA:10` for details. Note that we use a slightly different formulation
+    here.
+
+    :arg H_interior: Hessian component from domain interior
+    :arg H_boundary: Hessian component from domain boundary
+    :arg target: target metric complexity
+    :arg p: normalisation order
+    :kwarg H_interior_scaling: optional scaling for interior component
+    :kwarg H_boundary_scaling: optional scaling for boundary component
+    """
+    d = H_interior.function_space().mesh().topological_dimension()
+    if d not in (2, 3):
+        raise ValueError(f"Spatial dimension {d} not supported.")
+    if np.isinf(p):
+        raise NotImplementedError(
+            "Metric complexity cannot be determined in the L-infinity case."
+        )
+    g = kwargs.get("H_interior_scaling", firedrake.Constant(1.0))
+    gbar = kwargs.get("H_boundary_scaling", firedrake.Constant(1.0))
+    g = pow(g, d / (2 * p + d))
+    gbar = pow(gbar, d / (2 * p + d - 1))
+
+    # Compute coefficients for the algebraic problem
+    a = firedrake.assemble(g * pow(ufl.det(H_interior), p / (2 * p + d)) * ufl.dx)
+    b = firedrake.assemble(
+        gbar * pow(ufl.det(H_boundary), p / (2 * p + d - 1)) * ufl.ds
+    )
+
+    # Solve algebraic problem
+    c = sympy.Symbol("c")
+    c = sympy.solve(a * pow(c, d / 2) + b * pow(c, (d - 1) / 2) - target, c)
+    eq = f"{a}*c^{d/2} + {b}*c^{(d-1)/2} = {target}"
+    if len(c) == 0:
+        raise ValueError(f"Could not find any solutions for equation {eq}.")
+    elif len(c) > 1:
+        raise ValueError(f"Could not find a unique solution for equation {eq}.")
+    elif not np.isclose(float(sympy.im(c[0])), 0.0):
+        raise ValueError(f"Could not find any real solutions for equation {eq}.")
+    else:
+        return float(sympy.re(c[0]))
