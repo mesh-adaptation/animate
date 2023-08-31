@@ -13,9 +13,10 @@ import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc, OptionsManager
 import numpy as np
 from pyop2 import op2
+import sympy
 import ufl
 
-__all__ = ["RiemannianMetric"]
+__all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 
 
 class RiemannianMetric(ffunc.Function):
@@ -762,3 +763,108 @@ class P0Metric(RiemannianMetric):
         el = self.function_space().ufl_element()
         if (el.family(), el.degree()) != ("Discontinuous Lagrange", 0):
             raise ValueError(f"P0 metric should be in P0 space, not '{el}'.")
+
+
+@PETSc.Log.EventDecorator()
+def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
+    """
+    Solve an algebraic problem to obtain coefficients for the interior and boundary
+    metrics to obtain a given metric complexity.
+
+    See :cite:`LDA:10` for details. Note that we use a slightly different formulation
+    here.
+
+    :arg H_interior: Hessian component from domain interior
+    :arg H_boundary: Hessian component from domain boundary
+    :arg target: target metric complexity
+    :arg p: normalisation order
+    :kwarg H_interior_scaling: optional scaling for interior component
+    :kwarg H_boundary_scaling: optional scaling for boundary component
+    """
+    d = H_interior.function_space().mesh().topological_dimension()
+    if d not in (2, 3):
+        raise ValueError(f"Spatial dimension {d} not supported.")
+    if np.isinf(p):
+        raise NotImplementedError(
+            "Metric complexity cannot be determined in the L-infinity case."
+        )
+    g = kwargs.get("H_interior_scaling", firedrake.Constant(1.0))
+    gbar = kwargs.get("H_boundary_scaling", firedrake.Constant(1.0))
+    g = pow(g, d / (2 * p + d))
+    gbar = pow(gbar, d / (2 * p + d - 1))
+
+    # Compute coefficients for the algebraic problem
+    a = firedrake.assemble(g * pow(ufl.det(H_interior), p / (2 * p + d)) * ufl.dx)
+    b = firedrake.assemble(
+        gbar * pow(ufl.det(H_boundary), p / (2 * p + d - 1)) * ufl.ds
+    )
+
+    # Solve algebraic problem
+    c = sympy.Symbol("c")
+    c = sympy.solve(a * pow(c, d / 2) + b * pow(c, (d - 1) / 2) - target, c)
+    eq = f"{a}*c^{d/2} + {b}*c^{(d-1)/2} = {target}"
+    if len(c) == 0:
+        raise ValueError(f"Could not find any solutions for equation {eq}.")
+    elif len(c) > 1:
+        raise ValueError(f"Could not find a unique solution for equation {eq}.")
+    elif not np.isclose(float(sympy.im(c[0])), 0.0):
+        raise ValueError(f"Could not find any real solutions for equation {eq}.")
+    else:
+        return float(sympy.re(c[0]))
+
+
+# TODO: Use the intersection functionality in PETSc
+@PETSc.Log.EventDecorator()
+def intersect_on_boundary(*metrics, boundary_tag="on_boundary"):
+    """
+    Combine a list of metrics by intersection.
+
+    :arg metrics: the metrics to be combined
+    :kwarg boundary_tag: optional boundary segment physical ID for boundary
+        intersection. Otherwise, the intersection is over the whole boundary.
+    """
+    n = len(metrics)
+    assert n > 0, "Nothing to combine"
+    fs = metrics[0].function_space()
+    dim = fs.mesh().topological_dimension()
+    if dim not in (2, 3):
+        raise ValueError(
+            f"Spatial dimension {dim} not supported." " Must be either 2 or 3."
+        )
+    for i, metric in enumerate(metrics):
+        if not isinstance(metric, RiemannianMetric):
+            raise ValueError(
+                f"Metric {i} should be of type 'RiemannianMetric',"
+                f" but is of type '{type(metric)}'."
+            )
+        fsi = metric.function_space()
+        if fs != fsi:
+            raise ValueError(
+                f"Function space of metric {i} does not match that"
+                f" of metric 0: {fsi} vs. {fs}."
+            )
+
+    # Create the metric to be returned
+    intersected_metric = RiemannianMetric(fs)
+    intersected_metric.assign(metrics[0])
+
+    # Establish the boundary node set
+    if isinstance(boundary_tag, (list, tuple)) and len(boundary_tag) == 0:
+        raise ValueError(
+            "It is unclear what to do with an empty"
+            f" {type(boundary_tag)} of boundary tags."
+        )
+    node_set = firedrake.DirichletBC(fs, 0, boundary_tag).node_set
+
+    # Compute the intersection
+    Mtmp = RiemannianMetric(fs)
+    for metric in metrics[1:]:
+        Mtmp.assign(intersected_metric)
+        op2.par_loop(
+            get_metric_kernel("intersect", dim),
+            node_set,
+            intersected_metric.dat(op2.RW),
+            Mtmp.dat(op2.READ),
+            metric.dat(op2.READ),
+        )
+    return intersected_metric
