@@ -270,14 +270,14 @@ class RiemannianMetric(ffunc.Function):
     # TODO: Implement this on the PETSc side
     #       See https://gitlab.com/petsc/petsc/-/issues/1450
     @PETSc.Log.EventDecorator()
-    def enforce_variable_constraints(self, h_min, h_max, a_max, boundary_tag=None):
+    def enforce_variable_constraints(self, h_min=1.0e-30, h_max=1.0e30, a_max=1.0e5, boundary_tag=None):
         """
         Post-process a metric to enforce minimum and maximum metric magnitudes
         and maximum anisotropy, any of which may vary spatially.
 
-        :arg h_min: minimum tolerated magnitude
-        :arg h_max: maximum tolerated magnitude
-        :arg a_max: maximum tolerated anisotropy
+        :kwarg h_min: minimum tolerated magnitude
+        :kwarg h_max: maximum tolerated magnitude
+        :kwarg a_max: maximum tolerated anisotropy
         :kwarg boundary_tag: optional tag to enforce sizes on.
         """
         mesh = self.function_space().mesh()
@@ -313,7 +313,7 @@ class RiemannianMetric(ffunc.Function):
 
         dim = mesh.topological_dimension()
         if boundary_tag is None:
-            node_set = self.function_space.node_set
+            node_set = self.function_space().node_set
         else:
             bc = firedrake.DirichletBC(self.function_space(), 0, boundary_tag)
             node_set = bc.node_set
