@@ -267,6 +267,66 @@ class RiemannianMetric(ffunc.Function):
         v.destroy()
         return self
 
+    # TODO: Implement this on the PETSc side
+    #       See https://gitlab.com/petsc/petsc/-/issues/1450
+    @PETSc.Log.EventDecorator()
+    def enforce_variable_constraints(self, h_min, h_max, a_max, boundary_tag=None):
+        """
+        Post-process a metric to enforce minimum and maximum metric magnitudes
+        and maximum anisotropy, any of which may vary spatially.
+
+        :arg h_min: minimum tolerated magnitude
+        :arg h_max: maximum tolerated magnitude
+        :arg a_max: maximum tolerated anisotropy
+        :kwarg boundary_tag: optional tag to enforce sizes on.
+        """
+        mesh = self.function_space().mesh()
+        P1 = firedrake.FunctionSpace(mesh, "CG", 1)
+
+        def interp(f):
+            if isinstance(f, ffunc.Function):
+                return clement_interpolant(f)
+            else:
+                return ffunc.Function(P1).assign(f)
+
+        h_min = interp(h_min)
+        h_max = interp(h_max)
+        a_max = interp(a_max)
+
+        _hmin = h_min.vector().gather().min()
+        if _hmin <= 0.0:
+            raise ValueError(f"Encountered non-positive h_min value: {_hmin}.")
+        if h_max.vector().gather().min() < _hmin:
+            raise ValueError(
+                "Minimum h_max value is smaller than minimum h_min value:"
+                f"{h_max.vector().gather().min()} < {_hmin}."
+            )
+        dx = ufl.dx(domain=mesh)
+        integral = firedrake.assemble(ufl.conditional(h_max < h_min, 1, 0) * dx)
+        if not np.isclose(integral, 0.0):
+            raise ValueError("Encountered regions where h_max < h_min.")
+        if a_max.vector().gather().min() < 1.0:
+            raise ValueError(
+                "Encountered a_max value smaller than unity:"
+                f"{a_max.vector().gather().min()}."
+            )
+
+        dim = mesh.topological_dimension()
+        if boundary_tag is None:
+            node_set = self.function_space.node_set
+        else:
+            bc = firedrake.DirichletBC(self.function_space(), 0, boundary_tag)
+            node_set = bc.node_set
+        op2.par_loop(
+            get_metric_kernel("postproc_metric", dim),
+            node_set,
+            self.dat(op2.RW),
+            h_min.dat(op2.READ),
+            h_max.dat(op2.READ),
+            a_max.dat(op2.READ),
+        )
+        return self
+
     @PETSc.Log.EventDecorator()
     def normalise(self, global_factor=None, boundary=False, **kwargs):
         """
