@@ -1,0 +1,15 @@
+--with-shared-libraries=1
+--with-debugging=0
+--with-fortran-bindings=0
+--download-zlib
+--download-metis
+--download-parmetis
+--download-ptscotch
+--download-hdf5
+--download-scalapack
+--download-mumps
+--download-chaco
+--download-hypre
+--download-eigen
+--download-mmg
+--download-parmmg
