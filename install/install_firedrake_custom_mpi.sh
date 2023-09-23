@@ -2,22 +2,21 @@
 
 # ====================================================================== #
 # Bash script for installing Firedrake based on a PETSc installation     #
-# which uses Mmg and ParMmg.                                             #
-#                                                                        #
-# Note that we use a custom PETSc branch.                                #
+# which uses Mmg and ParMmg with a custom MPI configuration.             #
 # ====================================================================== #
 
-# Unset PYTHONPATH and PETSc env variables
-PYTHONPATH_TMP=${PYTHONPATH}
-unset PYTHONPATH
-unset PETSC_DIR
-unset PETSC_ARCH
+# *** YOU MAY WISH TO EDIT THESE ENVIRONMENT VARIABLES: ***
 
-# Environment variables for MPI
+FIREDRAKE_ENV=firedrake-sep23
+PETSC_BRANCH=jwallwork23/parmmg-rebased
 MPICC=/usr/bin/mpicc.mpich
 MPICXX=/usr/bin/mpicxx.mpich
 MPIEXEC=/usr/bin/mpiexec.mpich
 MPIF90=/usr/bin/mpif90.mpich
+
+# *** YOU SHOULD NOT NEED TO EDIT ANYTHING BELOW. ***
+
+# Validate environment variables for MPI
 for mpi in ${MPICC} ${MPICXX} ${MPIEXEC} ${MPIF90}
 do
 	if [ ! -f ${mpi} ]
@@ -28,11 +27,13 @@ do
 done
 
 # Environment variables for Firedrake installation
-FIREDRAKE_ENV=firedrake-adapt
+CWD=$(pwd)
+unset PYTHONPATH
+unset PETSC_DIR
+unset PETSC_ARCH
+export PETSC_CONFIGURE_OPTIONS="$(cat petsc_options.txt | tr '\n' ' ') \
+	--with-mpiexec=${MPIEXEC} --CC=${MPICC} --CXX=${MPICXX} --FC=${MPIF90}"
 FIREDRAKE_DIR=${SOFTWARE}/${FIREDRAKE_ENV}
-PETSC_BRANCH=jwallwork23/parmmg-rebased 
-export PETSC_CONFIGURE_OPTIONS="$(cat petsc_options.txt | tr '\n' ' ')"
-export PETSC_CONFIGURE_OPTIONS="${PETSC_CONFIGURE_OPTIONS} --with-mpiexec=${MPIEXEC} --CC=${MPICC} --CXX=${MPICXX} --FC=${MPIF90}"
 
 # Check environment variables
 echo "MPICC=${MPICC}"
@@ -44,18 +45,14 @@ echo "FIREDRAKE_DIR=${FIREDRAKE_DIR}"
 echo "PETSC_BRANCH=${PETSC_BRANCH}"
 echo "PETSC_CONFIGURE_OPTIONS=${PETSC_CONFIGURE_OPTIONS}"
 echo "python3=$(which python3)"
-echo "Are these settings okay? Press enter to continue."
+echo "Are these settings okay? Press any key to continue or Ctrl+C to exit."
 read chk
 
-# Install Firedrake
+# Install Firedrake using the above configuration
 curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/master/scripts/firedrake-install
 python3 firedrake-install --venv-name ${FIREDRAKE_ENV} --package-branch petsc ${PETSC_BRANCH} \
     --mpicc ${MPICC} --mpicxx ${MPICXX} --mpif90 ${MPIF90} --mpiexec ${MPIEXEC}
 source ${FIREDRAKE_DIR}/bin/activate
-
-# Reset environment
-export PYTHONPATH=${PYTHONPATH_TMP}
-unset PYTHONPATH_TMP
 unset PETSC_CONFIGURE_OPTIONS
 
 # Install Animate and test that the adaptation functionality is working
@@ -64,3 +61,5 @@ git clone git@github.com:pyroteus/animate
 cd animate
 make install
 make test
+
+cd ${CWD}
