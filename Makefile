@@ -1,6 +1,6 @@
 all: install
 
-.PHONY: test
+.PHONY: install test
 
 install:
 	@echo "Installing dependencies..."
