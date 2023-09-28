@@ -190,9 +190,11 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
         # Compute tangential components
         for j, s1 in enumerate(s):
             for i, s0 in enumerate(s):
-                l2_proj[i][j] = firedrake.assemble(
+                l2_proj[i][j] = firedrake.Function(P1)
+                l2_proj[i][j].dat.data_with_halos[:] = firedrake.assemble(
                     p1test * ufl.dot(ufl.dot(s0, H), s1) / fa * ufl.ds
-                )
+                ).dat.data_with_halos
+                # TODO: Avoid accessing .dat.data_with_halos
     else:
         raise ValueError(
             f"Recovery method '{method}' not supported for Hessians on the boundary."
