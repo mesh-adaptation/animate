@@ -22,6 +22,11 @@ def clement_interpolant(source, target_space=None, boundary=False):
     :kwarg target_space: the :math:`\mathbb P1` space to interpolate into
     :kwarg boundary: interpolate over boundary facets or cells?
     """
+    if isinstance(source, firedrake.Cofunction):
+        data = source.dat.data_with_halos
+        source = firedrake.Function(source.function_space().dual())
+        source.dat.data_with_halos[:] = data
+        # TODO: Avoid accessing .dat.data_with_halos
 
     # Process source space
     Vs = source.function_space()

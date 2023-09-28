@@ -1,0 +1,41 @@
+FROM firedrakeproject/firedrake:latest
+
+MAINTAINER Joe Wallwork <joe.wallwork@outlook.com>
+
+USER firedrake
+WORKDIR /home/firedrake
+
+# Reconfigure PETSc with Mmg and ParMmg
+RUN bash -c "cd petsc; \
+	git fetch; \
+	git checkout jwallwork23/parmmg-rebased; \
+	cp default/lib/petsc/conf/reconfigure-default.py .; \
+	sed -i '30i \ \ \ \ '\''--download-parmmg'\'',' reconfigure-default.py; \
+	sed -i '30i \ \ \ \ '\''--download-mmg'\'',' reconfigure-default.py; \
+	sed -i '30i \ \ \ \ '\''--download-eigen'\'',' reconfigure-default.py; \
+	sed -i '30i \ \ \ \ '\''--download-triangle'\'',' reconfigure-default.py; \
+	sed -i '30i \ \ \ \ '\''--download-tetgen'\'',' reconfigure-default.py; \
+	./reconfigure-default.py"
+
+# Rebuild PETSc
+RUN bash -c "cd petsc; \
+	make all"
+
+# Rebuild Firedrake
+RUN bash -c "source firedrake/bin/activate; \
+	cd firedrake/src/firedrake; \
+	firedrake-update"
+
+# Install Animate
+RUN bash -c "source firedrake/bin/activate; \
+	cd firedrake/src; \
+	git clone https://github.com/pyroteus/animate.git; \
+	cd animate; \
+	make install"
+
+# Install Goalie
+RUN bash -c "source firedrake/bin/activate; \
+	cd firedrake/src; \
+	git clone https://github.com/pyroteus/goalie.git; \
+	cd goalie; \
+	make install"
