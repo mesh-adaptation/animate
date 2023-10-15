@@ -47,34 +47,6 @@ def degree(request):
     return request.param
 
 
-def test_set_parameters():
-    """
-    Test that the set_parameters method works as expected.
-    """
-    mesh = uniform_mesh(2)
-    metric = uniform_metric(mesh)
-
-    # Check the defaults
-    assert np.isclose(metric._plex.metricGetMinimumMagnitude(), 1e-30)
-    assert np.isclose(metric._plex.metricGetMaximumMagnitude(), 1e30)
-
-    # Check h_max is applied correctly
-    hmax = 1.0
-    metric.set_parameters({"dm_plex_metric_h_max": hmax})
-    assert np.isclose(metric._plex.metricGetMaximumMagnitude(), hmax)
-    assert np.isclose(metric.metric_parameters["dm_plex_metric_h_max"], hmax)
-
-    # Check h_min is applied correctly...
-    hmin = 0.1
-    metric.set_parameters({"dm_plex_metric_h_min": hmin})
-    assert np.isclose(metric._plex.metricGetMinimumMagnitude(), hmin)
-    assert np.isclose(metric.metric_parameters["dm_plex_metric_h_min"], hmin)
-
-    # ...and h_max isn't reset to the default
-    assert np.isclose(metric._plex.metricGetMaximumMagnitude(), hmax)
-    assert np.isclose(metric.metric_parameters["dm_plex_metric_h_max"], hmax)
-
-
 def test_copy(dim):
     """
     Test that the copy method works as expected.

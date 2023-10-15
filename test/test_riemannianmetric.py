@@ -52,6 +52,43 @@ class TestMetricSetup(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
 
+class TestSetParameters(unittest.TestCase):
+    """
+    Unit tests for the :meth:`set_parameters` method of :class:`RiemannianMetric`.
+    """
+
+    def setUp(self):
+        self.metric = uniform_metric(uniform_mesh(2))
+
+    def test_defaults(self):
+        plex = self.metric._plex
+        self.assertAlmostEqual(plex.metricGetMinimumMagnitude(), 1e-30)
+        self.assertAlmostEqual(plex.metricGetMaximumMagnitude(), 1e30)
+
+    def test_set_h_max(self):
+        hmax = 1.0
+        metric = self.metric
+        metric.set_parameters({"dm_plex_metric_h_max": hmax})
+        self.assertAlmostEqual(metric._plex.metricGetMaximumMagnitude(), hmax)
+        self.assertAlmostEqual(metric.metric_parameters["dm_plex_metric_h_max"], hmax)
+
+    def test_set_h_min(self):
+        hmin = 0.1
+        metric = self.metric
+        metric.set_parameters({"dm_plex_metric_h_min": hmin})
+        self.assertAlmostEqual(metric._plex.metricGetMinimumMagnitude(), hmin)
+        self.assertAlmostEqual(metric.metric_parameters["dm_plex_metric_h_min"], hmin)
+
+    def test_no_reset(self):
+        hmin = 0.1
+        hmax = 1.0
+        metric = self.metric
+        metric.set_parameters({"dm_plex_metric_h_max": hmax})
+        metric.set_parameters({"dm_plex_metric_h_min": hmin})
+        self.assertAlmostEqual(metric._plex.metricGetMaximumMagnitude(), hmax)
+        self.assertAlmostEqual(metric.metric_parameters["dm_plex_metric_h_max"], hmax)
+
+
 class TestMetricCombination(unittest.TestCase):
     """
     Unit tests for :class:`RiemannianMetric` combination methods.
