@@ -102,18 +102,16 @@ class RiemannianMetric(ffunc.Function):
             Riemannian metric implementation. All such options have the prefix
             `dm_plex_metric_`.
         """
-        mp = self._process_parameters(metric_parameters)
-        self.metric_parameters.update(mp)
-        opts = OptionsManager(self.metric_parameters, "")
-        with opts.inserted_options():
+        self.metric_parameters.update(self._process_parameters(metric_parameters))
+        with OptionsManager(self.metric_parameters, "").inserted_options():
             self._plex.metricSetFromOptions()
-        if self._plex.metricIsIsotropic():
-            raise NotImplementedError(
-                "Isotropic metric optimisations are not supported in Firedrake"
-            )
         if self._plex.metricIsUniform():
             raise NotImplementedError(
-                "Uniform optimisations are not supported in Firedrake"
+                "Uniform metric optimisations are not supported in Firedrake."
+            )
+        if self._plex.metricIsIsotropic():
+            raise NotImplementedError(
+                "Isotropic metric optimisations are not supported in Firedrake."
             )
 
     def _create_from_array(self, array):
