@@ -477,6 +477,24 @@ class TestMetricDecompositions(unittest.TestCase):
             raise ValueError("Reassembled metric does not match.")
 
 
+class TestMetricProperties(unittest.TestCase):
+    """
+    Unit tests to verify properties of :class:`RiemannianMetric`.
+    """
+
+    def test_symmetric(self):
+        mesh = uniform_mesh(2, 4, recentre=True)
+        f = hyperbolic(*SpatialCoordinate(mesh))
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        metric = RiemannianMetric(P1_ten)
+        metric.compute_hessian(f)
+        metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
+        err = assemble(abs(det(metric - transpose(metric))) * dx) / assemble(
+            abs(det(metric)) * dx
+        )
+        self.assertLess(err, 1.0e-08)
+
+
 class TestMetricUtils(unittest.TestCase):
     """
     Unit tests for other misc. methods of :class:`RiemannianMetric`.
