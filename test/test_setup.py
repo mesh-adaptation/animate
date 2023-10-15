@@ -14,7 +14,9 @@ def uniform_mesh(dim, n=5, l=1, recentre=False, **kwargs):
     All other keyword arguments are passed to the :func:`SquareMesh` or :func:`CubeMesh`
     constructor.
     """
-    if dim == 2:
+    if dim == 1:
+        mesh = IntervalMesh(n, l, **kwargs)
+    elif dim == 2:
         mesh = SquareMesh(n, n, l, **kwargs)
     elif dim == 3:
         mesh = CubeMesh(n, n, n, l, **kwargs)

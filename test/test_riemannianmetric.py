@@ -5,6 +5,53 @@ import numpy as np
 import unittest
 
 
+class TestMetricSetup(unittest.TestCase):
+    r"""
+    Unit tests for constructing :class:`RiemannianMetric`\s.
+    """
+
+    def test_dimension_error(self):
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(uniform_mesh(1, 1))
+        msg = "Riemannian metric should be 2D or 3D, not 1D."
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_mixed_error(self):
+        mesh = uniform_mesh(2, 1)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(P1_ten * P1_ten)
+        msg = "Riemannian metric cannot be built in a mixed space."
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_rank_error(self):
+        mesh = uniform_mesh(2, 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(TensorFunctionSpace(mesh, "CG", 1, shape=(2, 2, 2)))
+        msg = "Riemannian metric should be matrix-valued, not rank-3 tensor-valued."
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_family_error(self):
+        mesh = uniform_mesh(2, 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(TensorFunctionSpace(mesh, "DG", 1))
+        msg = (
+            "Riemannian metric should be in P1 space, not"
+            " '<tensor element with shape (2, 2) of <DG1 on a triangle>>'."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_degree_error(self):
+        mesh = uniform_mesh(2, 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(TensorFunctionSpace(mesh, "CG", 2))
+        msg = (
+            "Riemannian metric should be in P1 space, not"
+            " '<tensor element with shape (2, 2) of <CG2 on a triangle>>'."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
+
 class TestMetricCombination(unittest.TestCase):
     """
     Unit tests for :class:`RiemannianMetric` combination methods.

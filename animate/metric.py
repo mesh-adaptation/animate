@@ -55,15 +55,15 @@ class RiemannianMetric(ffunc.Function):
         mesh = fs.mesh()
         tdim = mesh.topological_dimension()
         if tdim not in (2, 3):
-            raise ValueError(f"Riemannian metric should be 2D or 3D, not {tdim}D")
-        self._check_space()
+            raise ValueError(f"Riemannian metric should be 2D or 3D, not {tdim}D.")
         if isinstance(fs.dof_count, Iterable):
-            raise ValueError("Riemannian metric cannot be built in a mixed space")
+            raise ValueError("Riemannian metric cannot be built in a mixed space.")
+        self._check_space()
         rank = len(fs.dof_dset.dim)
         if rank != 2:
             raise ValueError(
                 "Riemannian metric should be matrix-valued,"
-                f" not rank-{rank} tensor-valued"
+                f" not rank-{rank} tensor-valued."
             )
 
         # Stash mesh data
