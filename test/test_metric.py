@@ -47,32 +47,6 @@ def degree(request):
     return request.param
 
 
-def test_copy(dim):
-    """
-    Test that the copy method works as expected.
-    """
-    mesh = uniform_mesh(dim)
-    hmax = 1.0
-    target = 100.0
-    p = 2.0
-    mp = {
-        "dm_plex_metric": {
-            "h_max": hmax,
-            "target_complexity": target,
-            "p": p,
-        }
-    }
-    metric = uniform_metric(mesh, a=100.0, metric_parameters=mp)
-    assert np.isclose(metric._plex.metricGetMaximumMagnitude(), hmax)
-    assert np.isclose(metric._plex.metricGetTargetComplexity(), target)
-    assert np.isclose(metric._plex.metricGetNormalizationOrder(), p)
-    newmetric = metric.copy(deepcopy=True)
-    assert np.isclose(errornorm(metric, newmetric), 0.0)
-    assert np.isclose(newmetric._plex.metricGetMaximumMagnitude(), hmax)
-    assert np.isclose(newmetric._plex.metricGetTargetComplexity(), target)
-    assert np.isclose(newmetric._plex.metricGetNormalizationOrder(), p)
-
-
 def test_hessian_bowl(dim):
     """
     Test that the Hessian recovery technique is able to recover the analytical

@@ -475,3 +475,32 @@ class TestMetricDecompositions(unittest.TestCase):
         expected.interpolate(as_matrix(mat))
         if not np.isclose(errornorm(metric, expected), 0.0):
             raise ValueError("Reassembled metric does not match.")
+
+
+class TestMetricUtils(unittest.TestCase):
+    """
+    Unit tests for other misc. methods of :class:`RiemannianMetric`.
+    """
+
+    @parameterized.expand([[2], [3]])
+    def test_copy(self, dim):
+        mesh = uniform_mesh(dim)
+        hmax = 1.0
+        target = 100.0
+        p = 2.0
+        mp = {
+            "dm_plex_metric": {
+                "h_max": hmax,
+                "target_complexity": target,
+                "p": p,
+            }
+        }
+        metric = uniform_metric(mesh, a=100.0, metric_parameters=mp)
+        self.assertAlmostEqual(metric._plex.metricGetMaximumMagnitude(), hmax)
+        self.assertAlmostEqual(metric._plex.metricGetTargetComplexity(), target)
+        self.assertAlmostEqual(metric._plex.metricGetNormalizationOrder(), p)
+        newmetric = metric.copy(deepcopy=True)
+        self.assertAlmostEqual(errornorm(metric, newmetric), 0.0)
+        self.assertAlmostEqual(newmetric._plex.metricGetMaximumMagnitude(), hmax)
+        self.assertAlmostEqual(newmetric._plex.metricGetTargetComplexity(), target)
+        self.assertAlmostEqual(newmetric._plex.metricGetNormalizationOrder(), p)
