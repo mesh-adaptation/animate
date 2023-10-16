@@ -137,21 +137,6 @@ def test_average(dim):
     assert np.isclose(errornorm(metric_avg, expected), 0.0)
 
 
-def test_complexity(dim):
-    mesh = uniform_mesh(dim, 1)
-    x = SpatialCoordinate(mesh)
-    P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-    metric = RiemannianMetric(P1_ten)
-    if dim == 2:
-        mat = [[1 + x[0], 0], [0, 1 + x[1]]]
-        expected = 4 - 16 * np.sqrt(2) / 9
-    else:
-        mat = [[1 + x[0], 0, 0], [0, 1 + x[1], 0], [0, 0, 1 + x[2]]]
-        expected = 8 / 27 * (22 * np.sqrt(2) - 25)
-    metric.interpolate(as_matrix(mat))
-    assert np.isclose(metric.complexity(), expected)
-
-
 def test_enforce_spd_a_max(dim):
     """
     Tests that the :meth:`enforce_spd` method applies maximum anisotropy as expected.

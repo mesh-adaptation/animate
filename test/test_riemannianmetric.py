@@ -522,3 +522,18 @@ class TestMetricUtils(unittest.TestCase):
         self.assertAlmostEqual(newmetric._plex.metricGetMaximumMagnitude(), hmax)
         self.assertAlmostEqual(newmetric._plex.metricGetTargetComplexity(), target)
         self.assertAlmostEqual(newmetric._plex.metricGetNormalizationOrder(), p)
+
+    @parameterized.expand([[2], [3]])
+    def test_complexity(self, dim):
+        mesh = uniform_mesh(dim, 1)
+        x = SpatialCoordinate(mesh)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        metric = RiemannianMetric(P1_ten)
+        if dim == 2:
+            mat = [[1 + x[0], 0], [0, 1 + x[1]]]
+            expected = 4 - 16 * np.sqrt(2) / 9
+        else:
+            mat = [[1 + x[0], 0, 0], [0, 1 + x[1], 0], [0, 0, 1 + x[2]]]
+            expected = 8 / 27 * (22 * np.sqrt(2) - 25)
+        metric.interpolate(as_matrix(mat))
+        self.assertAlmostEqual(metric.complexity(), expected, places=5)
