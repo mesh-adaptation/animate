@@ -501,24 +501,6 @@ class TestMetricDecompositions(unittest.TestCase):
             raise ValueError("Reassembled metric does not match.")
 
 
-class TestMetricProperties(unittest.TestCase):
-    """
-    Unit tests to verify properties of :class:`RiemannianMetric`.
-    """
-
-    def test_symmetric(self):
-        mesh = uniform_mesh(2, 4, recentre=True)
-        f = hyperbolic(*SpatialCoordinate(mesh))
-        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-        metric = RiemannianMetric(P1_ten)
-        metric.compute_hessian(f)
-        metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
-        err = assemble(abs(det(metric - transpose(metric))) * dx) / assemble(
-            abs(det(metric)) * dx
-        )
-        self.assertLess(err, 1.0e-08)
-
-
 class TestEnforceSPD(unittest.TestCase):
     """
     Unit tests for the :meth:`enforce_spd` method of :class:`RiemannianMetric`.
@@ -530,6 +512,15 @@ class TestEnforceSPD(unittest.TestCase):
         metric = uniform_metric(mesh, a=-1.0)
         metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
         expected = uniform_metric(mesh, a=1.0)
+        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+
+    def test_symmetric(self):
+        mesh = uniform_mesh(2, 4, recentre=True)
+        f = hyperbolic(*SpatialCoordinate(mesh))
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        metric = RiemannianMetric(P1_ten).compute_hessian(f)
+        metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
+        expected = RiemannianMetric(P1_ten).interpolate(transpose(metric))
         self.assertAlmostEqual(errornorm(metric, expected), 0.0)
 
     @parameterized.expand([[2], [3]])
