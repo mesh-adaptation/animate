@@ -105,11 +105,7 @@ class TestHessianMetric(unittest.TestCase):
     Unit tests for the :meth:`compute_hessian` method of :class:`RiemannianMetric`.
     """
 
-    @parameterized.expand([[2], [3]])
-    def test_bowl_serial(self, dim):
-        self._test_bowl(dim)
-
-    def _test_bowl(self, dim, places=7):
+    def test_bowl(self, dim=2, places=7):
         mesh = uniform_mesh(dim, 4, recentre=True)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten).compute_hessian(bowl(*mesh.coordinates))
@@ -122,11 +118,7 @@ class TestMetricCombination(unittest.TestCase):
     Unit tests for :class:`RiemannianMetric` combination methods.
     """
 
-    @parameterized.expand([(2, True), (2, False), (3, True), (3, False)])
-    def test_uniform_combine(self, dim, average):
-        self._test_uniform_combine(dim, average)
-
-    def _test_uniform_combine(self, dim, average):
+    def test_uniform_combine(self, dim=2, average=False):
         mesh = uniform_mesh(dim, 1)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 
@@ -143,8 +135,7 @@ class TestMetricCombination(unittest.TestCase):
         metric.combine(metric1, average=average)
         self.assertAlmostEqual(errornorm(metric, expected), 0)
 
-    @parameterized.expand([[2], [3]])
-    def test_variable_average(self, dim):
+    def test_variable_average(self, dim=2):
         mesh = uniform_mesh(dim, 1)
         x = SpatialCoordinate(mesh)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
@@ -173,11 +164,7 @@ class TestNormalisation(unittest.TestCase):
     Unit tests for metric normalisation.
     """
 
-    @parameterized.expand([[2], [3]])
-    def test_uniform(self, dim):
-        self._test_uniform(dim)
-
-    def _test_uniform(self, dim):
+    def test_uniform(self, dim=2):
         mesh = uniform_mesh(dim)
         target = 200.0 if dim == 2 else 2500.0
         metric = uniform_metric(mesh)

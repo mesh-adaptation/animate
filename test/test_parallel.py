@@ -12,24 +12,30 @@ def dim(request):
 
 
 @pytest.mark.parallel(nprocs=2)
-def test_average_uniform_np2(dim):
+def test_intersect_uniform_np2(dim):
     assert COMM_WORLD.size == 2
-    test_metric.TestMetricCombination()._test_uniform_combine(dim, True)
+    test_metric.TestMetricCombination().test_uniform_combine(dim, False)
 
 
 @pytest.mark.parallel(nprocs=2)
-def test_intersect_uniform_np2(dim):
+def test_average_uniform_np2(dim):
     assert COMM_WORLD.size == 2
-    test_metric.TestMetricCombination()._test_uniform_combine(dim, False)
+    test_metric.TestMetricCombination().test_uniform_combine(dim, True)
+
+
+@pytest.mark.parallel(nprocs=2)
+def test_average_variable_np2(dim):
+    assert COMM_WORLD.size == 2
+    test_metric.TestMetricCombination().test_variable_average(dim)
 
 
 @pytest.mark.parallel(nprocs=2)
 def test_hessian_bowl_np2(dim):
     assert COMM_WORLD.size == 2
-    test_metric.TestHessianMetric()._test_bowl(dim, places=6)
+    test_metric.TestHessianMetric().test_bowl(dim, places=6)
 
 
 @pytest.mark.parallel(nprocs=2)
 def test_normalise_uniform_np2(dim):
     assert COMM_WORLD.size == 2
-    test_metric.TestNormalisation()._test_uniform(dim)
+    test_metric.TestNormalisation().test_uniform(dim)
