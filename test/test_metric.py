@@ -129,7 +129,7 @@ class TestHessianMetric(MetricTestCase):
         self.assertAlmostMatching(metric, expected, places=places)
 
 
-class TestMetricCombination(MetricTestCase):
+class TestCombination(MetricTestCase):
     """
     Unit tests for :class:`RiemannianMetric` combination methods.
     """
@@ -154,7 +154,7 @@ class TestMetricCombination(MetricTestCase):
     def test_no_op(self, average):
         metric = RiemannianMetric(uniform_mesh(2, 1))
         expected = metric.copy(deepcopy=True)
-        metric.combine(average=True)
+        metric.combine(average=average)
         self.assertAlmostMatching(metric, expected)
 
     def test_average_space_error(self):
@@ -203,6 +203,21 @@ class TestMetricCombination(MetricTestCase):
         metric_avg.average(metric2)
         expected = uniform_metric(mesh, a=2.0)
         self.assertAlmostMatching(metric_avg, expected)
+
+    @parameterized.expand([[2], [3]])
+    def test_multiple_intersect(self, dim):
+        mesh = uniform_mesh(dim, 1)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+
+        metric1 = uniform_metric(P1_ten, 100.0)
+        metric2 = uniform_metric(P1_ten, 40.0)
+        metric3 = uniform_metric(P1_ten, 20.0)
+        expected = metric1
+
+        metric = RiemannianMetric(P1_ten)
+        metric.assign(metric1)
+        metric.intersect(metric2, metric3)
+        self.assertAlmostMatching(metric, expected)
 
 
 class TestNormalisation(MetricTestCase):

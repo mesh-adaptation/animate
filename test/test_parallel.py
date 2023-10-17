@@ -14,19 +14,19 @@ def dim(request):
 @pytest.mark.parallel(nprocs=2)
 def test_intersect_uniform_np2(dim):
     assert COMM_WORLD.size == 2
-    test_metric.TestMetricCombination().test_uniform_combine(dim, False)
+    test_metric.TestCombination().test_uniform_combine(dim, False)
 
 
 @pytest.mark.parallel(nprocs=2)
 def test_average_uniform_np2(dim):
     assert COMM_WORLD.size == 2
-    test_metric.TestMetricCombination().test_uniform_combine(dim, True)
+    test_metric.TestCombination().test_uniform_combine(dim, True)
 
 
 @pytest.mark.parallel(nprocs=2)
 def test_average_variable_np2(dim):
     assert COMM_WORLD.size == 2
-    test_metric.TestMetricCombination().test_variable_average(dim)
+    test_metric.TestCombination().test_variable_average(dim)
 
 
 @pytest.mark.parallel(nprocs=2)
