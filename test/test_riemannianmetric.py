@@ -178,12 +178,14 @@ class TestNormalisation(unittest.TestCase):
         mesh = uniform_mesh(dim)
         target = 200.0 if dim == 2 else 2500.0
         metric = uniform_metric(mesh)
-        metric.set_parameters({
-            "dm_plex_metric": {
-                "target_complexity": target,
-                "normalization_order": 1.0,
+        metric.set_parameters(
+            {
+                "dm_plex_metric": {
+                    "target_complexity": target,
+                    "normalization_order": 1.0,
+                }
             }
-        })
+        )
         metric.normalise()
         expected = uniform_metric(mesh, a=pow(target, 2.0 / dim))
         self.assertAlmostEqual(errornorm(metric, expected), 0.0)
@@ -572,11 +574,11 @@ class TestEnforceSPD(unittest.TestCase):
         """
         mesh = uniform_mesh(dim)
         h = 0.1
-        metric = uniform_metric(mesh, a=1 / h ** 2)
+        metric = uniform_metric(mesh, a=1 / h**2)
         h_min = 0.2
         metric.set_parameters({"dm_plex_metric_h_min": h_min})
         metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
-        expected = uniform_metric(mesh, a=1 / h_min ** 2)
+        expected = uniform_metric(mesh, a=1 / h_min**2)
         self.assertAlmostEqual(errornorm(metric, expected), 0.0)
 
     @parameterized.expand([[2], [3]])
@@ -587,11 +589,11 @@ class TestEnforceSPD(unittest.TestCase):
         """
         mesh = uniform_mesh(dim)
         h = 0.1
-        metric = uniform_metric(mesh, a=1 / h ** 2)
+        metric = uniform_metric(mesh, a=1 / h**2)
         h_max = 0.05
         metric.set_parameters({"dm_plex_metric_h_max": h_max})
         metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
-        expected = uniform_metric(mesh, a=1 / h_max ** 2)
+        expected = uniform_metric(mesh, a=1 / h_max**2)
         self.assertAlmostEqual(errornorm(metric, expected), 0.0)
 
     @parameterized.expand([[2], [3]])
