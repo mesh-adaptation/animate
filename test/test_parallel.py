@@ -1,7 +1,7 @@
 """
 Tests under MPI parallelism.
 """
-import test_riemannianmetric
+import test_metric
 import pytest
 
 
@@ -12,9 +12,9 @@ def dim(request):
 
 @pytest.mark.parallel(nprocs=2)
 def test_hessian_bowl_np2(dim):
-    test_riemannianmetric.TestHessianMetric()._test_bowl(dim, places=6)
+    test_metric.TestHessianMetric()._test_bowl(dim, places=6)
 
 
 @pytest.mark.parallel(nprocs=2)
 def test_normalise_uniform_np2(dim):
-    test_riemannianmetric.TestNormalisation()._test_uniform(dim)
+    test_metric.TestNormalisation()._test_uniform(dim)
