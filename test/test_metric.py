@@ -210,6 +210,13 @@ class TestNormalisation(MetricTestCase):
     Unit tests for metric normalisation.
     """
 
+    def test_unset_target_complexity_error(self):
+        metric = uniform_metric(uniform_mesh(2))
+        with self.assertRaises(ValueError) as cm:
+            metric.normalise()
+        msg = "dm_plex_metric_target_complexity must be set."
+        self.assertEqual(str(cm.exception), msg)
+
     def test_uniform(self, dim=2):
         mesh = uniform_mesh(dim)
         target = 200.0 if dim == 2 else 2500.0
