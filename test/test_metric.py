@@ -124,6 +124,9 @@ class TestMetricCombination(unittest.TestCase):
 
     @parameterized.expand([(2, True), (2, False), (3, True), (3, False)])
     def test_uniform_combine(self, dim, average):
+        self._test_uniform_combine(dim, average)
+
+    def _test_uniform_combine(self, dim, average):
         mesh = uniform_mesh(dim, 1)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 
