@@ -5,7 +5,16 @@ import numpy as np
 import unittest
 
 
-class TestMetricSetup(unittest.TestCase):
+class MetricTestCase(unittest.TestCase):
+    """
+    Base class for :class:`RiemannianMetric` unit tests.
+    """
+
+    def assertAlmostMatching(self, a, b, **kwargs):
+        self.assertAlmostEqual(errornorm(a, b), 0.0, **kwargs)
+
+
+class TestMetricSetup(MetricTestCase):
     r"""
     Unit tests for constructing :class:`RiemannianMetric`\s.
     """
@@ -52,7 +61,7 @@ class TestMetricSetup(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
 
-class TestSetParameters(unittest.TestCase):
+class TestSetParameters(MetricTestCase):
     """
     Unit tests for the :meth:`set_parameters` method of :class:`RiemannianMetric`.
     """
@@ -100,7 +109,7 @@ class TestSetParameters(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
 
-class TestHessianMetric(unittest.TestCase):
+class TestHessianMetric(MetricTestCase):
     """
     Unit tests for the :meth:`compute_hessian` method of :class:`RiemannianMetric`.
     """
@@ -110,10 +119,10 @@ class TestHessianMetric(unittest.TestCase):
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten).compute_hessian(bowl(*mesh.coordinates))
         expected = uniform_metric(mesh, a=1.0)
-        self.assertAlmostEqual(errornorm(metric, expected), 0, places=places)
+        self.assertAlmostMatching(metric, expected, places=places)
 
 
-class TestMetricCombination(unittest.TestCase):
+class TestMetricCombination(MetricTestCase):
     """
     Unit tests for :class:`RiemannianMetric` combination methods.
     """
@@ -129,11 +138,11 @@ class TestMetricCombination(unittest.TestCase):
 
         metric.assign(metric1)
         metric.combine(metric2, average=average)
-        self.assertAlmostEqual(errornorm(metric, expected), 0)
+        self.assertAlmostMatching(metric, expected)
 
         metric.assign(metric2)
         metric.combine(metric1, average=average)
-        self.assertAlmostEqual(errornorm(metric, expected), 0)
+        self.assertAlmostMatching(metric, expected)
 
     def test_variable_average(self, dim=2):
         mesh = uniform_mesh(dim, 1)
@@ -152,14 +161,14 @@ class TestMetricCombination(unittest.TestCase):
 
         metric_avg = metric1.copy(deepcopy=True)
         metric_avg.average(metric1, metric1)
-        self.assertAlmostEqual(errornorm(metric_avg, metric1), 0.0)
+        self.assertAlmostMatching(metric_avg, metric1)
 
         metric_avg.average(metric2)
         expected = uniform_metric(mesh, a=2.0)
-        self.assertAlmostEqual(errornorm(metric_avg, expected), 0.0)
+        self.assertAlmostMatching(metric_avg, expected)
 
 
-class TestNormalisation(unittest.TestCase):
+class TestNormalisation(MetricTestCase):
     """
     Unit tests for metric normalisation.
     """
@@ -178,7 +187,7 @@ class TestNormalisation(unittest.TestCase):
         )
         metric.normalise()
         expected = uniform_metric(mesh, a=pow(target, 2.0 / dim))
-        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+        self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand(
         [
@@ -222,7 +231,7 @@ class TestNormalisation(unittest.TestCase):
         self.assertLess(abs(metric.complexity() - target), 0.1 * target)
 
 
-class TestMetricDrivers(unittest.TestCase):
+class TestMetricDrivers(MetricTestCase):
     """
     Unit tests for :class:`RiemannianMetric` drivers.
     """
@@ -388,7 +397,7 @@ class TestMetricDrivers(unittest.TestCase):
         indicator = self.uniform_indicator(mesh)
         metric.compute_isotropic_metric(indicator, interpolant=interpolant)
         expected = uniform_metric(P1_ten, 1.0)
-        self.assertAlmostEqual(errornorm(metric, expected), 0)
+        self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand([(2, "Clement"), (2, "L2"), (3, "Clement"), (3, "L2")])
     def test_uniform_isotropic_dwr_metric(self, dim, interpolant):
@@ -399,7 +408,7 @@ class TestMetricDrivers(unittest.TestCase):
         indicator = self.uniform_indicator(mesh)
         metric.compute_isotropic_dwr_metric(indicator, interpolant=interpolant)
         expected = uniform_metric(P1_ten, 1.0)
-        self.assertAlmostEqual(errornorm(metric, expected), 0)
+        self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand([(2, "Clement"), (2, "L2"), (3, "Clement"), (3, "L2")])
     def test_uniform_anisotropic_dwr_metric(self, dim, interpolant):
@@ -413,7 +422,7 @@ class TestMetricDrivers(unittest.TestCase):
             indicator, hessian, interpolant=interpolant
         )
         expected = uniform_metric(P1_ten, 1.0)
-        self.assertAlmostEqual(errornorm(metric, expected), 0)
+        self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand([(2, "Clement"), (2, "L2"), (3, "Clement"), (3, "L2")])
     def test_uniform_weighted_hessian_metric(self, dim, interpolant):
@@ -426,10 +435,10 @@ class TestMetricDrivers(unittest.TestCase):
         metric.compute_weighted_hessian_metric(
             indicators, hessians, interpolant=interpolant
         )
-        self.assertAlmostEqual(errornorm(metric, expected), 0)
+        self.assertAlmostMatching(metric, expected)
 
 
-class TestMetricDecompositions(unittest.TestCase):
+class TestMetricDecompositions(MetricTestCase):
     """
     Unit tests for metric decompositions.
     """
@@ -575,7 +584,7 @@ class TestMetricDecompositions(unittest.TestCase):
             raise ValueError("Reassembled metric does not match.")
 
 
-class TestEnforceSPD(unittest.TestCase):
+class TestEnforceSPD(MetricTestCase):
     """
     Unit tests for the :meth:`enforce_spd` method of :class:`RiemannianMetric`.
     """
@@ -586,7 +595,7 @@ class TestEnforceSPD(unittest.TestCase):
         metric = uniform_metric(mesh, a=-1.0)
         metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
         expected = uniform_metric(mesh, a=1.0)
-        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+        self.assertAlmostMatching(metric, expected)
 
     def test_symmetric(self):
         mesh = uniform_mesh(2, 4, recentre=True)
@@ -595,7 +604,7 @@ class TestEnforceSPD(unittest.TestCase):
         metric = RiemannianMetric(P1_ten).compute_hessian(f)
         metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
         expected = RiemannianMetric(P1_ten).interpolate(transpose(metric))
-        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+        self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand([[2], [3]])
     def test_enforce_h_min(self, dim):
@@ -610,7 +619,7 @@ class TestEnforceSPD(unittest.TestCase):
         metric.set_parameters({"dm_plex_metric_h_min": h_min})
         metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         expected = uniform_metric(mesh, a=1 / h_min**2)
-        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+        self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand([[2], [3]])
     def test_enforce_h_max(self, dim):
@@ -625,7 +634,7 @@ class TestEnforceSPD(unittest.TestCase):
         metric.set_parameters({"dm_plex_metric_h_max": h_max})
         metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         expected = uniform_metric(mesh, a=1 / h_max**2)
-        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+        self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand([[2], [3]])
     def test_enforce_a_max(self, dim):
@@ -642,10 +651,10 @@ class TestEnforceSPD(unittest.TestCase):
         metric.set_parameters({"dm_plex_metric_a_max": 1.0})
         metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)
         expected = uniform_metric(mesh, a=10.0)
-        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+        self.assertAlmostMatching(metric, expected)
 
 
-class TestMetricUtils(unittest.TestCase):
+class TestMetricUtils(MetricTestCase):
     """
     Unit tests for other misc. methods of :class:`RiemannianMetric`.
     """
