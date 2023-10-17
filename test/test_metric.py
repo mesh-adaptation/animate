@@ -127,6 +127,22 @@ class TestMetricCombination(MetricTestCase):
     Unit tests for :class:`RiemannianMetric` combination methods.
     """
 
+    @parameterized.expand([[True], [False]])
+    def test_combine_space_error(self, average):
+        metric = RiemannianMetric(uniform_mesh(2, 1))
+        with self.assertRaises(ValueError) as cm:
+            metric.combine(RiemannianMetric(uniform_mesh(2, 2)), average=average)
+        combine = "average" if average else "intersect"
+        msg = f"Cannot {combine} metrics with different function spaces."
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_average_space_error(self):
+        metric = RiemannianMetric(uniform_mesh(2, 1))
+        with self.assertRaises(ValueError) as cm:
+            metric.average(RiemannianMetric(uniform_mesh(2, 2)))
+        msg = "Cannot average metrics with different function spaces."
+        self.assertEqual(str(cm.exception), msg)
+
     def test_uniform_combine(self, dim=2, average=False):
         mesh = uniform_mesh(dim, 1)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)

@@ -324,11 +324,9 @@ class RiemannianMetric(ffunc.Function):
         fs = self.function_space()
         for metric in metrics:
             assert isinstance(metric, RiemannianMetric)
-            fsi = metric.function_space()
-            if fs != fsi:
+            if fs != metric.function_space():
                 raise ValueError(
-                    "Cannot combine metrics from different function spaces:"
-                    f" {fs} vs. {fsi}."
+                    "Cannot intersect metrics with different function spaces."
                 )
 
         # Intersect the metrics recursively one at a time
@@ -373,11 +371,9 @@ class RiemannianMetric(ffunc.Function):
         fs = self.function_space()
         for i, metric in enumerate(metrics):
             assert isinstance(metric, RiemannianMetric)
-            fsi = metric.function_space()
-            if fs != fsi:
+            if fs != metric.function_space():
                 raise ValueError(
-                    "Cannot combine metrics from different function spaces:"
-                    f" {fs} vs. {fsi}."
+                    "Cannot average metrics with different function spaces."
                 )
             self += weights[i + 1] * metric
         return self
