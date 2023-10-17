@@ -106,9 +106,9 @@ class TestMetricCombination(unittest.TestCase):
     """
 
     @parameterized.expand([(2, True), (2, False), (3, True), (3, False)])
-    def test_combine(self, dim, average):
+    def test_uniform_combine(self, dim, average):
         mesh = uniform_mesh(dim, 1)
-        P1_ten = firedrake.TensorFunctionSpace(mesh, "CG", 1)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 
         metric1 = uniform_metric(P1_ten, 100.0)
         metric2 = uniform_metric(P1_ten, 20.0)
@@ -122,6 +122,30 @@ class TestMetricCombination(unittest.TestCase):
         metric.assign(metric2)
         metric.combine(metric1, average=average)
         self.assertAlmostEqual(errornorm(metric, expected), 0)
+
+    @parameterized.expand([[2], [3]])
+    def test_variable_average(self, dim):
+        mesh = uniform_mesh(dim, 1)
+        x = SpatialCoordinate(mesh)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        metric1 = RiemannianMetric(P1_ten)
+        metric2 = RiemannianMetric(P1_ten)
+        if dim == 2:
+            mat1 = [[2 + x[0], 0], [0, 2 + x[1]]]
+            mat2 = [[2 - x[0], 0], [0, 2 - x[1]]]
+        else:
+            mat1 = [[2 + x[0], 0, 0], [0, 2 + x[1], 0], [0, 0, 2 + x[2]]]
+            mat2 = [[2 - x[0], 0, 0], [0, 2 - x[1], 0], [0, 0, 2 - x[2]]]
+        metric1.interpolate(as_matrix(mat1))
+        metric2.interpolate(as_matrix(mat2))
+
+        metric_avg = metric1.copy(deepcopy=True)
+        metric_avg.average(metric1, metric1)
+        self.assertAlmostEqual(errornorm(metric_avg, metric1), 0.0)
+
+        metric_avg.average(metric2)
+        expected = uniform_metric(mesh, a=2.0)
+        self.assertAlmostEqual(errornorm(metric_avg, expected), 0.0)
 
 
 class TestMetricDrivers(unittest.TestCase):
@@ -493,6 +517,67 @@ class TestMetricProperties(unittest.TestCase):
             abs(det(metric)) * dx
         )
         self.assertLess(err, 1.0e-08)
+
+
+class TestEnforceSPD(unittest.TestCase):
+    """
+    Unit tests for the :meth:`enforce_spd` method of :class:`RiemannianMetric`.
+    """
+
+    @parameterized.expand([[2], [3]])
+    def test_enforce_pos_def(self, dim):
+        mesh = uniform_mesh(dim)
+        metric = uniform_metric(mesh, a=-1.0)
+        metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
+        expected = uniform_metric(mesh, a=1.0)
+        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+
+    @parameterized.expand([[2], [3]])
+    def test_enforce_h_min(self, dim):
+        """
+        Check that the minimum magnitude is correctly applied:
+            h_min > h => h := h_min
+        """
+        mesh = uniform_mesh(dim)
+        h = 0.1
+        metric = uniform_metric(mesh, a=1 / h ** 2)
+        h_min = 0.2
+        metric.set_parameters({"dm_plex_metric_h_min": h_min})
+        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
+        expected = uniform_metric(mesh, a=1 / h_min ** 2)
+        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+
+    @parameterized.expand([[2], [3]])
+    def test_enforce_h_max(self, dim):
+        """
+        Check that the minimum magnitude is correctly applied:
+            h_max < h => h := h_max
+        """
+        mesh = uniform_mesh(dim)
+        h = 0.1
+        metric = uniform_metric(mesh, a=1 / h ** 2)
+        h_max = 0.05
+        metric.set_parameters({"dm_plex_metric_h_max": h_max})
+        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
+        expected = uniform_metric(mesh, a=1 / h_max ** 2)
+        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+
+    @parameterized.expand([[2], [3]])
+    def test_enforce_a_max(self, dim):
+        """
+        Check that the maximum anisotropy is correctly applied:
+            a_max < a => a := a_max
+        """
+        mesh = uniform_mesh(dim)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        metric = RiemannianMetric(P1_ten)
+        M = np.eye(dim)
+        M[0][0] = 10.0
+        metric.interpolate(as_matrix(M))
+        metric.set_parameters({"dm_plex_metric_a_max": 1.0})
+        metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)
+        expected = uniform_metric(mesh, a=10.0)
+        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
 
 
 class TestMetricUtils(unittest.TestCase):
