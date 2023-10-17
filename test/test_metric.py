@@ -108,6 +108,13 @@ class TestSetParameters(MetricTestCase):
         msg = "Isotropic metric optimisations are not supported in Firedrake."
         self.assertEqual(str(cm.exception), msg)
 
+    def test_p_valueerror(self):
+        metric = RiemannianMetric(uniform_mesh(2))
+        with self.assertRaises(Exception) as cm:
+            metric.set_parameters({"dm_plex_metric_p": 0.0})
+        msg = "Normalization order must be in [1, inf)"
+        self.assertTrue(str(cm.exception).endswith(msg))
+
 
 class TestHessianMetric(MetricTestCase):
     """

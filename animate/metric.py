@@ -284,8 +284,6 @@ class RiemannianMetric(ffunc.Function):
         if kwargs.get("boundary", False):
             d -= 1
         p = self.metric_parameters.get("dm_plex_metric_p", 1.0)
-        if not np.isinf(p) and p < 1.0:
-            raise ValueError(f"Metric normalisation order must be at least 1, not {p}.")
         target = self.metric_parameters.get("dm_plex_metric_target_complexity")
         if target is None:
             raise ValueError("dm_plex_metric_target_complexity must be set.")
