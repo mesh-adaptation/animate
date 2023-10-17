@@ -360,12 +360,14 @@ class RiemannianMetric(ffunc.Function):
         :return: the averaged :class:`~.RiemannianMetric`, modified in-place
         """
         num_metrics = len(metrics) + 1
+        if num_metrics == 1:
+            return self
         if weights is None:
             weights = np.ones(num_metrics) / num_metrics
         if len(weights) != num_metrics:
             raise ValueError(
-                f"Number of weights ({len(weights)}) does not match"
-                f" number of metrics ({num_metrics})."
+                f"Number of weights ({len(weights)}) does not match number of metrics"
+                f" ({num_metrics})."
             )
         self *= weights[0]
         fs = self.function_space()

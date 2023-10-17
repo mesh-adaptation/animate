@@ -136,6 +136,13 @@ class TestMetricCombination(MetricTestCase):
         msg = f"Cannot {combine} metrics with different function spaces."
         self.assertEqual(str(cm.exception), msg)
 
+    @parameterized.expand([[True], [False]])
+    def test_no_op(self, average):
+        metric = RiemannianMetric(uniform_mesh(2, 1))
+        expected = metric.copy(deepcopy=True)
+        metric.combine(average=True)
+        self.assertAlmostMatching(metric, expected)
+
     def test_average_space_error(self):
         metric = RiemannianMetric(uniform_mesh(2, 1))
         with self.assertRaises(ValueError) as cm:
