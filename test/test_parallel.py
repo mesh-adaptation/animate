@@ -17,5 +17,4 @@ def test_hessian_bowl_np2(dim):
 
 @pytest.mark.parallel(nprocs=2)
 def test_normalise_uniform_np2(dim):
-    test_metric.TestNormalisation()._test_uniform(dim)
->>>>>>> ccd65b7 (tmp)
+    test_riemannianmetric.TestNormalisation()._test_uniform(dim)

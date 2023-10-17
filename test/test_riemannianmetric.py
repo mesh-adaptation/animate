@@ -165,6 +165,30 @@ class TestMetricCombination(unittest.TestCase):
         self.assertAlmostEqual(errornorm(metric_avg, expected), 0.0)
 
 
+class TestNormalisation(unittest.TestCase):
+    """
+    Unit tests for metric normalisation.
+    """
+
+    @parameterized.expand([[2], [3]])
+    def test_uniform(self, dim):
+        self._test_uniform(dim)
+
+    def _test_uniform(self, dim):
+        mesh = uniform_mesh(dim)
+        target = 200.0 if dim == 2 else 2500.0
+        metric = uniform_metric(mesh)
+        metric.set_parameters({
+            "dm_plex_metric": {
+                "target_complexity": target,
+                "normalization_order": 1.0,
+            }
+        })
+        metric.normalise()
+        expected = uniform_metric(mesh, a=pow(target, 2.0 / dim))
+        self.assertAlmostEqual(errornorm(metric, expected), 0.0)
+
+
 class TestMetricDrivers(unittest.TestCase):
     """
     Unit tests for :class:`RiemannianMetric` drivers.

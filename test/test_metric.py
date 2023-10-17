@@ -18,27 +18,6 @@ def degree(request):
     return request.param
 
 
-@pytest.mark.parallel(nprocs=2)
-def test_normalise(dim):
-    """
-    Test that normalising a metric w.r.t.
-    a given metric complexity and the
-    normalisation order :math:`p=1` DTRT.
-    """
-    mesh = uniform_mesh(dim)
-    target = 200.0 if dim == 2 else 2500.0
-    mp = {
-        "dm_plex_metric": {
-            "target_complexity": target,
-            "normalization_order": 1.0,
-        }
-    }
-    metric = uniform_metric(mesh, metric_parameters=mp)
-    metric.normalise()
-    expected = uniform_metric(mesh, a=pow(target, 2.0 / dim))
-    assert np.isclose(errornorm(metric, expected), 0.0)
-
-
 def test_hessian_normalise(sensor, degree):
     """
     Test that normalising a metric enables the attainment of the target metric
