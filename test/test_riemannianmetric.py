@@ -100,6 +100,23 @@ class TestSetParameters(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
 
+class TestHessianMetric(unittest.TestCase):
+    """
+    Unit tests for the :meth:`compute_hessian` method of :class:`RiemannianMetric`.
+    """
+
+    @parameterized.expand([[2], [3]])
+    def test_bowl_serial(self, dim):
+        self._test_bowl(dim)
+
+    def _test_bowl(self, dim, places=7):
+        mesh = uniform_mesh(dim, 4, recentre=True)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        metric = RiemannianMetric(P1_ten).compute_hessian(bowl(*mesh.coordinates))
+        expected = uniform_metric(mesh, a=1.0)
+        self.assertAlmostEqual(errornorm(metric, expected), 0, places=places)
+
+
 class TestMetricCombination(unittest.TestCase):
     """
     Unit tests for :class:`RiemannianMetric` combination methods.

@@ -23,7 +23,7 @@ test: lint
 coverage:
 	@echo "Generating coverage report..."
 	@python3 -m coverage erase
-	@python3 -m coverage run --source=animate -m pytest -v -n auto test
+	@python3 -m coverage run --source=animate -m pytest -v test
 	@python3 -m coverage html
 	@echo "Done."
 

@@ -18,29 +18,6 @@ def degree(request):
     return request.param
 
 
-def test_hessian_bowl(dim):
-    """
-    Test that the Hessian recovery technique is able to recover the analytical
-    Hessian of a quadratic sensor function.
-    """
-    mesh = uniform_mesh(dim, 4, recentre=True)
-    f = bowl(*mesh.coordinates)
-    P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-    metric = RiemannianMetric(P1_ten)
-    metric.compute_hessian(f)
-    expected = interpolate(Identity(dim), P1_ten)
-    err = errornorm(metric, expected) / norm(expected)
-    assert err < 1.0e-07
-
-
-@pytest.mark.parallel(nprocs=2)
-def test_hessian_bowl_np2():
-    """
-    Test that the Hessian recovery technique works in parallel.
-    """
-    test_hessian_bowl(3)
-
-
 @pytest.mark.parallel(nprocs=2)
 def test_normalise(dim):
     """
