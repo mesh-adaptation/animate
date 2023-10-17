@@ -280,9 +280,7 @@ class RiemannianMetric(ffunc.Function):
         """
         kwargs.setdefault("restrict_sizes", True)
         kwargs.setdefault("restrict_anisotropy", True)
-        d = self._tdim
-        if kwargs.get("boundary", False):
-            d -= 1
+        d = self._tdim - 1 if boundary else self._tdim
         p = self.metric_parameters.get("dm_plex_metric_p", 1.0)
         target = self.metric_parameters.get("dm_plex_metric_target_complexity")
         if target is None:
@@ -300,6 +298,10 @@ class RiemannianMetric(ffunc.Function):
             global_factor = firedrake.Constant(pow(target / integral, 2 / d))
 
         # Normalise the metric
+        if boundary:
+            raise NotImplementedError(
+                "Normalisation on the boundary not yet implemented."
+            )
         determinant = 1 if np.isinf(p) else pow(detM, -1 / (2 * p + d))
         self.interpolate(global_factor * determinant * self)
 

@@ -274,6 +274,15 @@ class TestNormalisation(MetricTestCase):
         metric.normalise(restrict_sizes=False, restrict_anisotropy=False)
         self.assertLess(abs(metric.complexity() - target), 0.1 * target)
 
+    def test_boundary_notimplemented_error(self, dim=2):
+        mesh = uniform_mesh(dim)
+        metric = uniform_metric(mesh, a=2.0)
+        metric.set_parameters({"dm_plex_metric_target_complexity": 100.0})
+        with self.assertRaises(NotImplementedError) as cm:
+            metric.normalise(boundary=True)
+        msg = "Normalisation on the boundary not yet implemented."
+        self.assertEqual(str(cm.exception), msg)
+
 
 class TestMetricDrivers(MetricTestCase):
     """
