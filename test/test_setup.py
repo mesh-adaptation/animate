@@ -14,7 +14,9 @@ def uniform_mesh(dim, n=5, l=1, recentre=False, **kwargs):
     All other keyword arguments are passed to the :func:`SquareMesh` or :func:`CubeMesh`
     constructor.
     """
-    if dim == 2:
+    if dim == 1:
+        mesh = IntervalMesh(n, l, **kwargs)
+    elif dim == 2:
         mesh = SquareMesh(n, n, l, **kwargs)
     elif dim == 3:
         mesh = CubeMesh(n, n, n, l, **kwargs)
@@ -148,3 +150,32 @@ def errornorm(u, uh, norm_type="L2", **kwargs):
         v = u - uh
 
     return norm(v, norm_type=norm_type, **kwargs)
+
+
+def bowl(*coords):
+    """
+    Quadratic bowl sensor function in arbitrary dimensions.
+    """
+    return 0.5 * sum([xi**2 for xi in coords])
+
+
+def hyperbolic(x, y):
+    """
+    Hyperbolic sensor function in 2D.
+    """
+    sn = sin(50 * x * y)
+    return conditional(abs(x * y) < 2 * pi / 50, 0.01 * sn, sn)
+
+
+def multiscale(x, y):
+    """
+    Multi-scale sensor function in 2D.
+    """
+    return 0.1 * sin(50 * x) + atan(0.1 / (sin(5 * y) - 2 * x))
+
+
+def interweaved(x, y):
+    """
+    Interweaved sensor function in 2D.
+    """
+    return atan(0.1 / (sin(5 * y) - 2 * x)) + atan(0.5 / (sin(3 * y) - 7 * x))

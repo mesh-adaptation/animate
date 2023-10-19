@@ -55,15 +55,15 @@ class RiemannianMetric(ffunc.Function):
         mesh = fs.mesh()
         tdim = mesh.topological_dimension()
         if tdim not in (2, 3):
-            raise ValueError(f"Riemannian metric should be 2D or 3D, not {tdim}D")
-        self._check_space()
+            raise ValueError(f"Riemannian metric should be 2D or 3D, not {tdim}D.")
         if isinstance(fs.dof_count, Iterable):
-            raise ValueError("Riemannian metric cannot be built in a mixed space")
+            raise ValueError("Riemannian metric cannot be built in a mixed space.")
+        self._check_space()
         rank = len(fs.dof_dset.dim)
         if rank != 2:
             raise ValueError(
                 "Riemannian metric should be matrix-valued,"
-                f" not rank-{rank} tensor-valued"
+                f" not rank-{rank} tensor-valued."
             )
 
         # Stash mesh data
@@ -102,18 +102,16 @@ class RiemannianMetric(ffunc.Function):
             Riemannian metric implementation. All such options have the prefix
             `dm_plex_metric_`.
         """
-        mp = self._process_parameters(metric_parameters)
-        self.metric_parameters.update(mp)
-        opts = OptionsManager(self.metric_parameters, "")
-        with opts.inserted_options():
+        self.metric_parameters.update(self._process_parameters(metric_parameters))
+        with OptionsManager(self.metric_parameters, "").inserted_options():
             self._plex.metricSetFromOptions()
-        if self._plex.metricIsIsotropic():
-            raise NotImplementedError(
-                "Isotropic metric optimisations are not supported in Firedrake"
-            )
         if self._plex.metricIsUniform():
             raise NotImplementedError(
-                "Uniform optimisations are not supported in Firedrake"
+                "Uniform metric optimisations are not supported in Firedrake."
+            )
+        if self._plex.metricIsIsotropic():
+            raise NotImplementedError(
+                "Isotropic metric optimisations are not supported in Firedrake."
             )
 
     def _create_from_array(self, array):
@@ -282,12 +280,8 @@ class RiemannianMetric(ffunc.Function):
         """
         kwargs.setdefault("restrict_sizes", True)
         kwargs.setdefault("restrict_anisotropy", True)
-        d = self._tdim
-        if kwargs.get("boundary", False):
-            d -= 1
+        d = self._tdim - 1 if boundary else self._tdim
         p = self.metric_parameters.get("dm_plex_metric_p", 1.0)
-        if not np.isinf(p) and p < 1.0:
-            raise ValueError(f"Metric normalisation order must be at least 1, not {p}.")
         target = self.metric_parameters.get("dm_plex_metric_target_complexity")
         if target is None:
             raise ValueError("dm_plex_metric_target_complexity must be set.")
@@ -304,6 +298,10 @@ class RiemannianMetric(ffunc.Function):
             global_factor = firedrake.Constant(pow(target / integral, 2 / d))
 
         # Normalise the metric
+        if boundary:
+            raise NotImplementedError(
+                "Normalisation on the boundary not yet implemented."
+            )
         determinant = 1 if np.isinf(p) else pow(detM, -1 / (2 * p + d))
         self.interpolate(global_factor * determinant * self)
 
@@ -326,11 +324,9 @@ class RiemannianMetric(ffunc.Function):
         fs = self.function_space()
         for metric in metrics:
             assert isinstance(metric, RiemannianMetric)
-            fsi = metric.function_space()
-            if fs != fsi:
+            if fs != metric.function_space():
                 raise ValueError(
-                    "Cannot combine metrics from different function spaces:"
-                    f" {fs} vs. {fsi}."
+                    "Cannot intersect metrics with different function spaces."
                 )
 
         # Intersect the metrics recursively one at a time
@@ -364,22 +360,22 @@ class RiemannianMetric(ffunc.Function):
         :return: the averaged :class:`~.RiemannianMetric`, modified in-place
         """
         num_metrics = len(metrics) + 1
+        if num_metrics == 1:
+            return self
         if weights is None:
             weights = np.ones(num_metrics) / num_metrics
         if len(weights) != num_metrics:
             raise ValueError(
-                f"Number of weights ({len(weights)}) does not match"
-                f" number of metrics ({num_metrics})."
+                f"Number of weights ({len(weights)}) does not match number of metrics"
+                f" ({num_metrics})."
             )
         self *= weights[0]
         fs = self.function_space()
         for i, metric in enumerate(metrics):
             assert isinstance(metric, RiemannianMetric)
-            fsi = metric.function_space()
-            if fs != fsi:
+            if fs != metric.function_space():
                 raise ValueError(
-                    "Cannot combine metrics from different function spaces:"
-                    f" {fs} vs. {fsi}."
+                    "Cannot average metrics with different function spaces."
                 )
             self += weights[i + 1] * metric
         return self
