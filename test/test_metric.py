@@ -147,7 +147,7 @@ class TestCombination(MetricTestCase):
         metric = RiemannianMetric(uniform_mesh(2, 1))
         with self.assertRaises(ValueError) as cm:
             metric.average(metric, weights=[0.2, 0.2, 0.6])
-        msg = f"Number of weights (3) does not match number of metrics (2)."
+        msg = "Number of weights (3) does not match number of metrics (2)."
         self.assertEqual(str(cm.exception), msg)
 
     @parameterized.expand([[True], [False]])
