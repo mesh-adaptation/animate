@@ -44,6 +44,15 @@ class TestClement(unittest.TestCase):
         else:
             return as_matrix([[self.x, self.y], [-self.y, -self.x]])
 
+    def test_source_type_error(self):
+        with self.assertRaises(TypeError) as cm:
+            clement_interpolant(Constant(0.0))
+        msg = (
+            "Expected Cofunction or Function, got"
+            " '<class 'firedrake.constant.Constant'>'."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
     def test_rank_error(self):
         with self.assertRaises(ValueError) as cm:
             clement_interpolant(Function(self.get_space(3, "DG", 0)))
