@@ -2,6 +2,7 @@
 Test interpolation schemes.
 """
 from test_setup import *
+import numpy as np
 from parameterized import parameterized
 import unittest
 
@@ -70,6 +71,14 @@ class TestClement(unittest.TestCase):
             clement_interpolant(Function(self.P0), target_space=self.P0)
         msg = "Target space provided must be P1."
         self.assertEqual(str(cm.exception), msg)
+
+    def test_cofunction(self):
+        P0 = self.get_space(0, "DG", 0)
+        source = Cofunction(P0.dual())
+        source.dat.data_with_halos[:] = 1.0
+        target = clement_interpolant(source)
+        self.assertTrue(isinstance(target, Cofunction))
+        self.assertTrue(np.allclose(target.dat.data_with_halos, 1.0))
 
     @parameterized.expand([[0], [1], [2]])
     def test_volume_average_2d(self, rank):
