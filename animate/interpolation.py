@@ -3,6 +3,7 @@ Driver functions for mesh-to-mesh data transfer.
 """
 from animate.quality import QualityMeasure
 import firedrake
+from firedrake.functionspaceimpl import FiredrakeDualSpace
 from firedrake.petsc import PETSc
 from pyop2 import op2
 import numpy as np
@@ -52,6 +53,10 @@ def clement_interpolant(source, target_space=None, boundary=False):
             Vt = firedrake.VectorFunctionSpace(mesh, "CG", 1)
         else:
             Vt = firedrake.TensorFunctionSpace(mesh, "CG", 1)
+    elif isinstance(Vt, FiredrakeDualSpace):
+        Vt = Vt.dual()
+    elif not isinstance(Vt, FiredrakeDualSpace):
+        is_cofunction = False
     Vt_e = Vt.ufl_element()
     if not (Vt_e.family() == "Lagrange" and Vt_e.degree() == 1):
         raise ValueError("Target space provided must be P1.")

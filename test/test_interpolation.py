@@ -72,12 +72,22 @@ class TestClement(unittest.TestCase):
         msg = "Target space provided must be P1."
         self.assertEqual(str(cm.exception), msg)
 
-    def test_cofunction(self):
+    def test_cofunction_dual_target_space(self):
         P0 = self.get_space(0, "DG", 0)
+        P1 = self.get_space(0, "CG", 1)
         source = Cofunction(P0.dual())
         source.dat.data_with_halos[:] = 1.0
-        target = clement_interpolant(source)
+        target = clement_interpolant(source, target_space=P1.dual())
         self.assertTrue(isinstance(target, Cofunction))
+        self.assertTrue(np.allclose(target.dat.data_with_halos, 1.0))
+
+    def test_cofunction_primal_target_space(self):
+        P0 = self.get_space(0, "DG", 0)
+        P1 = self.get_space(0, "CG", 1)
+        source = Cofunction(P0.dual())
+        source.dat.data_with_halos[:] = 1.0
+        target = clement_interpolant(source, target_space=P1)
+        self.assertTrue(isinstance(target, Function))
         self.assertTrue(np.allclose(target.dat.data_with_halos, 1.0))
 
     @parameterized.expand([[0], [1], [2]])
