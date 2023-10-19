@@ -3,6 +3,7 @@ Driver functions for mesh-to-mesh data transfer.
 """
 from animate.quality import QualityMeasure
 import firedrake
+from firedrake.functionspaceimpl import FiredrakeDualSpace
 from firedrake.petsc import PETSc
 from pyop2 import op2
 import numpy as np
@@ -22,11 +23,15 @@ def clement_interpolant(source, target_space=None, boundary=False):
     :kwarg target_space: the :math:`\mathbb P1` space to interpolate into
     :kwarg boundary: interpolate over boundary facets or cells?
     """
-    if isinstance(source, firedrake.Cofunction):
+    if not isinstance(source, (firedrake.Cofunction, firedrake.Function)):
+        raise TypeError(f"Expected Cofunction or Function, got '{type(source)}'.")
+
+    # Map Cofunctions to Functions for the interpolation
+    is_cofunction = isinstance(source, firedrake.Cofunction)
+    if is_cofunction:
         data = source.dat.data_with_halos
         source = firedrake.Function(source.function_space().dual())
         source.dat.data_with_halos[:] = data
-        # TODO: Avoid accessing .dat.data_with_halos
 
     # Process source space
     Vs = source.function_space()
@@ -48,6 +53,10 @@ def clement_interpolant(source, target_space=None, boundary=False):
             Vt = firedrake.VectorFunctionSpace(mesh, "CG", 1)
         else:
             Vt = firedrake.TensorFunctionSpace(mesh, "CG", 1)
+    elif isinstance(Vt, FiredrakeDualSpace):
+        Vt = Vt.dual()
+    elif not isinstance(Vt, FiredrakeDualSpace):
+        is_cofunction = False
     Vt_e = Vt.ufl_element()
     if not (Vt_e.family() == "Lagrange" and Vt_e.degree() == 1):
         raise ValueError("Target space provided must be P1.")
@@ -139,4 +148,10 @@ def clement_interpolant(source, target_space=None, boundary=False):
     target.dat.data_with_halos[:] = np.nan_to_num(
         target.dat.data_with_halos, posinf=0, neginf=0
     )
+
+    # Map back to Cofunction, if one was passed originally
+    if is_cofunction:
+        data = target.dat.data_with_halos
+        target = firedrake.Cofunction(target.function_space().dual())
+        target.dat.data_with_halos[:] = data
     return target
