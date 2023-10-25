@@ -674,8 +674,8 @@ class TestEnforceSPD(MetricTestCase):
         expected = RiemannianMetric(P1_ten).interpolate(transpose(metric))
         self.assertAlmostMatching(metric, expected)
 
-    @parameterized.expand([[2], [3]])
-    def test_enforce_h_min(self, dim):
+    @parameterized.expand([(2, False), (2, True), (3, False), (3, True)])
+    def test_enforce_h_min(self, dim, variable):
         """
         Check that the minimum magnitude is correctly applied:
             h_min > h => h := h_min
@@ -684,13 +684,16 @@ class TestEnforceSPD(MetricTestCase):
         h = 0.1
         metric = uniform_metric(mesh, a=1 / h**2)
         h_min = 0.2
-        metric.set_parameters({"dm_plex_metric_h_min": h_min})
-        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
+        if variable:
+            metric.enforce_variable_constraints(h_min=h_min)
+        else:
+            metric.set_parameters({"dm_plex_metric_h_min": h_min})
+            metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         expected = uniform_metric(mesh, a=1 / h_min**2)
         self.assertAlmostMatching(metric, expected)
 
-    @parameterized.expand([[2], [3]])
-    def test_enforce_h_max(self, dim):
+    @parameterized.expand([(2, False), (2, True), (3, False), (3, True)])
+    def test_enforce_h_max(self, dim, variable):
         """
         Check that the minimum magnitude is correctly applied:
             h_max < h => h := h_max
@@ -699,13 +702,16 @@ class TestEnforceSPD(MetricTestCase):
         h = 0.1
         metric = uniform_metric(mesh, a=1 / h**2)
         h_max = 0.05
-        metric.set_parameters({"dm_plex_metric_h_max": h_max})
-        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
+        if variable:
+            metric.enforce_variable_constraints(h_max=h_max)
+        else:
+            metric.set_parameters({"dm_plex_metric_h_max": h_max})
+            metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         expected = uniform_metric(mesh, a=1 / h_max**2)
         self.assertAlmostMatching(metric, expected)
 
-    @parameterized.expand([[2], [3]])
-    def test_enforce_a_max(self, dim):
+    @parameterized.expand([(2, False), (2, True), (3, False), (3, True)])
+    def test_enforce_a_max(self, dim, variable):
         """
         Check that the maximum anisotropy is correctly applied:
             a_max < a => a := a_max
@@ -716,8 +722,12 @@ class TestEnforceSPD(MetricTestCase):
         M = np.eye(dim)
         M[0][0] = 10.0
         metric.interpolate(as_matrix(M))
-        metric.set_parameters({"dm_plex_metric_a_max": 1.0})
-        metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)
+        a_max = 1.0
+        if variable:
+            metric.enforce_variable_constraints(a_max=a_max)
+        else:
+            metric.set_parameters({"dm_plex_metric_a_max": a_max})
+            metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)
         expected = uniform_metric(mesh, a=10.0)
         self.assertAlmostMatching(metric, expected)
 
