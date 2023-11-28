@@ -43,7 +43,7 @@ def recover_gradient_l2(f, target_space=None):
             )
         degree = max(1, f.ufl_element().degree() - 1)
         mesh = f.function_space().mesh()
-        rank = len(f.ufl_element().value_shape())
+        rank = len(f.ufl_element().value_shape)
         if rank == 0:
             target_space = firedrake.VectorFunctionSpace(mesh, "CG", degree)
         elif rank == 1:
