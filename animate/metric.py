@@ -260,7 +260,7 @@ class RiemannianMetric(ffunc.Function):
             "restrictAnisotropy": restrict_anisotropy,
         }
         v = self._create_from_array(self.dat.data_with_halos)
-        det = self._plex.metricDeterminantCreate()
+        det, _ = self._plex.metricDeterminantCreate()
         self._plex.metricEnforceSPD(v, v, det, **kw)
         size = np.shape(self.dat.data_with_halos)
         self.dat.data_with_halos[:] = np.reshape(v.array, size)
