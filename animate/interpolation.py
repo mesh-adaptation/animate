@@ -38,7 +38,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
     Vs_e = Vs.ufl_element()
     if not (Vs_e.family() == "Discontinuous Lagrange" and Vs_e.degree() == 0):
         raise ValueError("Source function provided must be from a P0 space.")
-    rank = len(Vs_e.value_shape())
+    rank = len(Vs_e.value_shape)
     if rank not in (0, 1, 2):
         raise ValueError(f"Rank-{rank + 1} tensors are not supported.")
     mesh = Vs.mesh()

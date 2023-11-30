@@ -260,7 +260,7 @@ class RiemannianMetric(ffunc.Function):
             "restrictAnisotropy": restrict_anisotropy,
         }
         v = self._create_from_array(self.dat.data_with_halos)
-        det = self._plex.metricDeterminantCreate()
+        det, _ = self._plex.metricDeterminantCreate()
         self._plex.metricEnforceSPD(v, v, det, **kw)
         size = np.shape(self.dat.data_with_halos)
         self.dat.data_with_halos[:] = np.reshape(v.array, size)
@@ -448,17 +448,17 @@ class RiemannianMetric(ffunc.Function):
         """
         V_ten = evectors.function_space()
         fe_ten = V_ten.ufl_element()
-        if len(fe_ten.value_shape()) != 2:
+        if len(fe_ten.value_shape) != 2:
             raise ValueError(
                 "Eigenvector Function should be rank-2,"
-                f" not rank-{len(fe_ten.value_shape())}."
+                f" not rank-{len(fe_ten.value_shape)}."
             )
         V_vec = evalues.function_space()
         fe_vec = V_vec.ufl_element()
-        if len(fe_vec.value_shape()) != 1:
+        if len(fe_vec.value_shape) != 1:
             raise ValueError(
                 "Eigenvalue Function should be rank-1,"
-                f" not rank-{len(fe_vec.value_shape())}."
+                f" not rank-{len(fe_vec.value_shape)}."
             )
         if fe_ten.family() != fe_vec.family():
             raise ValueError(
