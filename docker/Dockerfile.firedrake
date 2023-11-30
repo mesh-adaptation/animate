@@ -1,4 +1,4 @@
-FROM firedrakeproject/firedrake:latest
+FROM firedrakeproject/firedrake-vanilla:latest
 
 MAINTAINER Joe Wallwork <joe.wallwork@outlook.com>
 
@@ -8,7 +8,7 @@ WORKDIR /home/firedrake
 # Reconfigure PETSc with Mmg and ParMmg
 RUN bash -c "cd petsc; \
 	git fetch; \
-	git checkout jwallwork23/parmmg-rebased; \
+	git checkout jwallwork23/plex-metric-updates; \
 	cp default/lib/petsc/conf/reconfigure-default.py .; \
 	sed -i '30i \ \ \ \ '\''--download-parmmg'\'',' reconfigure-default.py; \
 	sed -i '30i \ \ \ \ '\''--download-mmg'\'',' reconfigure-default.py; \
