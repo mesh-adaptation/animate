@@ -13,12 +13,12 @@ mesh = UnitSquareMesh(10, 10)
 P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 metric = RiemannianMetric(P1_ten)
 
-# We start by choosing a uniform, and _isotropic_ metric, which
+# We start by choosing a uniform, and *isotropic* metric, which
 # is to say that the metric tensor is just a constant diagonal matrix
 # that is a scalar multiple of the identity matrix:
 
 alpha = 100
-metric.interpolate(as_matrix([[alpha, 0], [0,alpha]]))
+metric.interpolate(as_matrix([[alpha, 0], [0, alpha]]))
 
 # In metric based adaptivity the metric is used to measure the length
 # of edges: for any edge :math:`\mathbf e={\mathbf v_2}-{\mathbf v_1}` written
@@ -38,7 +38,7 @@ metric.interpolate(as_matrix([[alpha, 0], [0,alpha]]))
 #
 # The metric is used by the mesh adaptivity library to determine the optimal length of edges,
 # where an edge is considered optimal if its length in metric space is 1. For our isotropic metric
-# this means that an edge of (Euclidean) length :math:`h=\sqrt{\mathbf{e}^T\mathbf{e}}` is considered optimal 
+# this means that an edge of (Euclidean) length :math:`h=\sqrt{\mathbf{e}^T\mathbf{e}}` is considered optimal
 # if :math:`\sqrt{\alpha} h=1`, or :math:`h=1/\sqrt{\alpha}`. Thus using :math:`\alpha=100` we expect
 # a mesh with edges of length :math:`h=0.1`
 
@@ -46,7 +46,7 @@ new_mesh = adapt(mesh, metric)
 import matplotlib.pyplot as plt
 fig, axes = plt.subplots()
 triplot(new_mesh, axes=axes)
-axes.legend()
+axes.set_aspect('equal')
 fig.show()
 fig.savefig('mesh1.jpg')
 
@@ -58,12 +58,13 @@ fig.savefig('mesh1.jpg')
 # :math:`h_y=0.25` we simply create a diagonal Riemannian metric with, respectively, the values
 # :math:`1/0.1^2` and :math:`1/0.25^2` along the diagonal:
 
-hx = 0.1; hy = 0.25
+hx = 0.1
+hy = 0.25
 metric.interpolate(as_matrix([[1/hx**2, 0], [0, 1/hy**2]]))
 new_mesh = adapt(mesh, metric)
 fig, axes = plt.subplots()
 triplot(new_mesh, axes=axes)
-axes.legend()
+axes.set_aspect('equal')
 fig.show()
 fig.savefig('mesh2.jpg')
 
@@ -76,14 +77,17 @@ fig.savefig('mesh2.jpg')
 
 x, y = SpatialCoordinate(mesh)
 r = 0.4
-h1 = 0.02; h2 = 0.05
+h1 = 0.02
+h2 = 0.05
 high = as_matrix([[1/h1**2, 0], [0, 1/h1**2]])
-low  = as_matrix([[1/h2**2, 0], [0, 1/h2**2]])
-metric.interpolate(conditional(sqrt((x-0.5)**2+(y-0.5)**2)<r, high, low))
+low = as_matrix([[1/h2**2, 0], [0, 1/h2**2]])
+metric.interpolate(conditional(sqrt((x-0.5)**2+(y-0.5)**2) < r, high, low))
 new_mesh = adapt(mesh, metric)
-fig, axes = plt.subplots()
-triplot(new_mesh, axes=axes)
-axes.legend()
+fig, axes = plt.subplots(ncols=2)
+triplot(mesh, axes=axes[0])
+axes[0].set_aspect('equal')
+triplot(new_mesh, axes=axes[1])
+axes[1].set_aspect('equal')
 fig.show()
 fig.savefig('mesh3.jpg')
 
@@ -91,24 +95,28 @@ fig.savefig('mesh3.jpg')
 #    :figwidth: 90%
 #    :align: center
 #
-# As we can observe the circular region of high resolution is not very accurately approximated.
-# This is a consequence of the low resolution of the initial mesh on which we have defined
-# our metric. For a more accurate result we therefore increase the resolution of the uniform
-# starting mesh
+# As we can observe in the figure on the right, the circular region of high
+# resolution is not very accurately approximated. This is a consequence of the
+# low resolution of the initial mesh (left figure) on which we have defined our
+# metric. For a more accurate result we therefore increase the resolution of
+# this initial mesh
 
-mesh = UnitSquareMesh(100, 100)
+mesh = UnitSquareMesh(50, 50)
 P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 metric = RiemannianMetric(P1_ten)
 x, y = SpatialCoordinate(mesh)
 r = 0.4
-h1 = 0.02; h2 = 0.05
+h1 = 0.02
+h2 = 0.05
 high = as_matrix([[1/h1**2, 0], [0, 1/h1**2]])
-low  = as_matrix([[1/h2**2, 0], [0, 1/h2**2]])
-metric.interpolate(conditional(sqrt((x-0.5)**2+(y-0.5)**2)<r, high, low))
+low = as_matrix([[1/h2**2, 0], [0, 1/h2**2]])
+metric.interpolate(conditional(sqrt((x-0.5)**2+(y-0.5)**2) < r, high, low))
 new_mesh = adapt(mesh, metric)
-fig, axes = plt.subplots()
-triplot(new_mesh, axes=axes)
-axes.legend()
+fig, axes = plt.subplots(figsize=(8, 16), nrows=2)
+triplot(mesh, axes=axes[0])
+axes[0].set_aspect('equal')
+triplot(new_mesh, axes=axes[1])
+axes[1].set_aspect('equal')
 fig.show()
 fig.savefig('mesh4.jpg')
 
