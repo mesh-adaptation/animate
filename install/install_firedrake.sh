@@ -34,12 +34,3 @@ curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/master/scri
 python3 firedrake-install --venv-name ${FIREDRAKE_ENV} --package-branch petsc ${PETSC_BRANCH}
 source ${FIREDRAKE_DIR}/bin/activate
 unset PETSC_CONFIGURE_OPTIONS
-
-# Install Animate and test that the adaptation functionality is working
-cd ${FIREDRAKE_DIR}/src
-git clone git@github.com:pyroteus/animate
-cd animate
-make install
-make test
-
-cd ${CWD}
