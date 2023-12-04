@@ -54,12 +54,3 @@ python3 firedrake-install --venv-name ${FIREDRAKE_ENV} --package-branch petsc ${
     --mpicc ${MPICC} --mpicxx ${MPICXX} --mpif90 ${MPIF90} --mpiexec ${MPIEXEC}
 source ${FIREDRAKE_DIR}/bin/activate
 unset PETSC_CONFIGURE_OPTIONS
-
-# Install Animate and test that the adaptation functionality is working
-cd ${FIREDRAKE_DIR}/src
-git clone git@github.com:pyroteus/animate
-cd animate
-make install
-make test
-
-cd ${CWD}
