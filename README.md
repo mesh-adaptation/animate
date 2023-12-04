@@ -28,21 +28,26 @@ Instructions:
 -  Install firedrake and associated dependencies to a local environment via `source install_firedrake_custom_mpi.sh`
 - Install animate via `make animate`
 - Execute the test suite to confirm installation was successful via `make test`
+- The shell script should automatically run the associated tests for the Animate package, so it is a good idea to confirm these have passed and the installation was successful before proceeding.
 
-### To install Animate via Docker image
+### To install Firedrake via Docker image
 
-The instructions for installing the Animate docker image can be found in the `Docker` folder, including a makefile for installation and execution.
+A Firedrake docker image exists and can alternatively be downloaded and installed before installing Animate. 
 
-Alternatively, manually install the Animate docker image:
+To install the Firedrake docker image:
 - Pull the docker image: `docker pull jwallwork/firedrake-parmmg`
 - Run the docker image: `docker run --rm -it -v ${HOME}:${HOME} jwallwork/firedrake-parmmg`
 
-Please note, by installing via a Docker image with `${HOME}` you are giving Docker access to your home space.
+Please note, that by installing via a Docker image with `${HOME}` you are giving Docker access to your home space.
+
+Continue to follow the instructions below in "To install Animate via `git clone`" to complete the installation of Animate.
 
 
 ### To install Animate via `git clone`
-Installing Animate via cloning the GitHub repository assumes prior installation of Firedrake and its dependencies. For separate instructions for installing Firedrake please See: [Firedrake download instructions](https://www.firedrakeproject.org/download.html).
+Installing Animate via cloning the GitHub repository assumes prior installation of Firedrake and its dependencies. For separate instructions for installing Firedrake please see: [Firedrake download instructions](https://www.firedrakeproject.org/download.html).
 
 To install Animate via `git clone`:
-- from the main Animate GitHub, `git clone` the repository using HTTPS or SSH.
-- navigate to the local cloned repository, activate your virtual environment and install via: `pip install .`.
+- Activate your local virtual environment containing the bespoke Firedrake installation and navigate to the `src` folder.
+- from the main Animate GitHub, `git clone` the repository using HTTPS or SSH into the `src` folder
+- `cd animate` and run `make install` to install Animate
+- Execute the test suite to confirm installation was successful via `make test`
