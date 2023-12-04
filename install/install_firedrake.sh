@@ -34,3 +34,5 @@ curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/master/scri
 python3 firedrake-install --venv-name ${FIREDRAKE_ENV} --package-branch petsc ${PETSC_BRANCH}
 source ${FIREDRAKE_DIR}/bin/activate
 unset PETSC_CONFIGURE_OPTIONS
+
+cd ${CWD}
