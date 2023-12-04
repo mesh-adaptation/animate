@@ -7,15 +7,15 @@
 Animate is a mesh adaptation toolkit enabling users to anisotropically adapt a mesh based on a Riemannian metric framework with control over the shape, orientation and size of the resulting mesh elements. Animate is built for use with Firedrake and  strongly leverages PETSc DMPlex functionality. The implementation of metric-based mesh adaptation used in PETSc assumes that the metric is piece-wise linear and continuous, with its degrees of freedom at the mesh vertices.
 
 For more information on Firedrake, please see: [Firedrake Website](https://www.firedrakeproject.org/).
-For more information on PETSc, please see: [PETSc metric based mesh adaptation](https://petsc.org/release/docs/manual/dmplex/#metric-based-mesh-adaptation)
+For more information on PETSc, please see: [PETSc metric-based mesh adaptation](https://petsc.org/release/docs/manual/dmplex/#metric-based-mesh-adaptation)
 
 ## Linux Installation
 
-The following installation instructions assume a Linux or WSL operating system. The options below include installation from a custom shell script which also installs the custom setup for Firedrake and PETSc. If Firedrake is already installed, please see instructions to install Animate via `git clone`.
+The following installation instructions assume a Linux or WSL operating system. The options below include the installation of a custom setup for Firedrake and PETSc from either a shell script or a Docker image. If Firedrake is already installed, please see instructions "To install Animate via `git clone`".
 
-### To install Animate with all in one shell script
+### To install Firedrake via shell script
 
-The 'all-in-one' shell script will install Animate and all its key dependencies, including Firedrake and PETSc.
+Firedrake, along with PETSc, is required by the Animate package and is available for installation via a shell script.
 
 Instructions:
 - Download installation files either:
@@ -26,9 +26,7 @@ Instructions:
 		- `curl -O https://raw.githubusercontent.com/pyroteus/animate/main/install/install_firedrake_custom_mpi.sh`
 		- `curl -O https://raw.githubusercontent.com/pyroteus/animate/main/install/petsc_options.txt`
 -  Install firedrake and associated dependencies to a local environment via `source install_firedrake_custom_mpi.sh`
-- Install animate via `make animate`
-- Execute the test suite to confirm installation was successful via `make test`
-- The shell script should automatically run the associated tests for the Animate package, so it is a good idea to confirm these have passed and the installation was successful before proceeding.
+- Continue to follow the instructions below in "To install Animate via `git clone`" to complete the installation of Animate.
 
 ### To install Firedrake via Docker image
 
