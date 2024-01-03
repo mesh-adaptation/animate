@@ -1,9 +1,12 @@
-all: run
+all: run combining_ellipse_intersection.jpg
 
 run:
 	@echo "Running all demos..."
 	@for file in ./*.py; do python3 $$file; done
 	@echo "Done."
+
+%.jpg: %.svg
+	convert -density 200 $< $@
 
 clean:
 	@echo "Running demo caches..."
