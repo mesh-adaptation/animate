@@ -25,7 +25,6 @@ def demo_file(request):
 
 def test_demos(demo_file, tmpdir, monkeypatch):
     assert os.path.isfile(demo_file), f"Demo file '{demo_file}' not found."
-    demo_name = os.path.splitext(os.path.basename(demo_file))[0]
 
     # Copy mesh files
     source = os.path.dirname(demo_file)
