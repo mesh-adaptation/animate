@@ -16,27 +16,28 @@
 # timesteps combined.
 #
 # A natural way to combine two metrics for mesh adaptation, is the so called
-# intersection method. A natural, geometric interpretation exist if we
+# intersection method. A natural, geometric interpretation exists if we
 # represent the individual metrics by ellipsoids, which indicate the desired
 # edge length in different directions through their principle axes. The
 # intersection of two metrics produces a metric whose associated ellipsoid is
-# the largest ellipsoid that can be fit within the ellipsoids of the two
-# metrics:
+# the largest ellipsoid that can fit within the ellipsoids of the two metrics:
 #
 # .. figure:: combining_ellipse_intersection.jpg
-#    :figwidth: 90%
+#    :figwidth: 70%
 #    :align: center
 #
 #
 # Below we first set up two metrics: Metric 1 asks for a medium resolution of
-# hm=0.025 in the left, and a coarse resolution of hc=0.1 in the right half of
-# the domain. Metric 2 prescribes the coarse resolution for y<0.3 and y>0.7,
-# but asks for an anisotropic resolution, hc in the x-direction and hf=0.01 in
-# the y-direction, for 0.3<y<0.7
+# :math:`hm=0.025` in the left, and a coarse resolution of :math:`hc=0.1` in
+# the right half of the domain. Metric 2 prescribes the coarse resolution for
+# :math:`y<0.3` and :math:`y>0.7`, but asks for an anisotropic resolution,
+# :math:`hc` in the :math:`x`-direction and :math:`hf=0.01` in the
+# :math:`y`-direction, for :math:`0.3<y<0.7`
 
 import matplotlib.pyplot as plt
 from firedrake import *
 from animate import *
+
 mesh = UnitSquareMesh(100, 100)
 P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 metric1 = RiemannianMetric(P1_ten)
@@ -46,23 +47,25 @@ r = 0.2
 hf = 0.01
 hm = 0.025
 hc = 0.1
-anisotropic = as_matrix([[1/hc**2, 0], [0, 1/hf**2]])
-medium = as_matrix([[1/hm**2, 0], [0, 1/hm**2]])
-coarse = as_matrix([[1/hc**2, 0], [0, 1/hc**2]])
+anisotropic = as_matrix([[1 / hc**2, 0], [0, 1 / hf**2]])
+medium = as_matrix([[1 / hm**2, 0], [0, 1 / hm**2]])
+coarse = as_matrix([[1 / hc**2, 0], [0, 1 / hc**2]])
 metric1.interpolate(conditional(x < 0.5, medium, coarse))
-metric2.interpolate(conditional(And(abs(x-0.5) < r, abs(y-0.5) < r), anisotropic, coarse))
-metric2.interpolate(conditional(abs(y-0.5) < r, anisotropic, coarse))
+metric2.interpolate(
+    conditional(And(abs(x - 0.5) < r, abs(y - 0.5) < r), anisotropic, coarse)
+)
+metric2.interpolate(conditional(abs(y - 0.5) < r, anisotropic, coarse))
 mesh1 = adapt(mesh, metric1)
 mesh2 = adapt(mesh, metric2)
 fig, axes = plt.subplots(figsize=(16, 8), ncols=2)
 triplot(mesh1, axes=axes[0])
-axes[0].set_aspect('equal')
-axes[0].set_title('Mesh based on metric1')
+axes[0].set_aspect("equal")
+axes[0].set_title("Mesh based on metric1")
 triplot(mesh2, axes=axes[1])
-axes[1].set_aspect('equal')
-axes[1].set_title('Mesh based on metric2')
+axes[1].set_aspect("equal")
+axes[1].set_title("Mesh based on metric2")
 fig.show()
-fig.savefig('combining_two_metrics.jpg')
+fig.savefig("combining_two_metrics.jpg")
 
 #
 # .. figure:: combining_two_metrics.jpg
@@ -80,20 +83,20 @@ intersected_metric.intersect(metric2)
 mesh_intersected = adapt(mesh, intersected_metric)
 fig, axes = plt.subplots(figsize=(16, 16))
 triplot(mesh_intersected, axes=axes)
-axes.set_aspect('equal')
-axes.set_title('Mesh based on intersected metric')
+axes.set_aspect("equal")
+axes.set_title("Mesh based on intersected metric")
 fig.show()
-fig.savefig('combining_intersection.jpg')
+fig.savefig("combining_intersection.jpg")
 
 #
 # .. figure:: combining_intersection.jpg
 #    :figwidth: 90%
 #    :align: center
 #
-# As we can observe, in every region the resolution respsects the minimum
+# As we can observe, in every region the resolution respects the minimum
 # resolution in all directions asked for by both metrics. For example, in the
-# region x<0.5, 0.3<y<0.7 the resolution in the x-direction is hf=0.01, as
-# required by metric2, but in the y-direction the resolution is hm=0.02 as
+# region :math:`x<0.5`, :math:`0.3<y<0.7` the resolution in the :math:`x`-direction is :math:`hf=0.01`, as
+# required by metric2, but in the :math:`y`-direction the resolution is :math:`hm=0.02` as
 # required by metric1.
 #
 # If instead we average the metrics using the
@@ -104,13 +107,15 @@ averaged_metric.average(metric2)
 mesh_averaged = adapt(mesh, averaged_metric)
 fig, axes = plt.subplots(figsize=(16, 16))
 triplot(mesh_averaged, axes=axes)
-axes.set_aspect('equal')
-axes.set_title('Mesh based on averaged metric')
+axes.set_aspect("equal")
+axes.set_title("Mesh based on averaged metric")
 fig.show()
-fig.savefig('combining_averaging.jpg')
+fig.savefig("combining_averaging.jpg")
 
 #
-# .. figure:: combining_averaging.jpg :figwidth: 90% :align: center
+# .. figure:: combining_averaging.jpg
+#    :figwidth: 90%
+#    :align: center
 #
-# the resolution in, e.g., the region x<0.5, y<0.3 is now based on an average
-# of hm=0.02 and hc=0.1, i.e. an edge length of 0.06.
+# the resolution in, e.g., the region :math:`x<0.5, y<0.3` is now based on an
+# average of :math:`hm=0.02` and :math:`hc=0.1`, i.e. an edge length of 0.06.
