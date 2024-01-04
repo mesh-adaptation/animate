@@ -47,8 +47,8 @@ class RiemannianMetric(ffunc.Function):
         """
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
-        super().__init__(function_space, *args, **kwargs)
         self.metric_parameters = {}
+        super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
         fs = self.function_space()
