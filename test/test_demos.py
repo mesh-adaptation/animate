@@ -18,7 +18,7 @@ demo_dir = os.path.abspath(os.path.join(cwd, "..", "demos"))
 all_demos = glob.glob(os.path.join(demo_dir, "*.py"))
 
 
-@pytest.fixture(params=all_demos, ids=lambda x: os.path.basename(x))
+@pytest.fixture(params=all_demos, ids=lambda x: x.split("demos/")[-1][:-3])
 def demo_file(request):
     return os.path.abspath(request.param)
 
