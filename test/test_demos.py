@@ -38,4 +38,4 @@ def test_demos(demo_file, tmpdir, monkeypatch):
 
     # Clean up plots
     for ext in ("jpg", "pvd", "vtu"):
-        subprocess.check_call(["rm", "-f", f"{demo_name}*.{ext}"])
+        subprocess.check_call(["rm", "-f", f"*.{ext}"])
