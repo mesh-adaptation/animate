@@ -282,9 +282,6 @@ class RiemannianMetric(ffunc.Function):
         kwargs.setdefault("restrict_anisotropy", True)
         d = self._tdim - 1 if boundary else self._tdim
         p = self.metric_parameters.get("dm_plex_metric_p", 1.0)
-        target = self.metric_parameters.get("dm_plex_metric_target_complexity")
-        if target is None:
-            raise ValueError("dm_plex_metric_target_complexity must be set.")
 
         # Enforce that the metric is SPD
         self.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
@@ -292,6 +289,9 @@ class RiemannianMetric(ffunc.Function):
         # Compute global normalisation factor
         detM = ufl.det(self)
         if global_factor is None:
+            target = self.metric_parameters.get("dm_plex_metric_target_complexity")
+            if target is None:
+                raise ValueError("dm_plex_metric_target_complexity must be set.")
             dX = (ufl.ds if boundary else ufl.dx)(domain=self._mesh)
             exponent = 0.5 if np.isinf(p) else (p / (2 * p + d))
             integral = firedrake.assemble(pow(detM, exponent) * dX)
