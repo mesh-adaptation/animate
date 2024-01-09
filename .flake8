@@ -1,0 +1,18 @@
+[flake8]
+ignore =
+	# Line too long
+	E501,
+	# Missing whitespace around arithmetic operator
+	E226,
+	# Module level import not at top of file
+	E402,
+	# Do not use variables named "I", "O", or "l"
+	E741,
+	# Unable to detect undefined names
+	F403,
+	# Name may be undefined, or defined from star imports
+	F405,
+	# Line break occurred before binary operator
+	W503
+max-line-length = 88
+select = B,C,E,F,W,T4,B9
