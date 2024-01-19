@@ -85,6 +85,34 @@ class TestSetParameters(MetricTestCase):
         self.assertAlmostEqual(metric._plex.metricGetMinimumMagnitude(), hmin)
         self.assertAlmostEqual(metric.metric_parameters["dm_plex_metric_h_min"], hmin)
 
+    def test_set_a_max(self):
+        amax = 1.0
+        metric = uniform_metric(uniform_mesh(2))
+        metric.set_parameters({"dm_plex_metric_a_max": amax})
+        self.assertAlmostEqual(metric._plex.metricGetMaximumAnisotropy(), amax)
+        self.assertAlmostEqual(metric.metric_parameters["dm_plex_metric_a_max"], amax)
+
+    @parameterized.expand([["h_min"], ["h_max"], ["a_max"]])
+    def test_set_variable(self, key):
+        value = Constant(1.0)
+        metric = uniform_metric(uniform_mesh(2))
+        metric.set_parameters({f"dm_plex_metric_{key}": value})
+        self.assertTrue(f"dm_plex_metric_{key}" not in metric.metric_parameters)
+        self.assertTrue(f"dm_plex_metric_{key}" in metric._variable_parameters)
+        self.assertEqual(metric._variable_parameters[f"dm_plex_metric_{key}"], value)
+
+    def test_set_boundary_tag(self):
+        value = "on_boundary"
+        metric = uniform_metric(uniform_mesh(2))
+        metric.set_parameters()
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" in metric._variable_parameters)
+        self.assertIsNone(metric._variable_parameters["dm_plex_metric_boundary_tag"])
+        metric.set_parameters({"dm_plex_metric_boundary_tag": value})
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" in metric._variable_parameters)
+        self.assertEqual(metric._variable_parameters["dm_plex_metric_boundary_tag"], value)
+
     def test_no_reset(self):
         hmin = 0.1
         hmax = 1.0
