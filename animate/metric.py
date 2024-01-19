@@ -103,6 +103,7 @@ class RiemannianMetric(ffunc.Function):
         # Spatially varying parameters need to be treated differently
         variable_parameters = {}
         for key in ("h_min", "h_max", "a_max"):
+            key = f"dm_plex_metric_{key}"
             value = mp.get(key)
             if value is None:
                 continue

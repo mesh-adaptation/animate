@@ -694,10 +694,13 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_min = 0.2
         if variable:
-            metric._variable_parameters["dm_plex_metric_h_min"] = h_min
-            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+            P0 = FunctionSpace(mesh, "DG", 0)
+            metric.set_parameters({"dm_plex_metric_h_min": Function(P0).assign(h_min)})
         else:
             metric.set_parameters({"dm_plex_metric_h_min": h_min})
+        if variable:
+            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+        else:
             metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         if boundary_tag is None:
             expected = uniform_metric(mesh, a=1 / h_min**2)
@@ -727,10 +730,13 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_max = 0.05
         if variable:
-            metric._variable_parameters["dm_plex_metric_h_max"] = h_max
-            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+            P0 = FunctionSpace(mesh, "DG", 0)
+            metric.set_parameters({"dm_plex_metric_h_max": Function(P0).assign(h_max)})
         else:
             metric.set_parameters({"dm_plex_metric_h_max": h_max})
+        if variable:
+            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+        else:
             metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         if boundary_tag is None:
             expected = uniform_metric(mesh, a=1 / h_max**2)
@@ -763,10 +769,13 @@ class TestEnforceSPD(MetricTestCase):
         metric.interpolate(as_matrix(M))
         a_max = 1.0
         if variable:
-            metric._variable_parameters["dm_plex_metric_a_max"] = a_max
-            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+            P0 = FunctionSpace(mesh, "DG", 0)
+            metric.set_parameters({"dm_plex_metric_a_max": Function(P0).assign(a_max)})
         else:
             metric.set_parameters({"dm_plex_metric_a_max": a_max})
+        if variable:
+            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+        else:
             metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)
         if boundary_tag is None:
             expected = uniform_metric(mesh, a=10.0)
