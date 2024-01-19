@@ -270,7 +270,7 @@ class RiemannianMetric(ffunc.Function):
     # TODO: Implement this on the PETSc side
     #       See https://gitlab.com/petsc/petsc/-/issues/1450
     @PETSc.Log.EventDecorator()
-    def enforce_variable_constraints(self, h_min=1.0e-30, h_max=1.0e30, a_max=1.0e5, boundary_tag=None):
+    def _enforce_variable_constraints(self, h_min=1.0e-30, h_max=1.0e30, a_max=1.0e5, boundary_tag=None):
         """
         Post-process a metric to enforce minimum and maximum metric magnitudes
         and maximum anisotropy, any of which may vary spatially.
