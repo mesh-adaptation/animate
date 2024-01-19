@@ -48,6 +48,7 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
         self.metric_parameters = {}
+        self._variable_parameters = {}
         super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
@@ -88,11 +89,26 @@ class RiemannianMetric(ffunc.Function):
     @staticmethod
     def _process_parameters(metric_parameters):
         mp = metric_parameters.copy()
+
+        # Account for concise nested dictionary formatting
         if "dm_plex_metric" in mp:
             for key, value in mp["dm_plex_metric"].items():
                 mp["_".join(["dm_plex_metric", key])] = value
             mp.pop("dm_plex_metric")
-        return mp
+
+        # Spatially varying parameters need to be treated differently
+        variable_parameters = {}
+        for key in ("h_min", "h_max", "a_max"):
+            value = mp.get(key)
+            if value is None:
+                continue
+            if isinstance(value, firedrake.Constant):
+                mp[key] = value.dat.data[0]
+            elif isinstance(value, ffunc.Function):
+                variable_parameters[key] = value
+                mp.pop(key)
+
+        return mp, variable_parameters
 
     def set_parameters(self, metric_parameters={}):
         """
@@ -102,7 +118,10 @@ class RiemannianMetric(ffunc.Function):
             Riemannian metric implementation. All such options have the prefix
             `dm_plex_metric_`.
         """
-        self.metric_parameters.update(self._process_parameters(metric_parameters))
+        mp, self._variable_parameters = self._process_parameters(metric_parameters)
+
+        # Pass parameters to PETSc
+        self.metric_parameters.update(mp)
         with OptionsManager(self.metric_parameters, "").inserted_options():
             self._plex.metricSetFromOptions()
         if self._plex.metricIsUniform():
