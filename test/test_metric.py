@@ -694,9 +694,8 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_min = 0.2
         if variable:
-            P0 = FunctionSpace(mesh, "DG", 0)
             metric.set_parameters({
-                "dm_plex_metric_h_min": Function(P0).assign(h_min),
+                "dm_plex_metric_h_min": Constant(h_min),
                 "dm_plex_metric_boundary_tag": boundary_tag,
             })
         else:
@@ -731,9 +730,8 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_max = 0.05
         if variable:
-            P0 = FunctionSpace(mesh, "DG", 0)
             metric.set_parameters({
-                "dm_plex_metric_h_max": Function(P0).assign(h_max),
+                "dm_plex_metric_h_max": Constant(h_max),
                 "dm_plex_metric_boundary_tag": boundary_tag,
             })
         else:
@@ -771,9 +769,8 @@ class TestEnforceSPD(MetricTestCase):
         metric.interpolate(as_matrix(M))
         a_max = 1.0
         if variable:
-            P0 = FunctionSpace(mesh, "DG", 0)
             metric.set_parameters({
-                "dm_plex_metric_a_max": Function(P0).assign(a_max),
+                "dm_plex_metric_a_max": Constant(a_max),
                 "dm_plex_metric_boundary_tag": boundary_tag,
             })
         else:
