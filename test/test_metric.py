@@ -695,11 +695,14 @@ class TestEnforceSPD(MetricTestCase):
         h_min = 0.2
         if variable:
             P0 = FunctionSpace(mesh, "DG", 0)
-            metric.set_parameters({"dm_plex_metric_h_min": Function(P0).assign(h_min)})
+            metric.set_parameters({
+                "dm_plex_metric_h_min": Function(P0).assign(h_min),
+                "dm_plex_metric_boundary_tag": boundary_tag,
+            })
         else:
             metric.set_parameters({"dm_plex_metric_h_min": h_min})
         if variable:
-            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+            metric._enforce_variable_constraints()
         else:
             metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         if boundary_tag is None:
@@ -731,11 +734,14 @@ class TestEnforceSPD(MetricTestCase):
         h_max = 0.05
         if variable:
             P0 = FunctionSpace(mesh, "DG", 0)
-            metric.set_parameters({"dm_plex_metric_h_max": Function(P0).assign(h_max)})
+            metric.set_parameters({
+                "dm_plex_metric_h_max": Function(P0).assign(h_max),
+                "dm_plex_metric_boundary_tag": boundary_tag,
+            })
         else:
             metric.set_parameters({"dm_plex_metric_h_max": h_max})
         if variable:
-            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+            metric._enforce_variable_constraints()
         else:
             metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
         if boundary_tag is None:
@@ -770,11 +776,14 @@ class TestEnforceSPD(MetricTestCase):
         a_max = 1.0
         if variable:
             P0 = FunctionSpace(mesh, "DG", 0)
-            metric.set_parameters({"dm_plex_metric_a_max": Function(P0).assign(a_max)})
+            metric.set_parameters({
+                "dm_plex_metric_a_max": Function(P0).assign(a_max),
+                "dm_plex_metric_boundary_tag": boundary_tag,
+            })
         else:
             metric.set_parameters({"dm_plex_metric_a_max": a_max})
         if variable:
-            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
+            metric._enforce_variable_constraints()
         else:
             metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)
         if boundary_tag is None:

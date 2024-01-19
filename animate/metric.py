@@ -52,6 +52,7 @@ class RiemannianMetric(ffunc.Function):
             "dm_plex_metric_h_min": firedrake.Constant(1.0e-30),
             "dm_plex_metric_h_max": firedrake.Constant(1.0e30),
             "dm_plex_metric_a_max": firedrake.Constant(1.0e5),
+            "dm_plex_metric_boundary_tag": None,
         }
         super().__init__(function_space, *args, **kwargs)
 
@@ -114,6 +115,10 @@ class RiemannianMetric(ffunc.Function):
                 mp.pop(key)
             else:
                 vp[key] = firedrake.Constant(value)
+
+        # The boundary_tag parameter does not currently exist in PETSc
+        if "dm_plex_metric_boundary_tag" in mp:
+            vp["dm_plex_metric_boundary_tag"] = mp.pop("dm_plex_metric_boundary_tag")
 
         return mp, vp
 
@@ -297,12 +302,10 @@ class RiemannianMetric(ffunc.Function):
     # TODO: Implement this on the PETSc side
     #       See https://gitlab.com/petsc/petsc/-/issues/1450
     @PETSc.Log.EventDecorator()
-    def _enforce_variable_constraints(self, boundary_tag=None):
+    def _enforce_variable_constraints(self):
         """
         Post-process a metric to enforce minimum and maximum metric magnitudes
         and maximum anisotropy, any of which may vary spatially.
-
-        :kwarg boundary_tag: optional tag to enforce sizes on.
         """
         mesh = self.function_space().mesh()
         P1 = firedrake.FunctionSpace(mesh, "CG", 1)
@@ -346,6 +349,7 @@ class RiemannianMetric(ffunc.Function):
             raise ValueError(f"Encountered a_max value smaller than unity: {_a_max}.")
 
         dim = mesh.topological_dimension()
+        boundary_tag = self._variable_parameters.get("dm_plex_metric_boundary_tag")
         if boundary_tag is None:
             node_set = self.function_space().node_set
         else:
