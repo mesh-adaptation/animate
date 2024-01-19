@@ -54,6 +54,7 @@ class RiemannianMetric(ffunc.Function):
             "dm_plex_metric_a_max": firedrake.Constant(1.0e5),
             "dm_plex_metric_boundary_tag": None,
         }
+        self._variable_parameters_set = False
         super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
@@ -91,8 +92,7 @@ class RiemannianMetric(ffunc.Function):
         if (el.family(), el.degree()) != ("Lagrange", 1):
             raise ValueError(f"Riemannian metric should be in P1 space, not '{el}'.")
 
-    @staticmethod
-    def _process_parameters(metric_parameters):
+    def _process_parameters(self, metric_parameters):
         mp = metric_parameters.copy()
 
         # Account for concise nested dictionary formatting
@@ -108,7 +108,8 @@ class RiemannianMetric(ffunc.Function):
             value = mp.get(key)
             if value is None:
                 continue
-            elif isinstance(value, firedrake.Constant):
+            self._variable_parameters_set = True
+            if isinstance(value, firedrake.Constant):
                 mp[key] = value.dat.data[0]
             elif isinstance(value, ffunc.Function):
                 vp[key] = value
@@ -118,6 +119,7 @@ class RiemannianMetric(ffunc.Function):
 
         # The boundary_tag parameter does not currently exist in PETSc
         if "dm_plex_metric_boundary_tag" in mp:
+            self._variable_parameters_set = True
             vp["dm_plex_metric_boundary_tag"] = mp.pop("dm_plex_metric_boundary_tag")
 
         return mp, vp
@@ -291,12 +293,22 @@ class RiemannianMetric(ffunc.Function):
             "restrictSizes": restrict_sizes,
             "restrictAnisotropy": restrict_anisotropy,
         }
+        if self._variable_parameters_set:
+            kw["restrictSizes"] = False
+            kw["restrictAnisotropy"] = False
         v = self._create_from_array(self.dat.data_with_halos)
         det, _ = self._plex.metricDeterminantCreate()
         self._plex.metricEnforceSPD(v, v, det, **kw)
         size = np.shape(self.dat.data_with_halos)
         self.dat.data_with_halos[:] = np.reshape(v.array, size)
         v.destroy()
+        if self._variable_parameters_set:
+            if restrict_sizes and restrict_anisotropy:
+                return self._enforce_variable_constraints()
+            elif restrict_sizes or restrict_anisotropy:
+                raise NotImplementedError(
+                    "Can only currently restrict both sizes and anisotropy."
+                )
         return self
 
     # TODO: Implement this on the PETSc side
