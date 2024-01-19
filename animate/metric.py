@@ -323,7 +323,7 @@ class RiemannianMetric(ffunc.Function):
         P1 = firedrake.FunctionSpace(mesh, "CG", 1)
 
         def interp(f):
-            """
+            r"""
             Try to apply a Clement interpolant.
               * `TypeError` indicates something other than a :class:`Function` passed.
               * `ValueError` indicates the :class:`Function` is not :math:`\mathbb{P}0`.
