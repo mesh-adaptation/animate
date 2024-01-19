@@ -108,12 +108,13 @@ class RiemannianMetric(ffunc.Function):
             value = mp.get(key)
             if value is None:
                 continue
-            self._variable_parameters_set = True
             if isinstance(value, firedrake.Constant):
                 mp[key] = value.dat.data[0]
+                self._variable_parameters_set = True
             elif isinstance(value, ffunc.Function):
                 vp[key] = value
                 mp.pop(key)
+                self._variable_parameters_set = True
             else:
                 vp[key] = firedrake.Constant(value)
 
