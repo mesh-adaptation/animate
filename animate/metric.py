@@ -315,6 +315,7 @@ class RiemannianMetric(ffunc.Function):
         h_max = interp(self._variable_parameters["dm_plex_metric_h_max"])
         a_max = interp(self._variable_parameters["dm_plex_metric_a_max"])
 
+        # Check minimal h_min value is positive and smaller than minimal h_max value
         _hmin = h_min.vector().gather().min()
         if _hmin <= 0.0:
             raise ValueError(f"Encountered non-positive h_min value: {_hmin}.")
@@ -323,15 +324,17 @@ class RiemannianMetric(ffunc.Function):
                 "Minimum h_max value is smaller than minimum h_min value:"
                 f"{h_max.vector().gather().min()} < {_hmin}."
             )
+
+        # Check h_max is always at least h_min
         dx = ufl.dx(domain=mesh)
         integral = firedrake.assemble(ufl.conditional(h_max < h_min, 1, 0) * dx)
         if not np.isclose(integral, 0.0):
             raise ValueError("Encountered regions where h_max < h_min.")
-        if a_max.vector().gather().min() < 1.0:
-            raise ValueError(
-                "Encountered a_max value smaller than unity:"
-                f"{a_max.vector().gather().min()}."
-            )
+
+        # Check minimal a_max value is close to unity or larger
+        _a_max = a_max.vector().gather().min()
+        if not np.isclose(_a_max, 1.0) and _a_max < 1.0:
+            raise ValueError(f"Encountered a_max value smaller than unity: {_a_max}.")
 
         dim = mesh.topological_dimension()
         if boundary_tag is None:
