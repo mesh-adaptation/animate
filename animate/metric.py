@@ -49,9 +49,9 @@ class RiemannianMetric(ffunc.Function):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
         self.metric_parameters = {}
         self._variable_parameters = {
-            "dm_plex_metric_h_min": 1.0e-30,
-            "dm_plex_metric_h_max": 1.0e30,
-            "dm_plex_metric_a_max": 1.0e5,
+            "dm_plex_metric_h_min": firedrake.Constant(1.0e-30),
+            "dm_plex_metric_h_max": firedrake.Constant(1.0e30),
+            "dm_plex_metric_a_max": firedrake.Constant(1.0e5),
         }
         super().__init__(function_space, *args, **kwargs)
 
