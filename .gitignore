@@ -3,6 +3,8 @@ outputs/
 plots/
 __pycache__/
 
+.coverage
+
 *.jpg
 *.jpeg
 *.pdf
