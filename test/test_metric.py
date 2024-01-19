@@ -694,7 +694,8 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_min = 0.2
         if variable:
-            metric._enforce_variable_constraints(h_min=h_min, boundary_tag=boundary_tag)
+            metric._variable_parameters["dm_plex_metric_h_min"] = h_min
+            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
         else:
             metric.set_parameters({"dm_plex_metric_h_min": h_min})
             metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
@@ -726,7 +727,8 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_max = 0.05
         if variable:
-            metric._enforce_variable_constraints(h_max=h_max, boundary_tag=boundary_tag)
+            metric._variable_parameters["dm_plex_metric_h_max"] = h_max
+            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
         else:
             metric.set_parameters({"dm_plex_metric_h_max": h_max})
             metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
@@ -761,7 +763,8 @@ class TestEnforceSPD(MetricTestCase):
         metric.interpolate(as_matrix(M))
         a_max = 1.0
         if variable:
-            metric._enforce_variable_constraints(a_max=a_max, boundary_tag=boundary_tag)
+            metric._variable_parameters["dm_plex_metric_a_max"] = a_max
+            metric._enforce_variable_constraints(boundary_tag=boundary_tag)
         else:
             metric.set_parameters({"dm_plex_metric_a_max": a_max})
             metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)

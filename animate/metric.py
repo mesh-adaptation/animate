@@ -48,7 +48,11 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
         self.metric_parameters = {}
-        self._variable_parameters = {}
+        self._variable_parameters = {
+            "dm_plex_metric_h_min": 1.0e-30,
+            "dm_plex_metric_h_max": 1.0e30,
+            "dm_plex_metric_a_max": 1.0e5,
+        }
         super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
@@ -118,10 +122,11 @@ class RiemannianMetric(ffunc.Function):
             Riemannian metric implementation. All such options have the prefix
             `dm_plex_metric_`.
         """
-        mp, self._variable_parameters = self._process_parameters(metric_parameters)
+        mp, vp = self._process_parameters(metric_parameters)
+        self.metric_parameters.update(mp)
+        self._variable_parameters.update(vp)
 
         # Pass parameters to PETSc
-        self.metric_parameters.update(mp)
         with OptionsManager(self.metric_parameters, "").inserted_options():
             self._plex.metricSetFromOptions()
         if self._plex.metricIsUniform():
@@ -289,14 +294,11 @@ class RiemannianMetric(ffunc.Function):
     # TODO: Implement this on the PETSc side
     #       See https://gitlab.com/petsc/petsc/-/issues/1450
     @PETSc.Log.EventDecorator()
-    def _enforce_variable_constraints(self, h_min=1.0e-30, h_max=1.0e30, a_max=1.0e5, boundary_tag=None):
+    def _enforce_variable_constraints(self, boundary_tag=None):
         """
         Post-process a metric to enforce minimum and maximum metric magnitudes
         and maximum anisotropy, any of which may vary spatially.
 
-        :kwarg h_min: minimum tolerated magnitude
-        :kwarg h_max: maximum tolerated magnitude
-        :kwarg a_max: maximum tolerated anisotropy
         :kwarg boundary_tag: optional tag to enforce sizes on.
         """
         mesh = self.function_space().mesh()
@@ -308,9 +310,9 @@ class RiemannianMetric(ffunc.Function):
             else:
                 return ffunc.Function(P1).assign(f)
 
-        h_min = interp(h_min)
-        h_max = interp(h_max)
-        a_max = interp(a_max)
+        h_min = interp(self._variable_parameters["dm_plex_metric_h_min"])
+        h_max = interp(self._variable_parameters["dm_plex_metric_h_max"])
+        a_max = interp(self._variable_parameters["dm_plex_metric_a_max"])
 
         _hmin = h_min.vector().gather().min()
         if _hmin <= 0.0:
