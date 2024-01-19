@@ -101,19 +101,21 @@ class RiemannianMetric(ffunc.Function):
             mp.pop("dm_plex_metric")
 
         # Spatially varying parameters need to be treated differently
-        variable_parameters = {}
+        vp = {}
         for key in ("h_min", "h_max", "a_max"):
             key = f"dm_plex_metric_{key}"
             value = mp.get(key)
             if value is None:
                 continue
-            if isinstance(value, firedrake.Constant):
+            elif isinstance(value, firedrake.Constant):
                 mp[key] = value.dat.data[0]
             elif isinstance(value, ffunc.Function):
-                variable_parameters[key] = value
+                vp[key] = value
                 mp.pop(key)
+            else:
+                vp[key] = firedrake.Constant(value)
 
-        return mp, variable_parameters
+        return mp, vp
 
     def set_parameters(self, metric_parameters={}):
         """
