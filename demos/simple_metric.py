@@ -10,6 +10,7 @@
 
 from firedrake import *
 from animate import *
+from firedrake.pyplot import triplot
 
 mesh = UnitSquareMesh(10, 10)
 P1_ten = TensorFunctionSpace(mesh, "CG", 1)
