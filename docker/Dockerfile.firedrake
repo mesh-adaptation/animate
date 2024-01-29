@@ -33,6 +33,13 @@ RUN bash -c "source firedrake/bin/activate; \
 	cd animate; \
 	make install"
 
+# Install Movement
+RUN bash -c "source firedrake/bin/activate; \
+	cd firedrake/src; \
+	git clone https://github.com/pyroteus/movement.git; \
+	cd movement; \
+	make install"
+
 # Install Goalie
 RUN bash -c "source firedrake/bin/activate; \
 	cd firedrake/src; \
