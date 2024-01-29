@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  test_suite:
     name: 'Test suite'
     runs-on: ubuntu-latest
     container:
