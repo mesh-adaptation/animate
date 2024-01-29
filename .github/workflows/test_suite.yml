@@ -1,4 +1,4 @@
-name: 'Build Animate'
+name: 'Run Animate test suite'
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    name: 'Build Animate'
+    name: 'Test suite'
     runs-on: ubuntu-latest
     container:
       image: jwallwork/firedrake-parmmg:latest
