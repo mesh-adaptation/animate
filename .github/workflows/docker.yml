@@ -7,6 +7,7 @@ on:
   pull_request:
   # TODO: Make it a cron job rather than running in PR testing
 
+jobs:
   docker:
     name: 'Build Docker container'
     runs-on: ubuntu-latest
