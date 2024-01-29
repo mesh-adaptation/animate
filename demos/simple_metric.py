@@ -27,13 +27,13 @@ metric.interpolate(as_matrix([[alpha, 0], [0, alpha]]))
 # of edges: for any edge :math:`\mathbf e={\mathbf v_2}-{\mathbf v_1}` written
 # as a vector between vertices :math:`\mathbf v_1` and :math:`\mathbf v_2`, its
 # length in metric space is given by:
-#  .. math::
+# .. math::
 #
 #      \ell_{\mathcal M}(\vec{\mathbf{e}})
 #      :=\sqrt{\mathbf{e}^T{\mathcal M}\mathbf{e}}
 #
 # which in this case evaluates to a simple scalar multiple of its Euclidean length:
-#  .. math::
+# .. math::
 #
 #      \ell_{\mathcal M}(\vec{\mathbf{e}})
 #      :=\sqrt{\mathbf{e}^T \begin{pmatrix} \alpha & 0 \\ 0 & \alpha \end{pmatrix} \mathbf{e}}
