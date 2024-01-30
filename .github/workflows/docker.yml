@@ -1,11 +1,8 @@
 name: 'Build bespoke Firedrake Docker container'
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-  # TODO: Make it a cron job rather than running in PR testing
+  schedule:
+    - cron: '0 1 * * 6'
 
 jobs:
   docker:
