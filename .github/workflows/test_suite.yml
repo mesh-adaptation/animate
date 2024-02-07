@@ -1,10 +1,17 @@
 name: 'Run Animate test suite'
 
 on:
+  # Run test suite whenever main is updated
   push:
     branches:
       - main
+
+  # Run test suite whenever commits are pushed to an open PR
   pull_request:
+
+  # Run test suite every Sunday at 1AM
+  schedule:
+    - cron: '0 1 * * 0'
 
 concurrency:
   # Cancel jobs running if new commits are pushed
