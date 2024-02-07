@@ -3,6 +3,7 @@ Checks that all demo scripts run.
 """
 import glob
 import os
+from os.path import splitext
 import pytest
 import shutil
 import subprocess
@@ -18,7 +19,7 @@ demo_dir = os.path.abspath(os.path.join(cwd, "..", "demos"))
 all_demos = glob.glob(os.path.join(demo_dir, "*.py"))
 
 
-@pytest.fixture(params=all_demos, ids=lambda x: x.split("demos/")[-1][:-3])
+@pytest.fixture(params=all_demos, ids=lambda x: splitext(x.split("demos/")[-1])[0])
 def demo_file(request):
     return os.path.abspath(request.param)
 

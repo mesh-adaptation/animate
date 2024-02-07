@@ -7,8 +7,11 @@
 # is usually assumed to be vertex-based, so we need to define the metric in
 # a Continuous Galerkin (CG) P1 tensor function space
 
+
 from firedrake import *
 from animate import *
+from firedrake.pyplot import triplot
+
 mesh = UnitSquareMesh(10, 10)
 P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 metric = RiemannianMetric(P1_ten)
@@ -24,13 +27,13 @@ metric.interpolate(as_matrix([[alpha, 0], [0, alpha]]))
 # of edges: for any edge :math:`\mathbf e={\mathbf v_2}-{\mathbf v_1}` written
 # as a vector between vertices :math:`\mathbf v_1` and :math:`\mathbf v_2`, its
 # length in metric space is given by:
-#  .. math::
+# .. math::
 #
 #      \ell_{\mathcal M}(\vec{\mathbf{e}})
 #      :=\sqrt{\mathbf{e}^T{\mathcal M}\mathbf{e}}
 #
 # which in this case evaluates to a simple scalar multiple of its Euclidean length:
-#  .. math::
+# .. math::
 #
 #      \ell_{\mathcal M}(\vec{\mathbf{e}})
 #      :=\sqrt{\mathbf{e}^T \begin{pmatrix} \alpha & 0 \\ 0 & \alpha \end{pmatrix} \mathbf{e}}
@@ -44,11 +47,12 @@ metric.interpolate(as_matrix([[alpha, 0], [0, alpha]]))
 
 new_mesh = adapt(mesh, metric)
 import matplotlib.pyplot as plt
+
 fig, axes = plt.subplots()
 triplot(new_mesh, axes=axes)
-axes.set_aspect('equal')
+axes.set_aspect("equal")
 fig.show()
-fig.savefig('mesh1.jpg')
+fig.savefig("mesh1.jpg")
 
 # .. figure:: mesh1.jpg
 #    :figwidth: 90%
@@ -60,13 +64,13 @@ fig.savefig('mesh1.jpg')
 
 hx = 0.1
 hy = 0.25
-metric.interpolate(as_matrix([[1/hx**2, 0], [0, 1/hy**2]]))
+metric.interpolate(as_matrix([[1 / hx**2, 0], [0, 1 / hy**2]]))
 new_mesh = adapt(mesh, metric)
 fig, axes = plt.subplots()
 triplot(new_mesh, axes=axes)
-axes.set_aspect('equal')
+axes.set_aspect("equal")
 fig.show()
-fig.savefig('mesh2.jpg')
+fig.savefig("mesh2.jpg")
 
 # .. figure:: mesh2.jpg
 #    :figwidth: 90%
@@ -79,19 +83,19 @@ x, y = SpatialCoordinate(mesh)
 r = 0.4
 h1 = 0.02
 h2 = 0.05
-high = as_matrix([[1/h1**2, 0], [0, 1/h1**2]])
-low = as_matrix([[1/h2**2, 0], [0, 1/h2**2]])
-metric.interpolate(conditional(sqrt((x-0.5)**2+(y-0.5)**2) < r, high, low))
+high = as_matrix([[1 / h1**2, 0], [0, 1 / h1**2]])
+low = as_matrix([[1 / h2**2, 0], [0, 1 / h2**2]])
+metric.interpolate(conditional(sqrt((x - 0.5) ** 2 + (y - 0.5) ** 2) < r, high, low))
 new_mesh = adapt(mesh, metric)
 fig, axes = plt.subplots(figsize=(16, 8), ncols=2)
 triplot(mesh, axes=axes[0])
-axes[0].set_aspect('equal')
-axes[0].set_title('Input mesh: 10 x 10')
+axes[0].set_aspect("equal")
+axes[0].set_title("Input mesh: 10 x 10")
 triplot(new_mesh, axes=axes[1])
-axes[1].set_aspect('equal')
-axes[1].set_title('Adapted mesh')
+axes[1].set_aspect("equal")
+axes[1].set_title("Adapted mesh")
 fig.show()
-fig.savefig('mesh3.jpg')
+fig.savefig("mesh3.jpg")
 
 # .. figure:: mesh3.jpg
 #    :figwidth: 90%
@@ -110,19 +114,19 @@ x, y = SpatialCoordinate(mesh)
 r = 0.4
 h1 = 0.02
 h2 = 0.05
-high = as_matrix([[1/h1**2, 0], [0, 1/h1**2]])
-low = as_matrix([[1/h2**2, 0], [0, 1/h2**2]])
-metric.interpolate(conditional(sqrt((x-0.5)**2+(y-0.5)**2) < r, high, low))
+high = as_matrix([[1 / h1**2, 0], [0, 1 / h1**2]])
+low = as_matrix([[1 / h2**2, 0], [0, 1 / h2**2]])
+metric.interpolate(conditional(sqrt((x - 0.5) ** 2 + (y - 0.5) ** 2) < r, high, low))
 new_mesh = adapt(mesh, metric)
 fig, axes = plt.subplots(figsize=(16, 8), ncols=2)
 triplot(mesh, axes=axes[0])
-axes[0].set_aspect('equal')
-axes[0].set_title('Input mesh: 50 x 50')
+axes[0].set_aspect("equal")
+axes[0].set_title("Input mesh: 50 x 50")
 triplot(new_mesh, axes=axes[1])
-axes[1].set_aspect('equal')
-axes[1].set_title('Adapted mesh')
+axes[1].set_aspect("equal")
+axes[1].set_title("Adapted mesh")
 fig.show()
-fig.savefig('mesh4.jpg')
+fig.savefig("mesh4.jpg")
 
 # .. figure:: mesh4.jpg
 #    :figwidth: 90%
