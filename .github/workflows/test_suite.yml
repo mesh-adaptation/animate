@@ -1,47 +1,56 @@
-name: Build Animate
+name: 'Run Animate test suite'
 
 on:
-  # Push to main or PR
   push:
     branches:
       - main
   pull_request:
 
+concurrency:
+  # Cancel jobs running if new commits are pushed
+  group: >
+    ${{ github.workflow }}-
+    ${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: "Build Animate"
-    # The type of runner that the job will run on
+  test_suite:
+    name: 'Test suite'
     runs-on: ubuntu-latest
-    # The docker container to use.
     container:
       image: jwallwork/firedrake-parmmg:latest
       options: --user root
     steps:
       - uses: actions/checkout@v2
-      - name: Cleanup
+
+      - name: 'Cleanup'
         if: ${{ always() }}
         run: |
           cd ..
           rm -rf build
-      - name: Setup python
+
+      - name: 'Setup Python'
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install Animate
+
+      - name: 'Install Animate'
         run: |
           . /home/firedrake/firedrake/bin/activate
           python -m pip uninstall -y animate
           python -m pip install -r requirements.txt
           python -m pip install -e .
-      - name: Test Animate
+
+      - name: 'Lint'
+        if: ${{ always() }}
+        run: |
+          . /home/firedrake/firedrake/bin/activate
+          flake8
+
+      - name: 'Test Animate'
         run: |
           . /home/firedrake/firedrake/bin/activate
           python $(which firedrake-clean)
           python -m coverage erase
           python -m coverage run --source=animate -m pytest -v --durations=20 test
           python -m coverage report
-      - name: Lint
-        if: ${{ always() }}
-        run: |
-          . /home/firedrake/firedrake/bin/activate
-          flake8 --ignore=E501,E226,E402,E741,F403,F405,W503
