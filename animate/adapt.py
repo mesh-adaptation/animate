@@ -158,6 +158,18 @@ class MetricBasedAdaptor(AdaptorBase):
             chk.save_mesh(self.mesh)
             chk.save_function(self.metric)
 
+    def load_checkpoint(self, filename):
+        """
+        Load a mesh from a :class:`~.CheckpointFile`.
+
+        Note that the checkpoint will have to be stored within Animate's ``.checkpoints``
+        subdirectory.
+
+        :arg filename: the filename of the checkpoint
+        """
+        with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
+            return chk.load_mesh()
+
 
 def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     r"""
