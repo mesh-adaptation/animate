@@ -16,7 +16,7 @@ def load_mesh(fname):
     return Mesh(os.path.join(mesh_dir, fname + ".msh"))
 
 
-def try_adapt(mesh, metric):
+def try_adapt(mesh, metric, **kwargs):
     """
     Attempt to invoke PETSc's mesh adaptation functionality
     and xfail if it is not installed.
@@ -26,7 +26,7 @@ def try_adapt(mesh, metric):
     :return: the adapted mesh w.r.t. the metric
     """
     try:
-        return adapt(mesh, metric)
+        return adapt(mesh, metric, **kwargs)
     except PETSc.Error as exc:
         if exc.ierr == 63:
             pytest.xfail("No mesh adaptation tools are installed")
@@ -39,7 +39,12 @@ def dim(request):
     return request.param
 
 
-def test_no_adapt(dim):
+@pytest.fixture(params=[True, False])
+def serial(request):
+    return request.param
+
+
+def test_no_adapt(dim, serial):
     """
     Test that we can turn off all of Mmg's
     mesh adaptation operations.
@@ -55,7 +60,7 @@ def test_no_adapt(dim):
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
-    newmesh = try_adapt(mesh, metric)
+    newmesh = try_adapt(mesh, metric, serial=serial)
     assert newmesh.coordinates.vector().gather().shape == dofs
 
 
@@ -65,7 +70,7 @@ def test_no_adapt_parallel():
     Test that we can turn off all of ParMmg's
     mesh adaptation operations.
     """
-    test_no_adapt(3)
+    test_no_adapt(3, False)
 
 
 @pytest.mark.parametrize(
@@ -124,7 +129,7 @@ def test_preserve_facet_tags_2d(meshname):
         assert np.isclose(bnd, newbnd), f"Length of arc {tag} not preserved"
 
 
-def test_adapt_3d():
+def test_adapt_3d(serial):
     """
     Test that we can successfully invoke
     Mmg3d and that it changes the DoF count.
@@ -138,7 +143,7 @@ def test_adapt_3d():
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
-    newmesh = try_adapt(mesh, metric)
+    newmesh = try_adapt(mesh, metric, serial=serial)
     assert newmesh.coordinates.vector().gather().shape != dofs
 
 
@@ -148,7 +153,7 @@ def test_adapt_parallel_3d_np2():
     Test that we can successfully invoke ParMmg with 2 MPI processes and that
     it changes the DoF count.
     """
-    test_adapt_3d()
+    test_adapt_3d(False)
 
 
 @pytest.mark.parallel(nprocs=3)
@@ -157,7 +162,7 @@ def test_adapt_parallel_3d_np3():
     Test that we can successfully invoke ParMmg with 3 MPI processes and that
     it changes the DoF count.
     """
-    test_adapt_3d()
+    test_adapt_3d(False)
 
 
 def test_enforce_spd_h_min(dim):
