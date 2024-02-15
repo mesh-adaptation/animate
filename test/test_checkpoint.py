@@ -8,9 +8,9 @@ class TestSaveCheckpoint(unittest.TestCase):
     """
 
     def setUp(self):
-        mesh = uniform_mesh(2, 1)
-        metric = RiemannianMetric(TensorFunctionSpace(mesh, "CG", 1))
-        self.adaptor = MetricBasedAdaptor(mesh, metric)
+        self.mesh = uniform_mesh(2, 1)
+        metric = RiemannianMetric(TensorFunctionSpace(self.mesh, "CG", 1))
+        self.adaptor = MetricBasedAdaptor(self.mesh, metric)
 
     def test_filepath_error(self):
         with self.assertRaises(ValueError) as cm:
@@ -29,9 +29,20 @@ class TestSaveCheckpoint(unittest.TestCase):
     def test_file_created(self):
         filename = "test_file_created"
         fname = self.adaptor._fix_checkpoint_filename(filename)
+        self.assertTrue(fname.endswith(".h5"))
         self.assertFalse(os.path.exists(fname))
         self.adaptor.save_checkpoint(filename)
-        self.assertTrue(fname.endswith(".h5"))
         self.assertTrue(os.path.exists(fname))
         os.remove(fname)
         self.assertFalse(os.path.exists(fname))
+
+    def test_save_load(self):
+        filename = "test_save_load"
+        fname = self.adaptor._fix_checkpoint_filename(filename)
+        self.assertFalse(os.path.exists(fname))
+        self.adaptor.save_checkpoint(filename)
+        self.assertTrue(os.path.exists(fname))
+        os.remove(fname)
+        self.assertFalse(os.path.exists(fname))
+        mesh = self.adaptor.load_checkpoint(filename)
+        self.assertEqual(mesh, self.mesh)
