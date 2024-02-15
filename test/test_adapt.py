@@ -1,4 +1,5 @@
 from test_setup import *
+from firedrake import COMM_WORLD
 from petsc4py import PETSc
 import pytest
 import numpy as np
@@ -40,11 +41,11 @@ def dim(request):
 
 
 @pytest.fixture(params=[True, False])
-def serial(request):
+def serialise(request):
     return request.param
 
 
-def test_no_adapt(dim, serial):
+def test_no_adapt(dim, **kwargs):
     """
     Test that we can turn off all of Mmg's
     mesh adaptation operations.
@@ -60,17 +61,18 @@ def test_no_adapt(dim, serial):
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
-    newmesh = try_adapt(mesh, metric, serial=serial)
+    newmesh = try_adapt(mesh, metric, **kwargs)
     assert newmesh.coordinates.vector().gather().shape == dofs
 
 
 @pytest.mark.parallel(nprocs=2)
-def test_no_adapt_parallel():
+def test_no_adapt_parallel(serialise):
     """
     Test that we can turn off all of ParMmg's
     mesh adaptation operations.
     """
-    test_no_adapt(3, False)
+    assert COMM_WORLD.size == 2
+    test_no_adapt(3, serialise=serialise)
 
 
 @pytest.mark.parametrize(
@@ -129,7 +131,7 @@ def test_preserve_facet_tags_2d(meshname):
         assert np.isclose(bnd, newbnd), f"Length of arc {tag} not preserved"
 
 
-def test_adapt_3d(serial):
+def test_adapt_3d(**kwargs):
     """
     Test that we can successfully invoke
     Mmg3d and that it changes the DoF count.
@@ -143,26 +145,28 @@ def test_adapt_3d(serial):
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
-    newmesh = try_adapt(mesh, metric, serial=serial)
+    newmesh = try_adapt(mesh, metric, **kwargs)
     assert newmesh.coordinates.vector().gather().shape != dofs
 
 
 @pytest.mark.parallel(nprocs=2)
-def test_adapt_parallel_3d_np2():
+def test_adapt_parallel_3d_np2(serialise):
     """
     Test that we can successfully invoke ParMmg with 2 MPI processes and that
     it changes the DoF count.
     """
-    test_adapt_3d(False)
+    assert COMM_WORLD.size == 2
+    test_adapt_3d(serialise=serialise)
 
 
 @pytest.mark.parallel(nprocs=3)
-def test_adapt_parallel_3d_np3():
+def test_adapt_parallel_3d_np3(serialise):
     """
     Test that we can successfully invoke ParMmg with 3 MPI processes and that
     it changes the DoF count.
     """
-    test_adapt_3d(False)
+    assert COMM_WORLD.size == 3
+    test_adapt_3d(serialise=serialise)
 
 
 def test_enforce_spd_h_min(dim):

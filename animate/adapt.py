@@ -123,7 +123,7 @@ class MetricBasedAdaptor(AdaptorBase):
         )  # TODO
 
 
-def adapt(mesh, *metrics, name=None, serial=False, remove_checkpoints=True):
+def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     r"""
     Adapt a mesh with respect to a metric and some adaptor parameters.
 
@@ -132,25 +132,25 @@ def adapt(mesh, *metrics, name=None, serial=False, remove_checkpoints=True):
     :param mesh: :class:`~firedrake.mesh.MeshGeometry` to be adapted.
     :param metrics: list of :class:`.RiemannianMetric`\s
     :param name: name for the adapted mesh
-    :param serial: should the adaptation be done in serial?
+    :param serialise: should the parallel adaptation be done in serial?
     :param remove_checkpoints: should checkpoint files be deleted after use?
     :return: a new :class:`~firedrake.mesh.MeshGeometry`.
     """
 
     # Parallel adaptation is currently only supported in 3D
     if mesh.topological_dimension() != 3:
-        serial = True
+        serialise = False
 
     # If already running in serial then no need to use checkpointing
     if COMM_WORLD.size == 1:
-        serial = False
+        serialise = False
 
     # Combine metrics by intersection, if multiple are passed
     metric = metrics[0]
     if len(metrics) > 1:
         metric.intersect(*metrics[1:])
 
-    if serial:
+    if serialise:
         fpath = os.path.join(get_venv_path(), "src", "animate", ".checkpoints")
         if not os.path.exists(fpath):
             os.makedirs(fpath)
@@ -163,7 +163,9 @@ def adapt(mesh, *metrics, name=None, serial=False, remove_checkpoints=True):
 
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
-            adapt_script = os.path.join(fpath, "src", "animate", "animate", "adapt.py")
+            adapt_script = os.path.join(
+                get_venv_path(), "src", "animate", "animate", "adapt.py"
+            )
             subprocess.run(["mpiexec", "-n", "1", "python3", adapt_script])
         COMM_WORLD.barrier()
 
