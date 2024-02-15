@@ -1,4 +1,5 @@
 import abc
+import firedrake.checkpointing as fchk
 from firedrake.cython.dmcommon import to_petsc_local_numbering
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
@@ -60,6 +61,7 @@ class MetricBasedAdaptor(AdaptorBase):
             raise NotImplementedError(f"Mesh coordinates must be P1, not {coord_fe}")
         assert isinstance(metric, RiemannianMetric)
         super().__init__(mesh)
+        self._set_checkpoint_dir()
         self.metric = metric
         self.projectors = []
         if name is None:
@@ -121,6 +123,40 @@ class MetricBasedAdaptor(AdaptorBase):
         raise NotImplementedError(
             "Consistent interpolation has not yet been implemented in parallel"
         )  # TODO
+
+    # --- Checkpointing
+
+    def _set_checkpoint_dir(self):
+        self._checkpoint_dir = os.path.join(
+            get_venv_path(), "src", "animate", ".checkpoints"
+        )
+        if not os.path.exists(self._checkpoint_dir):
+            os.makedirs(self._checkpoint_dir)
+
+    def _fix_checkpoint_filename(self, filename):
+        if "/" in filename:
+            raise ValueError(
+                "Provide a filename, not a filepath. Checkpoints will be stored in"
+                f" '{self._checkpoint_dir}'."
+            )
+        name, ext = os.path.splitext(filename)
+        ext = ext or ".h5"
+        if ext != ".h5":
+            raise ValueError(f"File extension '{ext}' not recognised. Use '.h5'.")
+        return os.path.join(self._checkpoint_dir, name + ext)
+
+    def save_checkpoint(self, filename):
+        """
+        Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
+
+        Note that the checkpoint will be stored within Animate's ``.checkpoints``
+        subdirectory.
+
+        :arg filename: the filename to use for the checkpoint
+        """
+        with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
+            chk.save_mesh(self.mesh)
+            chk.save_function(self.metric)
 
 
 def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
