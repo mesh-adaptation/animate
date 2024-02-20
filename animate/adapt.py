@@ -79,7 +79,7 @@ class MetricBasedAdaptor(AdaptorBase):
         reordered = to_petsc_local_numbering(v, self.metric.function_space())
         v.destroy()
         newplex = self.metric._plex.adaptMetric(reordered, "Face Sets", "Cell Sets")
-        newplex.setName(self.name + '_topology')
+        newplex.setName(fmesh._generate_default_mesh_topology_name(self.name))
         reordered.destroy()
         return fmesh.Mesh(
             newplex, distribution_parameters={"partition": False}, name=self.name
