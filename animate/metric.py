@@ -327,7 +327,7 @@ class RiemannianMetric(ffunc.Function):
               * `ValueError` indicates the :class:`Function` is not :math:`\mathbb{P}0`.
             """
             try:
-                return clement_interpolant(f)
+                return clement_interpolant(f, target_space=P1)
             except TypeError:
                 return ffunc.Function(P1).assign(f)
             except ValueError:
