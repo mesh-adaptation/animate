@@ -48,6 +48,13 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
         self.metric_parameters = {}
+        self._variable_parameters = {
+            "dm_plex_metric_h_min": firedrake.Constant(1.0e-30),
+            "dm_plex_metric_h_max": firedrake.Constant(1.0e30),
+            "dm_plex_metric_a_max": firedrake.Constant(1.0e5),
+            "dm_plex_metric_boundary_tag": None,
+        }
+        self._variable_parameters_set = False
         super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
@@ -85,14 +92,35 @@ class RiemannianMetric(ffunc.Function):
         if (el.family(), el.degree()) != ("Lagrange", 1):
             raise ValueError(f"Riemannian metric should be in P1 space, not '{el}'.")
 
-    @staticmethod
-    def _process_parameters(metric_parameters):
+    def _process_parameters(self, metric_parameters):
         mp = metric_parameters.copy()
+
+        # Account for concise nested dictionary formatting
         if "dm_plex_metric" in mp:
             for key, value in mp["dm_plex_metric"].items():
                 mp["_".join(["dm_plex_metric", key])] = value
             mp.pop("dm_plex_metric")
-        return mp
+
+        # Spatially varying parameters need to be treated differently
+        vp = {}
+        for key in ("h_min", "h_max", "a_max"):
+            key = f"dm_plex_metric_{key}"
+            value = mp.get(key)
+            if value is None:
+                continue
+            if isinstance(value, (firedrake.Constant, ffunc.Function)):
+                vp[key] = value
+                mp.pop(key)
+                self._variable_parameters_set = True
+            else:
+                vp[key] = firedrake.Constant(value)
+
+        # The boundary_tag parameter does not currently exist in PETSc
+        if "dm_plex_metric_boundary_tag" in mp:
+            self._variable_parameters_set = True
+            vp["dm_plex_metric_boundary_tag"] = mp.pop("dm_plex_metric_boundary_tag")
+
+        return mp, vp
 
     def set_parameters(self, metric_parameters={}):
         """
@@ -102,7 +130,11 @@ class RiemannianMetric(ffunc.Function):
             Riemannian metric implementation. All such options have the prefix
             `dm_plex_metric_`.
         """
-        self.metric_parameters.update(self._process_parameters(metric_parameters))
+        mp, vp = self._process_parameters(metric_parameters)
+        self.metric_parameters.update(mp)
+        self._variable_parameters.update(vp)
+
+        # Pass parameters to PETSc
         with OptionsManager(self.metric_parameters, "").inserted_options():
             self._plex.metricSetFromOptions()
         if self._plex.metricIsUniform():
@@ -259,12 +291,88 @@ class RiemannianMetric(ffunc.Function):
             "restrictSizes": restrict_sizes,
             "restrictAnisotropy": restrict_anisotropy,
         }
+        if self._variable_parameters_set:
+            kw["restrictSizes"] = False
+            kw["restrictAnisotropy"] = False
         v = self._create_from_array(self.dat.data_with_halos)
         det, _ = self._plex.metricDeterminantCreate()
         self._plex.metricEnforceSPD(v, v, det, **kw)
         size = np.shape(self.dat.data_with_halos)
         self.dat.data_with_halos[:] = np.reshape(v.array, size)
         v.destroy()
+        if self._variable_parameters_set:
+            if restrict_sizes and restrict_anisotropy:
+                return self._enforce_variable_constraints()
+            elif restrict_sizes or restrict_anisotropy:
+                raise NotImplementedError(
+                    "Can only currently restrict both sizes and anisotropy."
+                )
+        return self
+
+    # TODO: Implement this on the PETSc side
+    #       See https://gitlab.com/petsc/petsc/-/issues/1450
+    @PETSc.Log.EventDecorator()
+    def _enforce_variable_constraints(self):
+        """
+        Post-process a metric to enforce minimum and maximum metric magnitudes
+        and maximum anisotropy, any of which may vary spatially.
+        """
+        mesh = self.function_space().mesh()
+        P1 = firedrake.FunctionSpace(mesh, "CG", 1)
+
+        def interp(f):
+            r"""
+            Try to apply a Clement interpolant.
+              * `TypeError` indicates something other than a :class:`Function` passed.
+              * `ValueError` indicates the :class:`Function` is not :math:`\mathbb{P}0`.
+            """
+            try:
+                return clement_interpolant(f, target_space=P1)
+            except TypeError:
+                return ffunc.Function(P1).assign(f)
+            except ValueError:
+                return ffunc.Function(P1).interpolate(f)
+
+        h_min = interp(self._variable_parameters["dm_plex_metric_h_min"])
+        h_max = interp(self._variable_parameters["dm_plex_metric_h_max"])
+        a_max = interp(self._variable_parameters["dm_plex_metric_a_max"])
+
+        # Check minimal h_min value is positive and smaller than minimal h_max value
+        _hmin = h_min.vector().gather().min()
+        if _hmin <= 0.0:
+            raise ValueError(f"Encountered non-positive h_min value: {_hmin}.")
+        if h_max.vector().gather().min() < _hmin:
+            raise ValueError(
+                "Minimum h_max value is smaller than minimum h_min value:"
+                f"{h_max.vector().gather().min()} < {_hmin}."
+            )
+
+        # Check h_max is always at least h_min
+        dx = ufl.dx(domain=mesh)
+        integral = firedrake.assemble(ufl.conditional(h_max < h_min, 1, 0) * dx)
+        if not np.isclose(integral, 0.0):
+            raise ValueError("Encountered regions where h_max < h_min.")
+
+        # Check minimal a_max value is close to unity or larger
+        _a_max = a_max.vector().gather().min()
+        if not np.isclose(_a_max, 1.0) and _a_max < 1.0:
+            raise ValueError(f"Encountered a_max value smaller than unity: {_a_max}.")
+
+        dim = mesh.topological_dimension()
+        boundary_tag = self._variable_parameters.get("dm_plex_metric_boundary_tag")
+        if boundary_tag is None:
+            node_set = self.function_space().node_set
+        else:
+            bc = firedrake.DirichletBC(self.function_space(), 0, boundary_tag)
+            node_set = bc.node_set
+        op2.par_loop(
+            get_metric_kernel("postproc_metric", dim),
+            node_set,
+            self.dat(op2.RW),
+            h_min.dat(op2.READ),
+            h_max.dat(op2.READ),
+            a_max.dat(op2.READ),
+        )
         return self
 
     @PETSc.Log.EventDecorator()
