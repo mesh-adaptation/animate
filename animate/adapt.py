@@ -12,7 +12,55 @@ from animate.utility import get_animate_dir, get_checkpoint_dir
 import os
 import subprocess
 
-__all__ = ["MetricBasedAdaptor", "adapt"]
+__all__ = ["load_checkpoint", "MetricBasedAdaptor", "adapt"]
+
+
+# TODO: This should live somewhere else
+def _fix_checkpoint_filename(filename):
+    """
+    Convert a checkpoint filename to absolute form.
+
+    :arg filename: the filename without its path
+    :type filename: :class:`str`
+    :returns: the absolute filename
+    :rtype: :class:`str`
+    """
+    if "/" in filename:
+        raise ValueError(
+            "Provide a filename, not a filepath. Checkpoints will be stored in"
+            f" '{get_checkpoint_dir()}'."
+        )
+    name, ext = os.path.splitext(filename)
+    ext = ext or ".h5"
+    if ext != ".h5":
+        raise ValueError(f"File extension '{ext}' not recognised. Use '.h5'.")
+    return os.path.join(get_checkpoint_dir(), name + ext)
+
+
+# TODO: This should live somewhere else
+def load_checkpoint(filename, metric_name):
+    """
+    Load a metric from a :class:`~.CheckpointFile`.
+
+    Note that the checkpoint will have to be stored within Animate's ``.checkpoints``
+    subdirectory.
+
+    :arg filename: the filename of the checkpoint
+    :type filename: :class:`str`
+    :arg metric_name: the name used to store the metric
+    :type metric_name: :class:`str`
+    :returns: the mesh loaded from the checkpoint
+    :rtype: :class:`firedrake.mesh.MeshGeometry`
+    """
+    fname = _fix_checkpoint_filename(filename)
+    if not os.path.exists(fname):
+        raise Exception(f"Metric file does not exist! Path: {fname}.")
+    with fchk.CheckpointFile(fname, "r") as chk:
+        mesh = chk.load_mesh()
+        metric = chk.load_function(mesh, metric_name)
+    metric = RiemannianMetric(metric.function_space()).assign(metric)
+    # TODO: Load metric parameters
+    return metric
 
 
 class AdaptorBase(abc.ABC):
@@ -143,27 +191,6 @@ class MetricBasedAdaptor(AdaptorBase):
 
     # --- Checkpointing
 
-    @staticmethod
-    def _fix_checkpoint_filename(filename):
-        """
-        Convert a checkpoint filename to absolute form.
-
-        :arg filename: the filename without its path
-        :type filename: :class:`str`
-        :returns: the absolute filename
-        :rtype: :class:`str`
-        """
-        if "/" in filename:
-            raise ValueError(
-                "Provide a filename, not a filepath. Checkpoints will be stored in"
-                f" '{get_checkpoint_dir()}'."
-            )
-        name, ext = os.path.splitext(filename)
-        ext = ext or ".h5"
-        if ext != ".h5":
-            raise ValueError(f"File extension '{ext}' not recognised. Use '.h5'.")
-        return os.path.join(get_checkpoint_dir(), name + ext)
-
     def save_checkpoint(self, filename, metric_name=None):
         """
         Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
@@ -176,7 +203,7 @@ class MetricBasedAdaptor(AdaptorBase):
         :kwarg metric_name: the name to save the metric under
         :type metric_name: :class:`str`
         """
-        with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
+        with fchk.CheckpointFile(_fix_checkpoint_filename(filename), "w") as chk:
             chk.save_mesh(self.mesh)
             chk.save_function(self.metric, name=metric_name or self.name)
 
@@ -188,25 +215,6 @@ class MetricBasedAdaptor(AdaptorBase):
         :type filename: :class:`str`
         """
         raise NotImplementedError  # TODO
-
-    def load_checkpoint(self, filename, metric_name=None):
-        """
-        Load a mesh from a :class:`~.CheckpointFile`.
-
-        Note that the checkpoint will have to be stored within Animate's ``.checkpoints``
-        subdirectory.
-
-        :arg filename: the filename of the checkpoint
-        :type filename: :class:`str`
-        :kwarg metric_name: the name to save the metric under
-        :type metric_name: :class:`str`
-        :returns: the metric loaded from the checkpoint
-        :rtype: :class:`animate.metric.RiemannianMetric`
-        """
-        with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "r") as chk:
-            mesh = chk.load_mesh()
-            metric = chk.load_function(mesh, metric_name or self.name)
-        return metric
 
 
 def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
@@ -242,16 +250,15 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     if len(metrics) > 1:
         metric.intersect(*metrics[1:])
 
+    adaptor = MetricBasedAdaptor(mesh, metric, name=name)
     if serialise:
         checkpoint_dir = get_checkpoint_dir()
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
         # In parallel, save input mesh and metric to a checkpoint file
-        input_fname = os.path.join(checkpoint_dir, "tmp_metric.h5")
-        with fchk.CheckpointFile(input_fname, "w") as chk:
-            chk.save_mesh(mesh)
-            chk.save_function(metric, name="tmp_metric")
+        input_fname = os.path.join(checkpoint_dir, "metric_checkpoint.h5")
+        adaptor.save_checkpoint("metric_checkpoint", metric_name="tmp_metric")
         # TODO: Save parameters to file
 
         # In serial, load the checkpoint, adapt and write out the result
@@ -261,7 +268,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         COMM_WORLD.barrier()
 
         # In parallel, load from the checkpoint
-        output_fname = os.path.join(checkpoint_dir, "tmp_mesh.h5")
+        output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
         if not os.path.exists(output_fname):
             raise Exception(f"Adapted mesh file does not exist! Path: {output_fname}.")
         with fchk.CheckpointFile(output_fname, "r") as chk:
@@ -273,7 +280,6 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
             os.remove(output_fname)
         COMM_WORLD.barrier()
     else:
-        adaptor = MetricBasedAdaptor(mesh, metric, name=name)
         newmesh = adaptor.adapted_mesh
     return newmesh
 
@@ -282,22 +288,11 @@ if __name__ == "__main__":
     # This section of code is called on a subprocess by adapt
     assert COMM_WORLD.size == 1
 
-    # Load input mesh and metric from checkpoint
-    checkpoint_dir = get_checkpoint_dir()
-    assert os.path.exists(checkpoint_dir)
-    input_fname = os.path.join(checkpoint_dir, "tmp_metric.h5")
-    if not os.path.exists(input_fname):
-        raise Exception(f"Metric file does not exist! Path: {input_fname}.")
-    with fchk.CheckpointFile(input_fname, "r") as chk:
-        mesh = chk.load_mesh()
-        metric = chk.load_function(mesh, "tmp_metric")
-
-    # Convert metric from Function to RiemannianMetric, then adapt
-    metric = RiemannianMetric(metric.function_space()).assign(metric)
-    # TODO: Set parameters from file
-    adaptor = MetricBasedAdaptor(mesh, metric, name="tmp_adapted_mesh")
+    # Load metric from checkpoint then adapt
+    metric = load_checkpoint("metric_checkpoint", "tmp_metric")
+    adaptor = MetricBasedAdaptor(metric._mesh, metric, name="tmp_adapted_mesh")
 
     # Write adapted mesh to another checkpoint
-    output_fname = os.path.join(checkpoint_dir, "tmp_mesh.h5")
+    output_fname = os.path.join(get_checkpoint_dir(), "adapted_mesh_checkpoint.h5")
     with fchk.CheckpointFile(output_fname, "w") as chk:
         chk.save_mesh(adaptor.adapted_mesh)

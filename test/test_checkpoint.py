@@ -1,4 +1,5 @@
 from test_setup import *
+from animate.adapt import _fix_checkpoint_filename
 import h5py
 import numpy as np
 import unittest
@@ -14,25 +15,23 @@ class TestCheckpointing(unittest.TestCase):
         self.metric = RiemannianMetric(TensorFunctionSpace(self.mesh, "CG", 1))
 
     def test_filepath_error(self):
-        self.adaptor = MetricBasedAdaptor(self.mesh, self.metric)
         with self.assertRaises(ValueError) as cm:
-            self.adaptor._fix_checkpoint_filename("path/to/file")
+            _fix_checkpoint_filename("path/to/file")
         error_message = str(cm.exception)
         msg = "Provide a filename, not a filepath. Checkpoints will be stored in '"
         self.assertTrue(error_message.startswith(msg))
         self.assertTrue(get_checkpoint_dir() in error_message)
 
     def test_extension_error(self):
-        self.adaptor = MetricBasedAdaptor(self.mesh, self.metric)
         with self.assertRaises(ValueError) as cm:
-            self.adaptor._fix_checkpoint_filename("checkpoint.wrong")
+            _fix_checkpoint_filename("checkpoint.wrong")
         msg = "File extension '.wrong' not recognised. Use '.h5'."
         self.assertEqual(str(cm.exception), msg)
 
     def test_file_created(self):
         filename = "test_file_created"
         self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
-        fname = self.adaptor._fix_checkpoint_filename(filename)
+        fname = _fix_checkpoint_filename(filename)
         self.assertTrue(fname.endswith(".h5"))
         self.assertFalse(os.path.exists(fname))
         self.adaptor.save_checkpoint(filename)
@@ -42,7 +41,7 @@ class TestCheckpointing(unittest.TestCase):
 
     def test_save(self, filename="test_save"):
         self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
-        fname = self.adaptor._fix_checkpoint_filename(filename)
+        fname = _fix_checkpoint_filename(filename)
         self.assertFalse(os.path.exists(fname))
         self.adaptor.save_checkpoint(filename)
         self.assertTrue(os.path.exists(fname))
@@ -56,9 +55,9 @@ class TestCheckpointing(unittest.TestCase):
     def test_load(self):
         filename = "test_load"
         self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
-        fname = self.adaptor._fix_checkpoint_filename(filename)
+        fname = _fix_checkpoint_filename(filename)
         self.test_save(filename=filename)
-        metric = self.adaptor.load_checkpoint(filename)
+        metric = load_checkpoint(filename, filename)
         os.remove(fname)
         self.assertFalse(os.path.exists(fname))
         self.assertTrue(np.allclose(self.metric.dat.data, metric.dat.data))
