@@ -227,13 +227,15 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
 
 
 if __name__ == "__main__":
+    # This section of code is called on a subprocess by adapt
+    assert COMM_WORLD.size == 1
+
+    # Load input mesh and metric from checkpoint
     checkpoint_dir = get_checkpoint_dir()
     assert os.path.exists(checkpoint_dir)
     input_fname = os.path.join(checkpoint_dir, "tmp_metric.h5")
     if not os.path.exists(input_fname):
         raise Exception(f"Metric file does not exist! Path: {input_fname}.")
-
-    # Load input mesh and metric from checkpoint
     with CheckpointFile(input_fname, "r") as chk:
         mesh = chk.load_mesh()
         metric = chk.load_function(mesh, "tmp_metric")
