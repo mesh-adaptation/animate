@@ -1,18 +1,19 @@
 from test_setup import *
+import h5py
 import unittest
 
 
-class TestSaveCheckpoint(unittest.TestCase):
+class TestCheckpointing(unittest.TestCase):
     """
     Unit tests for methods of :class:`~.MetricBasedAdaptor` related to checkpointing.
     """
 
     def setUp(self):
         self.mesh = uniform_mesh(2, 1)
-        metric = RiemannianMetric(TensorFunctionSpace(self.mesh, "CG", 1))
-        self.adaptor = MetricBasedAdaptor(self.mesh, metric)
+        self.metric = RiemannianMetric(TensorFunctionSpace(self.mesh, "CG", 1))
 
     def test_filepath_error(self):
+        self.adaptor = MetricBasedAdaptor(self.mesh, self.metric)
         with self.assertRaises(ValueError) as cm:
             self.adaptor._fix_checkpoint_filename("path/to/file")
         error_message = str(cm.exception)
@@ -21,6 +22,7 @@ class TestSaveCheckpoint(unittest.TestCase):
         self.assertTrue(get_checkpoint_dir() in error_message)
 
     def test_extension_error(self):
+        self.adaptor = MetricBasedAdaptor(self.mesh, self.metric)
         with self.assertRaises(ValueError) as cm:
             self.adaptor._fix_checkpoint_filename("checkpoint.wrong")
         msg = "File extension '.wrong' not recognised. Use '.h5'."
@@ -28,6 +30,7 @@ class TestSaveCheckpoint(unittest.TestCase):
 
     def test_file_created(self):
         filename = "test_file_created"
+        self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
         fname = self.adaptor._fix_checkpoint_filename(filename)
         self.assertTrue(fname.endswith(".h5"))
         self.assertFalse(os.path.exists(fname))
@@ -36,13 +39,26 @@ class TestSaveCheckpoint(unittest.TestCase):
         os.remove(fname)
         self.assertFalse(os.path.exists(fname))
 
-    def test_save_load(self):
-        filename = "test_save_load"
+    def test_save(self, filename="test_save"):
+        self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
         fname = self.adaptor._fix_checkpoint_filename(filename)
         self.assertFalse(os.path.exists(fname))
         self.adaptor.save_checkpoint(filename)
         self.assertTrue(os.path.exists(fname))
+        with h5py.File(fname, "r") as h5:
+            self.assertTrue("topologies" in h5)
+            self.assertTrue("firedrake_default_topology" in h5["topologies"].keys())
+        if filename == "test_save":
+            os.remove(fname)
+            self.assertFalse(os.path.exists(fname))
+
+    def test_load(self):
+        # FIXME
+        filename = "test_load"
+        self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
+        fname = self.adaptor._fix_checkpoint_filename(filename)
+        self.test_save(filename=filename)
+        mesh = self.adaptor.load_mesh_from_checkpoint(filename)
         os.remove(fname)
         self.assertFalse(os.path.exists(fname))
-        mesh = self.adaptor.load_checkpoint(filename)
         self.assertEqual(mesh, self.mesh)
