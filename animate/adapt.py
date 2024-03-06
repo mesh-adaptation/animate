@@ -6,7 +6,7 @@ import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc
 from firedrake.projection import Projector
 import firedrake.utils as futils
-from firedrake import CheckpointFile, COMM_WORLD
+from firedrake import COMM_WORLD
 from animate.metric import RiemannianMetric
 from animate.utility import get_animate_dir, get_checkpoint_dir
 import os
@@ -22,12 +22,19 @@ class AdaptorBase(abc.ABC):
 
     def __init__(self, mesh):
         """
-        :param mesh: mesh to be adapted
+        :arg mesh: mesh to be adapted
+        :type mesh: :class:`firedrake.mesh.MeshGeometry`
         """
         self.mesh = mesh
 
     @abc.abstractmethod
     def adapted_mesh(self):
+        """
+        Adapt the mesh.
+
+        :returns: the adapted mesh
+        :rtype: :class:`firedrake.mesh.MeshGeometry`
+        """
         pass
 
     @abc.abstractmethod
@@ -35,7 +42,10 @@ class AdaptorBase(abc.ABC):
         """
         Interpolate a field from the initial mesh to the adapted mesh.
 
-        :param f: the field to be interpolated
+        :arg f: a Function on the initial mesh
+        :type f: :class:`firedrake.function.Function`
+        :returns: its interpolation onto the adapted mesh
+        :rtype: :class:`firedrake.function.Function`
         """
         pass
 
@@ -48,9 +58,12 @@ class MetricBasedAdaptor(AdaptorBase):
     @PETSc.Log.EventDecorator()
     def __init__(self, mesh, metric, name=None):
         """
-        :param mesh: :class:`~firedrake.mesh.MeshGeometry` to be adapted
-        :param metric: :class:`.RiemannianMetric` to use for the adaptation
-        :param name: name for the adapted mesh
+        :arg mesh: mesh to be adapted
+        :type mesh: :class:`firedrake.mesh.MeshGeometry`
+        :arg metric: metric to use for the adaptation
+        :type metric: :class:`animate.metric.RiemannianMetric`
+        :kwarg name: name for the adapted mesh
+        :type name: :class:`str`
         """
         if metric._mesh is not mesh:
             raise ValueError("The mesh associated with the metric is inconsistent")
@@ -73,7 +86,8 @@ class MetricBasedAdaptor(AdaptorBase):
         """
         Adapt the mesh with respect to the provided metric.
 
-        :return: a new :class:`~firedrake.mesh.MeshGeometry`.
+        :returns: the adapted mesh
+        :rtype: :class:`firedrake.mesh.MeshGeometry`
         """
         self.metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
         size = self.metric.dat.dataset.layout_vec.getSizes()
@@ -93,11 +107,13 @@ class MetricBasedAdaptor(AdaptorBase):
     @PETSc.Log.EventDecorator()
     def project(self, f):
         """
-        Project a :class:`.Function` into the corresponding :class:`.FunctionSpace`
-        defined on the adapted mesh using supermeshing.
+        Project a Function into the corresponding FunctionSpace defined on the adapted
+        mesh using conservative projection.
 
-        :param: the scalar :class:`.Function` on the initial mesh
-        :return: its projection onto the adapted mesh
+        :arg f: a Function on the initial mesh
+        :type f: :class:`firedrake.function.Function`
+        :returns: its projection onto the adapted mesh
+        :rtype: :class:`firedrake.function.Function`
         """
         fs = f.function_space()
         for projector in self.projectors:
@@ -116,8 +132,10 @@ class MetricBasedAdaptor(AdaptorBase):
         Interpolate a :class:`.Function` into the corresponding :class:`.FunctionSpace`
         defined on the adapted mesh.
 
-        :param: the scalar :class:`.Function` on the initial mesh
-        :return: its interpolation onto the adapted mesh
+        :arg f: a Function on the initial mesh
+        :type f: :class:`firedrake.function.Function`
+        :returns: its interpolation onto the adapted mesh
+        :rtype: :class:`firedrake.function.Function`
         """
         raise NotImplementedError(
             "Consistent interpolation has not yet been implemented in parallel"
@@ -125,18 +143,26 @@ class MetricBasedAdaptor(AdaptorBase):
 
     # --- Checkpointing
 
-    def _fix_checkpoint_filename(self, filename):
-        checkpoint_dir = get_checkpoint_dir()
+    @staticmethod
+    def _fix_checkpoint_filename(filename):
+        """
+        Convert a checkpoint filename to absolute form.
+
+        :arg filename: the filename without its path
+        :type filename: :class:`str`
+        :returns: the absolute filename
+        :rtype: :class:`str`
+        """
         if "/" in filename:
             raise ValueError(
                 "Provide a filename, not a filepath. Checkpoints will be stored in"
-                f" '{checkpoint_dir}'."
+                f" '{get_checkpoint_dir()}'."
             )
         name, ext = os.path.splitext(filename)
         ext = ext or ".h5"
         if ext != ".h5":
             raise ValueError(f"File extension '{ext}' not recognised. Use '.h5'.")
-        return os.path.join(checkpoint_dir, name + ext)
+        return os.path.join(get_checkpoint_dir(), name + ext)
 
     def save_checkpoint(self, filename):
         """
@@ -146,12 +172,13 @@ class MetricBasedAdaptor(AdaptorBase):
         subdirectory.
 
         :arg filename: the filename to use for the checkpoint
+        :type filename: :class:`str`
         """
         with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
             chk.save_mesh(self.mesh)
             chk.save_function(self.metric)
 
-    def load_checkpoint(self, filename):
+    def load_mesh_from_checkpoint(self, filename):
         """
         Load a mesh from a :class:`~.CheckpointFile`.
 
@@ -159,6 +186,9 @@ class MetricBasedAdaptor(AdaptorBase):
         subdirectory.
 
         :arg filename: the filename of the checkpoint
+        :type filename: :class:`str`
+        :returns: the mesh loaded from the checkpoint
+        :rtype: :class:`firedrake.mesh.MeshGeometry`
         """
         with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
             return chk.load_mesh()
@@ -170,12 +200,18 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
 
     If multiple metrics are provided, then they are intersected.
 
-    :param mesh: :class:`~firedrake.mesh.MeshGeometry` to be adapted.
-    :param metrics: list of :class:`.RiemannianMetric`\s
-    :param name: name for the adapted mesh
-    :param serialise: should the parallel adaptation be done in serial?
-    :param remove_checkpoints: should checkpoint files be deleted after use?
-    :return: a new :class:`~firedrake.mesh.MeshGeometry`.
+    :arg mesh: mesh to be adapted.
+    :type mesh: :class:`firedrake.mesh.MeshGeometry`
+    :arg metrics: metrics to guide the mesh adaptation
+    :type metrics: :class:`list` of :class:`.RiemannianMetric`\s
+    :kwarg name: name for the adapted mesh
+    :type name: :class:`str`
+    :kwarg serialise: if ``True``, adaptation is done in serial
+    :type serialise: :class:`bool`
+    :kwarg remove_checkpoints: if ``True``, checkpoint files are deleted after use
+    :type remove_checkpoints: :class:`bool`
+    :returns: the adapted mesh
+    :rtype: :class:`~firedrake.mesh.MeshGeometry`
     """
 
     # Parallel adaptation is currently only supported in 3D
@@ -198,7 +234,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
 
         # In parallel, save input mesh and metric to a checkpoint file
         input_fname = os.path.join(checkpoint_dir, "tmp_metric.h5")
-        with CheckpointFile(input_fname, "w") as chk:
+        with fchk.CheckpointFile(input_fname, "w") as chk:
             chk.save_mesh(mesh)
             chk.save_function(metric, name="tmp_metric")
 
@@ -212,7 +248,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         output_fname = os.path.join(checkpoint_dir, "tmp_mesh.h5")
         if not os.path.exists(output_fname):
             raise Exception(f"Adapted mesh file does not exist! Path: {output_fname}.")
-        with CheckpointFile(output_fname, "r") as chk:
+        with fchk.CheckpointFile(output_fname, "r") as chk:
             newmesh = chk.load_mesh("tmp_adapted_mesh")
 
         # Delete temporary checkpoint files
@@ -236,7 +272,7 @@ if __name__ == "__main__":
     input_fname = os.path.join(checkpoint_dir, "tmp_metric.h5")
     if not os.path.exists(input_fname):
         raise Exception(f"Metric file does not exist! Path: {input_fname}.")
-    with CheckpointFile(input_fname, "r") as chk:
+    with fchk.CheckpointFile(input_fname, "r") as chk:
         mesh = chk.load_mesh()
         metric = chk.load_function(mesh, "tmp_metric")
 
@@ -246,5 +282,5 @@ if __name__ == "__main__":
 
     # Write adapted mesh to another checkpoint
     output_fname = os.path.join(checkpoint_dir, "tmp_mesh.h5")
-    with CheckpointFile(output_fname, "w") as chk:
+    with fchk.CheckpointFile(output_fname, "w") as chk:
         chk.save_mesh(adaptor.adapted_mesh)
