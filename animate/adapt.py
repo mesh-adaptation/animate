@@ -209,7 +209,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         # In parallel, save input mesh and metric to a checkpoint file
         input_fname = os.path.join(fpath, "tmp_metric.h5")
         with CheckpointFile(input_fname, "w") as chk:
-            chk.save_mesh(mesh, name="tmp_input_mesh")
+            chk.save_mesh(mesh)
             chk.save_function(metric, name="tmp_metric")
 
         # In serial, load the checkpoint, adapt and write out the result
