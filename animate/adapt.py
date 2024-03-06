@@ -127,9 +127,12 @@ class MetricBasedAdaptor(AdaptorBase):
     # --- Checkpointing
 
     def _set_checkpoint_dir(self):
-        self._checkpoint_dir = os.path.join(
-            get_venv_path(), "src", "animate", ".checkpoints"
-        )
+        if os.environ.get("ANIMATE_CHECKPOINT_DIR"):
+            self._checkpoint_dir = os.environ["ANIMATE_CHECKPOINT_DIR"]
+        else:
+            self._checkpoint_dir = os.path.join(
+                get_venv_path(), "src", "animate", ".checkpoints"
+            )
         if not os.path.exists(self._checkpoint_dir):
             os.makedirs(self._checkpoint_dir)
 
