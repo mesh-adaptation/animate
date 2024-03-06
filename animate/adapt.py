@@ -176,9 +176,18 @@ class MetricBasedAdaptor(AdaptorBase):
         """
         with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
             chk.save_mesh(self.mesh)
-            chk.save_function(self.metric)
+            chk.save_function(self.metric, name=self.name)
 
-    def load_mesh_from_checkpoint(self, filename):
+    def save_parameters(self, filename):
+        """
+        Write the metric parameters to file.
+
+        :arg filename: the filename to use for the parameter file
+        :type filename: :class:`str`
+        """
+        raise NotImplementedError  # TODO
+
+    def load_checkpoint(self, filename):
         """
         Load a mesh from a :class:`~.CheckpointFile`.
 
@@ -187,11 +196,13 @@ class MetricBasedAdaptor(AdaptorBase):
 
         :arg filename: the filename of the checkpoint
         :type filename: :class:`str`
-        :returns: the mesh loaded from the checkpoint
-        :rtype: :class:`firedrake.mesh.MeshGeometry`
+        :returns: the metric loaded from the checkpoint
+        :rtype: :class:`animate.metric.RiemannianMetric`
         """
         with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
-            return chk.load_mesh()
+            mesh = chk.load_mesh()
+            metric = chk.load_function(mesh, self.name)
+        return metric
 
 
 def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
@@ -237,6 +248,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         with fchk.CheckpointFile(input_fname, "w") as chk:
             chk.save_mesh(mesh)
             chk.save_function(metric, name="tmp_metric")
+        # TODO: Save parameters to file
 
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
@@ -278,6 +290,7 @@ if __name__ == "__main__":
 
     # Convert metric from Function to RiemannianMetric, then adapt
     metric = RiemannianMetric(metric.function_space()).assign(metric)
+    # TODO: Set parameters from file
     adaptor = MetricBasedAdaptor(mesh, metric, name="tmp_adapted_mesh")
 
     # Write adapted mesh to another checkpoint
