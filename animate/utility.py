@@ -21,7 +21,9 @@ def get_animate_dir():
     if os.environ.get("ANIMATE_DIR"):
         return os.environ["ANIMATE_DIR"]
     else:
-        return os.path.join(get_venv_path(), "src", "animate")
+        import animate
+
+        return animate.__file__[:-20]
 
 
 def get_checkpoint_dir():
