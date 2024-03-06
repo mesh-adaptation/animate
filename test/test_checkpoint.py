@@ -18,7 +18,7 @@ class TestSaveCheckpoint(unittest.TestCase):
         error_message = str(cm.exception)
         msg = "Provide a filename, not a filepath. Checkpoints will be stored in '"
         self.assertTrue(error_message.startswith(msg))
-        self.assertTrue(self.adaptor._checkpoint_dir in error_message)
+        self.assertTrue(get_checkpoint_dir() in error_message)
 
     def test_extension_error(self):
         with self.assertRaises(ValueError) as cm:

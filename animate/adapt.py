@@ -7,8 +7,8 @@ from firedrake.petsc import PETSc
 from firedrake.projection import Projector
 import firedrake.utils as futils
 from firedrake import CheckpointFile, COMM_WORLD
-from .metric import RiemannianMetric
-from .utility import get_venv_path
+from animate.metric import RiemannianMetric
+from animate.utility import get_animate_dir, get_checkpoint_dir
 import os
 import subprocess
 
@@ -61,7 +61,6 @@ class MetricBasedAdaptor(AdaptorBase):
             raise NotImplementedError(f"Mesh coordinates must be P1, not {coord_fe}")
         assert isinstance(metric, RiemannianMetric)
         super().__init__(mesh)
-        self._set_checkpoint_dir()
         self.metric = metric
         self.projectors = []
         if name is None:
@@ -126,27 +125,18 @@ class MetricBasedAdaptor(AdaptorBase):
 
     # --- Checkpointing
 
-    def _set_checkpoint_dir(self):
-        if os.environ.get("ANIMATE_CHECKPOINT_DIR"):
-            self._checkpoint_dir = os.environ["ANIMATE_CHECKPOINT_DIR"]
-        else:
-            self._checkpoint_dir = os.path.join(
-                get_venv_path(), "src", "animate", ".checkpoints"
-            )
-        if not os.path.exists(self._checkpoint_dir):
-            os.makedirs(self._checkpoint_dir)
-
     def _fix_checkpoint_filename(self, filename):
+        checkpoint_dir = get_checkpoint_dir()
         if "/" in filename:
             raise ValueError(
                 "Provide a filename, not a filepath. Checkpoints will be stored in"
-                f" '{self._checkpoint_dir}'."
+                f" '{checkpoint_dir}'."
             )
         name, ext = os.path.splitext(filename)
         ext = ext or ".h5"
         if ext != ".h5":
             raise ValueError(f"File extension '{ext}' not recognised. Use '.h5'.")
-        return os.path.join(self._checkpoint_dir, name + ext)
+        return os.path.join(checkpoint_dir, name + ext)
 
     def save_checkpoint(self, filename):
         """
@@ -202,26 +192,24 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         metric.intersect(*metrics[1:])
 
     if serialise:
-        fpath = os.path.join(get_venv_path(), "src", "animate", ".checkpoints")
-        if not os.path.exists(fpath):
-            os.makedirs(fpath)
+        checkpoint_dir = get_checkpoint_dir()
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
 
         # In parallel, save input mesh and metric to a checkpoint file
-        input_fname = os.path.join(fpath, "tmp_metric.h5")
+        input_fname = os.path.join(checkpoint_dir, "tmp_metric.h5")
         with CheckpointFile(input_fname, "w") as chk:
             chk.save_mesh(mesh)
             chk.save_function(metric, name="tmp_metric")
 
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
-            adapt_script = os.path.join(
-                get_venv_path(), "src", "animate", "animate", "adapt.py"
-            )
+            adapt_script = os.path.join(get_animate_dir(), "animate", "adapt.py")
             subprocess.run(["mpiexec", "-n", "1", "python3", adapt_script])
         COMM_WORLD.barrier()
 
         # In parallel, load from the checkpoint
-        output_fname = os.path.join(fpath, "tmp_mesh.h5")
+        output_fname = os.path.join(checkpoint_dir, "tmp_mesh.h5")
         if not os.path.exists(output_fname):
             raise Exception(f"Adapted mesh file does not exist! Path: {output_fname}.")
         with CheckpointFile(output_fname, "r") as chk:
@@ -238,22 +226,22 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
 
 
 if __name__ == "__main__":
-    fpath = os.path.join(get_venv_path(), "src", "animate", ".checkpoints")
-    assert os.path.exists(fpath)
-    input_fname = os.path.join(fpath, "tmp_metric.h5")
+    checkpoint_dir = get_checkpoint_dir()
+    assert os.path.exists(checkpoint_dir)
+    input_fname = os.path.join(checkpoint_dir, "tmp_metric.h5")
     if not os.path.exists(input_fname):
         raise Exception(f"Metric file does not exist! Path: {input_fname}.")
 
     # Load input mesh and metric from checkpoint
     with CheckpointFile(input_fname, "r") as chk:
-        mesh = chk.load_mesh("tmp_input_mesh")
-        metric = chk.load_function("tmp_metric")
+        mesh = chk.load_mesh()
+        metric = chk.load_function(mesh, "tmp_metric")
 
     # Convert metric from Function to RiemannianMetric, then adapt
     metric = RiemannianMetric(metric.function_space()).assign(metric)
     adaptor = MetricBasedAdaptor(mesh, metric, name="tmp_adapted_mesh")
 
     # Write adapted mesh to another checkpoint
-    output_fname = os.path.join(fpath, "tmp_mesh.h5")
+    output_fname = os.path.join(checkpoint_dir, "tmp_mesh.h5")
     with CheckpointFile(output_fname, "w") as chk:
         chk.save_mesh(adaptor.adapted_mesh)

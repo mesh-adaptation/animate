@@ -1,4 +1,4 @@
-from animate import *
+from animate.utility import get_venv_path
 import os
 import unittest
 
