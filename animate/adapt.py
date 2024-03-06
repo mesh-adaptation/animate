@@ -216,9 +216,10 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
             newmesh = chk.load_mesh("tmp_adapted_mesh")
 
         # Delete temporary checkpoint files
-        if remove_checkpoints:
+        if remove_checkpoints and COMM_WORLD.rank == 0:
             os.remove(input_fname)
             os.remove(output_fname)
+        COMM_WORLD.barrier()
     else:
         adaptor = MetricBasedAdaptor(mesh, metric, name=name)
         newmesh = adaptor.adapted_mesh
