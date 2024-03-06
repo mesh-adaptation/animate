@@ -1,6 +1,8 @@
 import abc
 import firedrake.checkpointing as fchk
 from firedrake.cython.dmcommon import to_petsc_local_numbering
+
+# import firedrake.function as ffunc
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc
@@ -207,14 +209,14 @@ class MetricBasedAdaptor(AdaptorBase):
             chk.save_mesh(self.mesh)
             chk.save_function(self.metric, name=metric_name or self.name)
 
-    def save_parameters(self, filename):
-        """
-        Write the metric parameters to file.
-
-        :arg filename: the filename to use for the parameter file
-        :type filename: :class:`str`
-        """
-        raise NotImplementedError  # TODO
+            # TODO: chk.opts.set_from_options?
+            # TODO: or perhaps create a group for metric parameters?
+            # group = chk.require_group("metric_parameters")
+            # for key, value in self.metric.metric_parameters.items():
+            #     if isinstance(value, ffunc.Function):
+            #         chk.save_function(value, name=key)
+            #     else:
+            #         chk.set_attr("metric_parameters", key, value)  # FIXME
 
 
 def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
