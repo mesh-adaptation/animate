@@ -58,6 +58,7 @@ jobs:
         run: |
           . /home/firedrake/firedrake/bin/activate
           python $(which firedrake-clean)
+          export ANIMATE_DIR=$(pwd)
           python -m coverage erase
           python -m coverage run --source=animate -m pytest -v --durations=20 test
           python -m coverage report
