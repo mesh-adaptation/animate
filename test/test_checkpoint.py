@@ -58,7 +58,9 @@ class TestCheckpointing(unittest.TestCase):
         self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
         fname = self.adaptor._fix_checkpoint_filename(filename)
         self.test_save(filename=filename)
-        mesh = self.adaptor.load_mesh_from_checkpoint(filename)
+        metric = self.adaptor.load_checkpoint(filename)
         os.remove(fname)
         self.assertFalse(os.path.exists(fname))
-        self.assertEqual(mesh, self.mesh)
+        self.assertAlmostEqual(errornorm(self.metric, metric), 0)
+
+    # TODO: Check saving and loading metric parameters
