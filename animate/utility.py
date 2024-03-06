@@ -31,7 +31,7 @@ def get_checkpoint_dir():
     if os.environ.get("ANIMATE_CHECKPOINT_DIR"):
         checkpoint_dir = os.environ["ANIMATE_CHECKPOINT_DIR"]
     else:
-        checkpoint_dir = os.path.join(get_venv_path(), "src", "animate", ".checkpoints")
+        checkpoint_dir = os.path.join(get_animate_dir(), ".checkpoints")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     return checkpoint_dir
