@@ -1,5 +1,6 @@
 from test_setup import *
 import h5py
+import numpy as np
 import unittest
 
 
@@ -53,7 +54,6 @@ class TestCheckpointing(unittest.TestCase):
             self.assertFalse(os.path.exists(fname))
 
     def test_load(self):
-        # FIXME
         filename = "test_load"
         self.adaptor = MetricBasedAdaptor(self.mesh, self.metric, name=filename)
         fname = self.adaptor._fix_checkpoint_filename(filename)
@@ -61,6 +61,6 @@ class TestCheckpointing(unittest.TestCase):
         metric = self.adaptor.load_checkpoint(filename)
         os.remove(fname)
         self.assertFalse(os.path.exists(fname))
-        self.assertAlmostEqual(errornorm(self.metric, metric), 0)
+        self.assertTrue(np.allclose(self.metric.dat.data, metric.dat.data))
 
     # TODO: Check saving and loading metric parameters

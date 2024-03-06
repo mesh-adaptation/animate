@@ -164,7 +164,7 @@ class MetricBasedAdaptor(AdaptorBase):
             raise ValueError(f"File extension '{ext}' not recognised. Use '.h5'.")
         return os.path.join(get_checkpoint_dir(), name + ext)
 
-    def save_checkpoint(self, filename):
+    def save_checkpoint(self, filename, metric_name=None):
         """
         Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
 
@@ -173,10 +173,12 @@ class MetricBasedAdaptor(AdaptorBase):
 
         :arg filename: the filename to use for the checkpoint
         :type filename: :class:`str`
+        :kwarg metric_name: the name to save the metric under
+        :type metric_name: :class:`str`
         """
         with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
             chk.save_mesh(self.mesh)
-            chk.save_function(self.metric, name=self.name)
+            chk.save_function(self.metric, name=metric_name or self.name)
 
     def save_parameters(self, filename):
         """
@@ -187,7 +189,7 @@ class MetricBasedAdaptor(AdaptorBase):
         """
         raise NotImplementedError  # TODO
 
-    def load_checkpoint(self, filename):
+    def load_checkpoint(self, filename, metric_name=None):
         """
         Load a mesh from a :class:`~.CheckpointFile`.
 
@@ -196,12 +198,14 @@ class MetricBasedAdaptor(AdaptorBase):
 
         :arg filename: the filename of the checkpoint
         :type filename: :class:`str`
+        :kwarg metric_name: the name to save the metric under
+        :type metric_name: :class:`str`
         :returns: the metric loaded from the checkpoint
         :rtype: :class:`animate.metric.RiemannianMetric`
         """
-        with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "w") as chk:
+        with fchk.CheckpointFile(self._fix_checkpoint_filename(filename), "r") as chk:
             mesh = chk.load_mesh()
-            metric = chk.load_function(mesh, self.name)
+            metric = chk.load_function(mesh, metric_name or self.name)
         return metric
 
 
