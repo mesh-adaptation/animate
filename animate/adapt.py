@@ -1,8 +1,7 @@
 import abc
 import firedrake.checkpointing as fchk
 from firedrake.cython.dmcommon import to_petsc_local_numbering
-
-# import firedrake.function as ffunc
+import firedrake.function as ffunc
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc
@@ -60,8 +59,15 @@ def load_checkpoint(filename, metric_name):
     with fchk.CheckpointFile(fname, "r") as chk:
         mesh = chk.load_mesh()
         metric = chk.load_function(mesh, metric_name)
+
+        # Load stashed metric parameters
+        mp = chk._read_pickled_dict("metric_parameters", "mp_dict")
+        for key, value in mp.items():
+            if value == "Function":
+                mp[key] = chk.load_function(mesh, key)
+
     metric = RiemannianMetric(metric.function_space()).assign(metric)
-    # TODO: Load metric parameters
+    metric.set_parameters(mp)
     return metric
 
 
@@ -205,18 +211,17 @@ class MetricBasedAdaptor(AdaptorBase):
         :kwarg metric_name: the name to save the metric under
         :type metric_name: :class:`str`
         """
+        mp = self.metric.metric_parameters.copy()
         with fchk.CheckpointFile(_fix_checkpoint_filename(filename), "w") as chk:
             chk.save_mesh(self.mesh)
             chk.save_function(self.metric, name=metric_name or self.name)
 
-            # TODO: chk.opts.set_from_options?
-            # TODO: or perhaps create a group for metric parameters?
-            # group = chk.require_group("metric_parameters")
-            # for key, value in self.metric.metric_parameters.items():
-            #     if isinstance(value, ffunc.Function):
-            #         chk.save_function(value, name=key)
-            #     else:
-            #         chk.set_attr("metric_parameters", key, value)  # FIXME
+            # Stash metric parameters
+            for key, value in mp.items():
+                if isinstance(value, ffunc.Function):
+                    chk.save_function(value, name=key)
+                    mp[key] = "Function"
+            chk._write_pickled_dict("metric_parameters", "mp_dict", mp)
 
 
 def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
@@ -261,8 +266,6 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         # In parallel, save input mesh and metric to a checkpoint file
         input_fname = os.path.join(checkpoint_dir, "metric_checkpoint.h5")
         adaptor.save_checkpoint("metric_checkpoint", metric_name="tmp_metric")
-        # TODO: Save parameters to file
-
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
             adapt_script = os.path.join(get_animate_dir(), "animate", "adapt.py")
