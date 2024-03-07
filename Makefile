@@ -20,7 +20,7 @@ lint:
 
 test: lint
 	@echo "Running all tests..."
-	@python3 -m pytest -v -n auto --durations=20 test
+	@python3 -m pytest -v --durations=20 test
 	@echo "Done."
 
 coverage:
