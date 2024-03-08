@@ -7,11 +7,10 @@ import firedrake.mesh as fmesh
 from firedrake.petsc import PETSc
 from firedrake.projection import Projector
 import firedrake.utils as futils
-from firedrake import COMM_WORLD
+from firedrake import COMM_SELF, COMM_WORLD
 from animate.metric import RiemannianMetric
-from animate.utility import get_animate_dir, get_checkpoint_dir
+from animate.utility import get_checkpoint_dir
 import os
-import subprocess
 
 __all__ = ["load_checkpoint", "MetricBasedAdaptor", "adapt"]
 
@@ -39,7 +38,7 @@ def _fix_checkpoint_filename(filename):
 
 
 # TODO: This should live somewhere else
-def load_checkpoint(filename, metric_name):
+def load_checkpoint(filename, metric_name, comm=COMM_WORLD):
     """
     Load a metric from a :class:`~.CheckpointFile`.
 
@@ -50,13 +49,15 @@ def load_checkpoint(filename, metric_name):
     :type filename: :class:`str`
     :arg metric_name: the name used to store the metric
     :type metric_name: :class:`str`
+    :kwarg comm: MPI communicator for handling the checkpoint file
+    :type comm: :class:`mpi4py.MPI.Intracom`
     :returns: the mesh loaded from the checkpoint
     :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
     fname = _fix_checkpoint_filename(filename)
     if not os.path.exists(fname):
         raise Exception(f"Metric file does not exist! Path: {fname}.")
-    with fchk.CheckpointFile(fname, "r") as chk:
+    with fchk.CheckpointFile(fname, "r", comm=comm) as chk:
         mesh = chk.load_mesh()
         metric = chk.load_function(mesh, metric_name)
 
@@ -112,7 +113,7 @@ class MetricBasedAdaptor(AdaptorBase):
     """
 
     @PETSc.Log.EventDecorator()
-    def __init__(self, mesh, metric, name=None):
+    def __init__(self, mesh, metric, name=None, comm=COMM_WORLD):
         """
         :arg mesh: mesh to be adapted
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
@@ -120,6 +121,8 @@ class MetricBasedAdaptor(AdaptorBase):
         :type metric: :class:`animate.metric.RiemannianMetric`
         :kwarg name: name for the adapted mesh
         :type name: :class:`str`
+        :kwarg comm: MPI communicator for handling the checkpoint file
+        :type comm: :class:`mpi4py.MPI.Intracom`
         """
         if metric._mesh is not mesh:
             raise ValueError("The mesh associated with the metric is inconsistent")
@@ -135,6 +138,7 @@ class MetricBasedAdaptor(AdaptorBase):
         if name is None:
             name = mesh.name
         self.name = name
+        self.comm = comm
 
     @futils.cached_property
     @PETSc.Log.EventDecorator()
@@ -157,7 +161,10 @@ class MetricBasedAdaptor(AdaptorBase):
         newplex.setName(fmesh._generate_default_mesh_topology_name(self.name))
         reordered.destroy()
         return fmesh.Mesh(
-            newplex, distribution_parameters={"partition": False}, name=self.name
+            newplex,
+            distribution_parameters={"partition": False},
+            name=self.name,
+            comm=self.comm,
         )
 
     @PETSc.Log.EventDecorator()
@@ -199,7 +206,7 @@ class MetricBasedAdaptor(AdaptorBase):
 
     # --- Checkpointing
 
-    def save_checkpoint(self, filename, metric_name=None):
+    def save_checkpoint(self, filename, metric_name=None, comm=COMM_WORLD):
         """
         Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
 
@@ -210,6 +217,8 @@ class MetricBasedAdaptor(AdaptorBase):
         :type filename: :class:`str`
         :kwarg metric_name: the name to save the metric under
         :type metric_name: :class:`str`
+        :kwarg comm: MPI communicator for handling the checkpoint file
+        :type comm: :class:`mpi4py.MPI.Intracom`
         """
         mp = self.metric.metric_parameters.copy()
         with fchk.CheckpointFile(_fix_checkpoint_filename(filename), "w") as chk:
@@ -262,22 +271,30 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         checkpoint_dir = get_checkpoint_dir()
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
+        metric_name, mesh_name = "tmp_metric", "tmp_adapted_mesh"
+        metric_fname = "metric_checkpoint"
+        input_fname = os.path.join(checkpoint_dir, metric_fname + ".h5")
+        output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
 
         # In parallel, save input mesh and metric to a checkpoint file
-        input_fname = os.path.join(checkpoint_dir, "metric_checkpoint.h5")
-        adaptor.save_checkpoint("metric_checkpoint", metric_name="tmp_metric")
+        adaptor.save_checkpoint(metric_fname, metric_name=metric_name)
+
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
-            adapt_script = os.path.join(get_animate_dir(), "animate", "adapt.py")
-            subprocess.run(["mpiexec", "-n", "1", "python3", adapt_script])
+            metric0 = load_checkpoint(metric_fname, metric_name, comm=COMM_SELF)
+            mesh0 = metric0._mesh
+            adaptor0 = MetricBasedAdaptor(
+                mesh0, metric0, name=mesh_name, comm=COMM_SELF
+            )
+            with fchk.CheckpointFile(output_fname, "w", comm=COMM_SELF) as chk:
+                chk.save_mesh(adaptor0.adapted_mesh)
         COMM_WORLD.barrier()
 
         # In parallel, load from the checkpoint
-        output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
         if not os.path.exists(output_fname):
             raise Exception(f"Adapted mesh file does not exist! Path: {output_fname}.")
         with fchk.CheckpointFile(output_fname, "r") as chk:
-            newmesh = chk.load_mesh("tmp_adapted_mesh")
+            newmesh = chk.load_mesh(mesh_name)
 
         # Delete temporary checkpoint files
         if remove_checkpoints and COMM_WORLD.rank == 0:
@@ -287,17 +304,3 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     else:
         newmesh = adaptor.adapted_mesh
     return newmesh
-
-
-if __name__ == "__main__":
-    # This section of code is called on a subprocess by adapt
-    assert COMM_WORLD.size == 1
-
-    # Load metric from checkpoint then adapt
-    metric = load_checkpoint("metric_checkpoint", "tmp_metric")
-    adaptor = MetricBasedAdaptor(metric._mesh, metric, name="tmp_adapted_mesh")
-
-    # Write adapted mesh to another checkpoint
-    output_fname = os.path.join(get_checkpoint_dir(), "adapted_mesh_checkpoint.h5")
-    with fchk.CheckpointFile(output_fname, "w") as chk:
-        chk.save_mesh(adaptor.adapted_mesh)
