@@ -186,21 +186,22 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
 
     if serialise:
         checkpoint_dir = get_checkpoint_dir()
-        if COMM_WORLD.rank == 0 and not os.path.exists(checkpoint_dir):
+        if not os.path.exists(checkpoint_dir) and COMM_WORLD.rank == 0:
             os.makedirs(checkpoint_dir)
         COMM_WORLD.barrier()
-        name = name or "tmp_adapted_mesh"
         metric_name = "tmp_metric"
         metric_fname = "metric_checkpoint"
         input_fname = os.path.join(checkpoint_dir, metric_fname + ".h5")
         output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
 
         # In parallel, save input mesh and metric to a checkpoint file
-        save_checkpoint(metric, metric_fname, metric_name=metric_name)
+        save_checkpoint(metric_fname, metric, metric_name)
 
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
-            metric0 = load_checkpoint(metric_fname, metric_name, comm=COMM_SELF)
+            metric0 = load_checkpoint(
+                metric_fname, mesh.name, metric_name, comm=COMM_SELF
+            )
             adaptor0 = MetricBasedAdaptor(metric0._mesh, metric0, name=name)
             with fchk.CheckpointFile(output_fname, "w", comm=COMM_SELF) as chk:
                 chk.save_mesh(adaptor0.adapted_mesh)

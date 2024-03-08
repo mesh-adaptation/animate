@@ -29,7 +29,7 @@ def _fix_checkpoint_filename(filename):
     return os.path.join(get_checkpoint_dir(), name + ext)
 
 
-def load_checkpoint(filename, metric_name, comm=firedrake.COMM_WORLD):
+def load_checkpoint(filename, mesh_name, metric_name, comm=firedrake.COMM_WORLD):
     """
     Load a metric from a :class:`~.CheckpointFile`.
 
@@ -49,7 +49,7 @@ def load_checkpoint(filename, metric_name, comm=firedrake.COMM_WORLD):
     if not os.path.exists(fname):
         raise Exception(f"Metric file does not exist! Path: {fname}.")
     with fchk.CheckpointFile(fname, "r", comm=comm) as chk:
-        mesh = chk.load_mesh()
+        mesh = chk.load_mesh(mesh_name)
         metric = chk.load_function(mesh, metric_name)
 
         # Load stashed metric parameters
@@ -63,7 +63,7 @@ def load_checkpoint(filename, metric_name, comm=firedrake.COMM_WORLD):
     return metric
 
 
-def save_checkpoint(metric, filename, metric_name=None, comm=firedrake.COMM_WORLD):
+def save_checkpoint(filename, metric, metric_name, comm=firedrake.COMM_WORLD):
     """
     Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
 
@@ -83,7 +83,7 @@ def save_checkpoint(metric, filename, metric_name=None, comm=firedrake.COMM_WORL
     mp = metric.metric_parameters.copy()
     with fchk.CheckpointFile(fname, "w", comm=comm) as chk:
         chk.save_mesh(metric._mesh)
-        chk.save_function(metric, name=metric_name or metric.name())
+        chk.save_function(metric, name=metric_name)
 
         # Stash metric parameters
         for key, value in metric._variable_parameters.items():
