@@ -42,8 +42,8 @@ def load_checkpoint(filename, metric_name, comm=COMM_WORLD):
     :type metric_name: :class:`str`
     :kwarg comm: MPI communicator for handling the checkpoint file
     :type comm: :class:`mpi4py.MPI.Intracom`
-    :returns: the mesh loaded from the checkpoint
-    :rtype: :class:`firedrake.mesh.MeshGeometry`
+    :returns: the metric loaded from the checkpoint
+    :rtype: :class:`animate.metric.RiemannianMetric`
     """
     fname = _fix_checkpoint_filename(filename)
     if not os.path.exists(fname):
@@ -63,13 +63,15 @@ def load_checkpoint(filename, metric_name, comm=COMM_WORLD):
     return metric
 
 
-def save_checkpoint(adaptor, filename, metric_name=None, comm=COMM_WORLD):
+def save_checkpoint(metric, filename, metric_name=None, comm=COMM_WORLD):
     """
     Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
 
     Note that the checkpoint will be stored within Animate's ``.checkpoints``
     subdirectory.
 
+    :arg metric: the metric to save to the checkpoint
+    :type metric: :class:`animate.metric.RiemannianMetric`
     :arg filename: the filename to use for the checkpoint
     :type filename: :class:`str`
     :kwarg metric_name: the name to save the metric under
@@ -78,10 +80,10 @@ def save_checkpoint(adaptor, filename, metric_name=None, comm=COMM_WORLD):
     :type comm: :class:`mpi4py.MPI.Intracom`
     """
     fname = _fix_checkpoint_filename(filename)
-    mp = adaptor.metric.metric_parameters.copy()
+    mp = metric.metric_parameters.copy()
     with fchk.CheckpointFile(fname, "w", comm=comm) as chk:
-        chk.save_mesh(adaptor.mesh)
-        chk.save_function(adaptor.metric, name=metric_name or adaptor.name)
+        chk.save_mesh(metric._mesh)
+        chk.save_function(metric, name=metric_name or metric.name)
 
         # Stash metric parameters
         for key, value in mp.items():

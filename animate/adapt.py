@@ -192,7 +192,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
 
         # In parallel, save input mesh and metric to a checkpoint file
-        save_checkpoint(adaptor, metric_fname, metric_name=metric_name)
+        save_checkpoint(metric, metric_fname, metric_name=metric_name)
 
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
