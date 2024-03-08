@@ -20,7 +20,7 @@ class AdaptorBase(abc.ABC):
     Abstract base class that defines the API for all mesh adaptors.
     """
 
-    def __init__(self, mesh, name=None, comm=COMM_WORLD):
+    def __init__(self, mesh, name=None, comm=None):
         """
         :arg mesh: mesh to be adapted
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
@@ -31,7 +31,7 @@ class AdaptorBase(abc.ABC):
         """
         self.mesh = mesh
         self.name = name or mesh.name
-        self.comm = comm
+        self.comm = comm or mesh.comm
 
     @abc.abstractmethod
     def adapted_mesh(self):
@@ -62,7 +62,7 @@ class MetricBasedAdaptor(AdaptorBase):
     """
 
     @PETSc.Log.EventDecorator()
-    def __init__(self, mesh, metric, name=None, comm=COMM_WORLD):
+    def __init__(self, mesh, metric, name=None, comm=None):
         """
         :arg mesh: mesh to be adapted
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
@@ -200,9 +200,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
             metric0 = load_checkpoint(metric_fname, metric_name, comm=COMM_SELF)
-            adaptor0 = MetricBasedAdaptor(
-                metric0._mesh, metric0, name=name, comm=COMM_SELF
-            )
+            adaptor0 = MetricBasedAdaptor(metric0._mesh, metric0, name=name)
             with fchk.CheckpointFile(output_fname, "w", comm=COMM_SELF) as chk:
                 chk.save_mesh(adaptor0.adapted_mesh)
         COMM_WORLD.barrier()
