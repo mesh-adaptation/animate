@@ -20,12 +20,18 @@ class AdaptorBase(abc.ABC):
     Abstract base class that defines the API for all mesh adaptors.
     """
 
-    def __init__(self, mesh):
+    def __init__(self, mesh, name=None, comm=COMM_WORLD):
         """
         :arg mesh: mesh to be adapted
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
+        :kwarg name: name for the adapted mesh
+        :type name: :class:`str`
+        :kwarg comm: MPI communicator for handling the checkpoint file
+        :type comm: :class:`mpi4py.MPI.Intracom`
         """
         self.mesh = mesh
+        self.name = name or mesh.name
+        self.comm = comm
 
     @abc.abstractmethod
     def adapted_mesh(self):
@@ -75,13 +81,9 @@ class MetricBasedAdaptor(AdaptorBase):
         if (coord_fe.family(), coord_fe.degree()) != ("Lagrange", 1):
             raise NotImplementedError(f"Mesh coordinates must be P1, not {coord_fe}")
         assert isinstance(metric, RiemannianMetric)
-        super().__init__(mesh)
+        super().__init__(mesh, name=name, comm=comm)
         self.metric = metric
         self.projectors = []
-        if name is None:
-            name = mesh.name
-        self.name = name
-        self.comm = comm
 
     @futils.cached_property
     @PETSc.Log.EventDecorator()
