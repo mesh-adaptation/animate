@@ -47,8 +47,7 @@ def serialise(request):
 
 def test_no_adapt(dim, **kwargs):
     """
-    Test that we can turn off all of Mmg's
-    mesh adaptation operations.
+    Test that we can turn off mesh adaptation operations.
     """
     mesh = uniform_mesh(dim)
     dofs = mesh.coordinates.vector().gather().shape
@@ -66,10 +65,18 @@ def test_no_adapt(dim, **kwargs):
 
 
 @pytest.mark.parallel(nprocs=2)
-def test_no_adapt_parallel(serialise):
+def test_no_adapt_2d_parallel():
     """
-    Test that we can turn off all of ParMmg's
-    mesh adaptation operations.
+    Test that we can turn off mesh adaptation operations in 2D.
+    """
+    assert COMM_WORLD.size == 2
+    test_no_adapt(2, serialise=True)
+
+
+@pytest.mark.parallel(nprocs=2)
+def test_no_adapt_3d_parallel(serialise):
+    """
+    Test that we can turn off mesh adaptation operations in 3D.
     """
     assert COMM_WORLD.size == 2
     test_no_adapt(3, serialise=serialise)
@@ -150,10 +157,20 @@ def test_adapt_3d(**kwargs):
 
 
 @pytest.mark.parallel(nprocs=2)
+def test_adapt_parallel_2d_np2(serialise):
+    """
+    Test that we can successfully invoke Mmg for a 2D run with 2 MPI processes and that
+    it changes the DoF count.
+    """
+    assert COMM_WORLD.size == 2
+    test_adapt_3d(serialise=True)
+
+
+@pytest.mark.parallel(nprocs=2)
 def test_adapt_parallel_3d_np2(serialise):
     """
-    Test that we can successfully invoke ParMmg with 2 MPI processes and that
-    it changes the DoF count.
+    Test that we can successfully invoke [Par]Mmg for a 3D run with 2 MPI processes and
+    that it changes the DoF count.
     """
     assert COMM_WORLD.size == 2
     test_adapt_3d(serialise=serialise)
@@ -162,8 +179,8 @@ def test_adapt_parallel_3d_np2(serialise):
 @pytest.mark.parallel(nprocs=3)
 def test_adapt_parallel_3d_np3(serialise):
     """
-    Test that we can successfully invoke ParMmg with 3 MPI processes and that
-    it changes the DoF count.
+    Test that we can successfully invoke [Par]Mmg for a 3D run with 3 MPI processes and
+    that it changes the DoF count.
     """
     assert COMM_WORLD.size == 3
     test_adapt_3d(serialise=serialise)

@@ -169,13 +169,14 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     :returns: the adapted mesh
     :rtype: :class:`~firedrake.mesh.MeshGeometry`
     """
+    nprocs = COMM_WORLD.size
 
     # Parallel adaptation is currently only supported in 3D
     if mesh.topological_dimension() != 3:
-        serialise = False
+        serialise = nprocs > 1
 
     # If already running in serial then no need to use checkpointing
-    if COMM_WORLD.size == 1:
+    if nprocs == 1:
         serialise = False
 
     # Combine metrics by intersection, if multiple are passed
