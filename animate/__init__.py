@@ -1,4 +1,5 @@
 from animate.adapt import *  # noqa
+from animate.checkpointing import *  # noqa
 from animate.interpolation import *  # noqa
 from animate.math import *  # noqa
 from animate.metric import *  # noqa
