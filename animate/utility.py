@@ -4,16 +4,6 @@ import os
 __all__ = ["get_checkpoint_dir"]
 
 
-def get_venv_path():
-    """
-    Retrieve the path to the current virtual environment.
-    """
-    fpath = os.environ.get("VIRTUAL_ENV")
-    if fpath is None:
-        raise Exception("Virtual environment is not active!")
-    return fpath
-
-
 def get_checkpoint_dir():
     """
     Retrieve the path to Animate's checkpoint directory.
@@ -23,6 +13,7 @@ def get_checkpoint_dir():
     else:
         import animate
 
+        assert animate.__file__[-19:] == "animate/__init__.py"
         checkpoint_dir = os.path.join(animate.__file__[:-20], ".checkpoints")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
