@@ -83,7 +83,7 @@ def save_checkpoint(metric, filename, metric_name=None, comm=COMM_WORLD):
     mp = metric.metric_parameters.copy()
     with fchk.CheckpointFile(fname, "w", comm=comm) as chk:
         chk.save_mesh(metric._mesh)
-        chk.save_function(metric, name=metric_name or metric.name)
+        chk.save_function(metric, name=metric_name or metric.name())
 
         # Stash metric parameters
         for key, value in mp.items():
