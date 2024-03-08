@@ -184,8 +184,9 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     adaptor = MetricBasedAdaptor(mesh, metric, name=name)
     if serialise:
         checkpoint_dir = get_checkpoint_dir()
-        if not os.path.exists(checkpoint_dir):
+        if COMM_WORLD.rank == 0 and not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
+        COMM_WORLD.barrier()
         metric_name, mesh_name = "tmp_metric", "tmp_adapted_mesh"
         metric_fname = "metric_checkpoint"
         input_fname = os.path.join(checkpoint_dir, metric_fname + ".h5")
@@ -215,7 +216,6 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         if remove_checkpoints and COMM_WORLD.rank == 0:
             os.remove(input_fname)
             os.remove(output_fname)
-        COMM_WORLD.barrier()
     else:
         newmesh = adaptor.adapted_mesh
     return newmesh
