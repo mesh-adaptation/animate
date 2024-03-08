@@ -1,6 +1,6 @@
 from .metric import RiemannianMetric
 from .utility import get_checkpoint_dir
-from firedrake import COMM_WORLD
+import firedrake
 import firedrake.checkpointing as fchk
 import firedrake.function as ffunc
 import os
@@ -29,7 +29,7 @@ def _fix_checkpoint_filename(filename):
     return os.path.join(get_checkpoint_dir(), name + ext)
 
 
-def load_checkpoint(filename, metric_name, comm=COMM_WORLD):
+def load_checkpoint(filename, metric_name, comm=firedrake.COMM_WORLD):
     """
     Load a metric from a :class:`~.CheckpointFile`.
 
@@ -63,7 +63,7 @@ def load_checkpoint(filename, metric_name, comm=COMM_WORLD):
     return metric
 
 
-def save_checkpoint(metric, filename, metric_name=None, comm=COMM_WORLD):
+def save_checkpoint(metric, filename, metric_name=None, comm=firedrake.COMM_WORLD):
     """
     Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
 
@@ -86,8 +86,12 @@ def save_checkpoint(metric, filename, metric_name=None, comm=COMM_WORLD):
         chk.save_function(metric, name=metric_name or metric.name())
 
         # Stash metric parameters
-        for key, value in mp.items():
+        for key, value in metric._variable_parameters.items():
             if isinstance(value, ffunc.Function):
                 chk.save_function(value, name=key)
                 mp[key] = "Function"
+            elif isinstance(value, firedrake.Constant):
+                mp[key] = float(value)
+            else:
+                mp[key] = value
         chk._write_pickled_dict("metric_parameters", "mp_dict", mp)
