@@ -181,13 +181,13 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     if len(metrics) > 1:
         metric.intersect(*metrics[1:])
 
-    adaptor = MetricBasedAdaptor(mesh, metric, name=name)
     if serialise:
         checkpoint_dir = get_checkpoint_dir()
         if COMM_WORLD.rank == 0 and not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
         COMM_WORLD.barrier()
-        metric_name, mesh_name = "tmp_metric", "tmp_adapted_mesh"
+        name = name or "tmp_adapted_mesh"
+        metric_name = "tmp_metric"
         metric_fname = "metric_checkpoint"
         input_fname = os.path.join(checkpoint_dir, metric_fname + ".h5")
         output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
@@ -198,9 +198,8 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         # In serial, load the checkpoint, adapt and write out the result
         if COMM_WORLD.rank == 0:
             metric0 = load_checkpoint(metric_fname, metric_name, comm=COMM_SELF)
-            mesh0 = metric0._mesh
             adaptor0 = MetricBasedAdaptor(
-                mesh0, metric0, name=mesh_name, comm=COMM_SELF
+                metric0._mesh, metric0, name=name, comm=COMM_SELF
             )
             with fchk.CheckpointFile(output_fname, "w", comm=COMM_SELF) as chk:
                 chk.save_mesh(adaptor0.adapted_mesh)
@@ -210,12 +209,12 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         if not os.path.exists(output_fname):
             raise Exception(f"Adapted mesh file does not exist! Path: {output_fname}.")
         with fchk.CheckpointFile(output_fname, "r") as chk:
-            newmesh = chk.load_mesh(mesh_name)
+            newmesh = chk.load_mesh(name)
 
         # Delete temporary checkpoint files
         if remove_checkpoints and COMM_WORLD.rank == 0:
             os.remove(input_fname)
             os.remove(output_fname)
     else:
-        newmesh = adaptor.adapted_mesh
+        newmesh = MetricBasedAdaptor(mesh, metric, name=name).adapted_mesh
     return newmesh
