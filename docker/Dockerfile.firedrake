@@ -1,4 +1,4 @@
-FROM firedrakeproject/firedrake-vanilla:latest
+FROM firedrakeproject/firedrake-vanilla:2024-02
 
 MAINTAINER Joe Wallwork <joe.wallwork@outlook.com>
 
@@ -24,7 +24,7 @@ RUN bash -c "cd petsc; \
 # Rebuild Firedrake
 RUN bash -c "source firedrake/bin/activate; \
 	cd firedrake/src/firedrake; \
-	firedrake-update --install thetis"
+	firedrake-update"
 
 # Install Animate
 RUN bash -c "source firedrake/bin/activate; \

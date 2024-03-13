@@ -8,7 +8,7 @@
 # *** YOU MAY WISH TO EDIT THESE ENVIRONMENT VARIABLES: ***
 
 FIREDRAKE_ENV=firedrake-sep23
-PETSC_BRANCH=jwallwork23/parmmg-rebased
+PETSC_BRANCH=jwallwork23/firedrake-parmmg
 
 # *** YOU SHOULD NOT NEED TO EDIT ANYTHING BELOW. ***
 
