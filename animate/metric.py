@@ -44,17 +44,11 @@ class RiemannianMetric(ffunc.Function):
             :class:`~.Function`. In this case, the function values are copied. If a
             :class:`~firedrake.mesh.MeshGeometry` is passed here then a tensor
             :math:`\mathbb P1` space is built on top of it.
+        :kwarg metric_parameters: same as for :func:`set_parameters <set_parameters>`.
         """
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
-        self.metric_parameters = {}
-        self._variable_parameters = {
-            "dm_plex_metric_h_min": firedrake.Constant(1.0e-30),
-            "dm_plex_metric_h_max": firedrake.Constant(1.0e30),
-            "dm_plex_metric_a_max": firedrake.Constant(1.0e5),
-            "dm_plex_metric_boundary_tag": None,
-        }
-        self._variable_parameters_set = False
+        self.metric_parameters = kwargs.pop("metric_parameters", {})
         super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
@@ -86,6 +80,16 @@ class RiemannianMetric(ffunc.Function):
         entity_dofs = np.zeros(tdim + 1, dtype=np.int32)
         entity_dofs[0] = tdim**2
         plex.setSection(mesh.create_section(entity_dofs))
+
+        self._variable_parameters = {
+            "dm_plex_metric_h_min": firedrake.Constant(1.0e-30),
+            "dm_plex_metric_h_max": firedrake.Constant(1.0e30),
+            "dm_plex_metric_a_max": firedrake.Constant(1.0e5),
+            "dm_plex_metric_boundary_tag": None,
+        }
+        self._variable_parameters_set = False
+        if self.metric_parameters:
+            self.set_parameters(self.metric_parameters)
 
     def _check_space(self):
         el = self.function_space().ufl_element()
