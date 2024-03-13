@@ -13,8 +13,8 @@ def get_checkpoint_dir():
     else:
         import animate
 
-        assert animate.__file__[-19:] == "animate/__init__.py"
-        checkpoint_dir = os.path.join(animate.__file__[:-20], ".checkpoints")
+        assert os.path.basename(animate.__file__) == "__init__.py"
+        checkpoint_dir = os.path.join(os.path.dirname(animate.__file__), ".checkpoints")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     return checkpoint_dir
