@@ -211,7 +211,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         if not os.path.exists(output_fname):
             raise Exception(f"Adapted mesh file does not exist! Path: {output_fname}.")
         with fchk.CheckpointFile(output_fname, "r") as chk:
-            newmesh = chk.load_mesh(name)
+            newmesh = chk.load_mesh(name or fmesh.DEFAULT_MESH_NAME)
 
         # Delete temporary checkpoint files
         if remove_checkpoints and COMM_WORLD.rank == 0:
