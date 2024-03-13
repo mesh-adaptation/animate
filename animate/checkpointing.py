@@ -63,7 +63,7 @@ def load_checkpoint(filename, mesh_name, metric_name, comm=firedrake.COMM_WORLD)
     return metric
 
 
-def save_checkpoint(filename, metric, metric_name, comm=firedrake.COMM_WORLD):
+def save_checkpoint(filename, metric, metric_name=None, comm=firedrake.COMM_WORLD):
     """
     Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
 
@@ -83,7 +83,7 @@ def save_checkpoint(filename, metric, metric_name, comm=firedrake.COMM_WORLD):
     mp = metric.metric_parameters.copy()
     with fchk.CheckpointFile(fname, "w", comm=comm) as chk:
         chk.save_mesh(metric._mesh)
-        chk.save_function(metric, name=metric_name)
+        chk.save_function(metric, name=metric_name or metric.name())
 
         # Stash metric parameters
         for key, value in metric._variable_parameters.items():
