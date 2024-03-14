@@ -11,8 +11,7 @@ from .checkpointing import load_checkpoint, save_checkpoint
 from .metric import RiemannianMetric
 from .utility import get_checkpoint_dir
 import os
-
-# import time
+import time
 
 __all__ = ["MetricBasedAdaptor", "adapt"]
 
@@ -220,8 +219,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
             # saved[0] = True
             PETSc.Sys.Print("Processor %d: DEBUG 7" % COMM_WORLD.rank, comm=COMM_SELF)
         else:
-            # time.sleep(1e-5)
-            pass
+            time.sleep(1e-5)
         COMM_WORLD.barrier()
         # if not COMM_WORLD.scatter(saved, root=0):
         #     raise Exception
