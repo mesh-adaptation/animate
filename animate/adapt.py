@@ -205,6 +205,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
             adaptor0 = MetricBasedAdaptor(metric0._mesh, metric0, name=name)
             with fchk.CheckpointFile(output_fname, "w", comm=COMM_SELF) as chk:
                 chk.save_mesh(adaptor0.adapted_mesh)
+            raise Exception  # FIXME: DEBUGGING
         COMM_WORLD.barrier()
 
         # In parallel, load from the checkpoint
