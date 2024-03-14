@@ -81,6 +81,7 @@ class RiemannianMetric(ffunc.Function):
         entity_dofs[0] = tdim**2
         plex.setSection(mesh.create_section(entity_dofs))
 
+        # Process spatially variable metric parameters
         self._variable_parameters = {
             "dm_plex_metric_h_min": firedrake.Constant(1.0e-30),
             "dm_plex_metric_h_max": firedrake.Constant(1.0e30),
