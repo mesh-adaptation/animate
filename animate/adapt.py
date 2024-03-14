@@ -220,7 +220,6 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
             # saved[0] = True
             PETSc.Sys.Print("Processor %d: DEBUG 7" % COMM_WORLD.rank, comm=COMM_SELF)
         else:
-            PETSc.Sys.Print("Processor %d: DEBUG A" % COMM_WORLD.rank, comm=COMM_SELF)
             # time.sleep(1e-5)
             pass
         COMM_WORLD.barrier()
