@@ -198,15 +198,28 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         save_checkpoint(metric_fname, metric, metric_name)
 
         # In serial, load the checkpoint, adapt and write out the result
+        PETSc.Sys.Print("Processor %d" % COMM_WORLD.rank, comm=COMM_SELF)
+        saved = [False] * COMM_WORLD.size
         if COMM_WORLD.rank == 0:
+            PETSc.Sys.Print("Processor %d: DEBUG 1" % COMM_WORLD.rank, comm=COMM_SELF)
+            PETSc.Sys.Print("Processor %d: DEBUG 2" % COMM_WORLD.rank, comm=COMM_SELF)
             metric0 = load_checkpoint(
                 metric_fname, mesh.name, metric_name, comm=COMM_SELF
             )
+            PETSc.Sys.Print("Processor %d: DEBUG 3" % COMM_WORLD.rank, comm=COMM_SELF)
             adaptor0 = MetricBasedAdaptor(metric0._mesh, metric0, name=name)
+            PETSc.Sys.Print("Processor %d: DEBUG 4" % COMM_WORLD.rank, comm=COMM_SELF)
             with fchk.CheckpointFile(output_fname, "w", comm=COMM_SELF) as chk:
+                PETSc.Sys.Print(
+                    "Processor %d: DEBUG 5" % COMM_WORLD.rank, comm=COMM_SELF
+                )
                 chk.save_mesh(adaptor0.adapted_mesh)
-            raise Exception  # FIXME: DEBUGGING
-        COMM_WORLD.barrier()
+            PETSc.Sys.Print("Processor %d: DEBUG 6" % COMM_WORLD.rank, comm=COMM_SELF)
+            saved[0] = True
+            PETSc.Sys.Print("Processor %d: DEBUG 7" % COMM_WORLD.rank, comm=COMM_SELF)
+        # COMM_WORLD.barrier()
+        if not COMM_WORLD.scatter(saved, root=0):
+            raise Exception
 
         # In parallel, load from the checkpoint
         if not os.path.exists(output_fname):

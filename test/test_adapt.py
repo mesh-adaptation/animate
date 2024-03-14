@@ -214,3 +214,7 @@ def test_enforce_spd_h_max(dim):
     metric.enforce_spd(restrict_sizes=True)
     newmesh = try_adapt(mesh, metric)
     assert newmesh.coordinates.vector().gather().shape[0] > num_vertices
+
+
+if __name__ == "__main__":
+    test_no_adapt_2d_parallel()
