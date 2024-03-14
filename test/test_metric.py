@@ -111,7 +111,17 @@ class TestSetParameters(MetricTestCase):
         metric.set_parameters({"dm_plex_metric_boundary_tag": value})
         self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
         self.assertTrue("dm_plex_metric_boundary_tag" in metric._variable_parameters)
-        self.assertEqual(metric._variable_parameters["dm_plex_metric_boundary_tag"], value)
+        self.assertEqual(
+            metric._variable_parameters["dm_plex_metric_boundary_tag"], value
+        )
+
+    def test_passing_parameters_methods(self):
+        mp = {"dm_plex_metric_h_max": 1.0}
+        metric1 = uniform_metric(uniform_mesh(2), metric_parameters=mp)
+        self.assertEqual(metric1.metric_parameters["dm_plex_metric_h_max"], 1.0)
+        metric2 = uniform_metric(uniform_mesh(2))
+        metric2.set_parameters(mp)
+        self.assertEqual(metric1.metric_parameters, metric2.metric_parameters)
 
     def test_no_reset(self):
         hmin = 0.1
@@ -722,10 +732,12 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_min = 0.2
         if variable:
-            metric.set_parameters({
-                "dm_plex_metric_h_min": Constant(h_min),
-                "dm_plex_metric_boundary_tag": boundary_tag,
-            })
+            metric.set_parameters(
+                {
+                    "dm_plex_metric_h_min": Constant(h_min),
+                    "dm_plex_metric_boundary_tag": boundary_tag,
+                }
+            )
         else:
             metric.set_parameters({"dm_plex_metric_h_min": h_min})
         # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)  # TODO
@@ -758,10 +770,12 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_max = 0.05
         if variable:
-            metric.set_parameters({
-                "dm_plex_metric_h_max": Constant(h_max),
-                "dm_plex_metric_boundary_tag": boundary_tag,
-            })
+            metric.set_parameters(
+                {
+                    "dm_plex_metric_h_max": Constant(h_max),
+                    "dm_plex_metric_boundary_tag": boundary_tag,
+                }
+            )
         else:
             metric.set_parameters({"dm_plex_metric_h_max": h_max})
         # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)  # TODO
@@ -797,10 +811,12 @@ class TestEnforceSPD(MetricTestCase):
         metric.interpolate(as_matrix(M))
         a_max = 1.0
         if variable:
-            metric.set_parameters({
-                "dm_plex_metric_a_max": Constant(a_max),
-                "dm_plex_metric_boundary_tag": boundary_tag,
-            })
+            metric.set_parameters(
+                {
+                    "dm_plex_metric_a_max": Constant(a_max),
+                    "dm_plex_metric_boundary_tag": boundary_tag,
+                }
+            )
         else:
             metric.set_parameters({"dm_plex_metric_a_max": a_max})
         # metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)  # TODO
