@@ -12,6 +12,8 @@ from .metric import RiemannianMetric
 from .utility import get_checkpoint_dir
 import os
 
+# import time
+
 __all__ = ["MetricBasedAdaptor", "adapt"]
 
 
@@ -199,7 +201,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
 
         # In serial, load the checkpoint, adapt and write out the result
         PETSc.Sys.Print("Processor %d" % COMM_WORLD.rank, comm=COMM_SELF)
-        saved = [False] * COMM_WORLD.size
+        # saved = [False] * COMM_WORLD.size
         if COMM_WORLD.rank == 0:
             PETSc.Sys.Print("Processor %d: DEBUG 1" % COMM_WORLD.rank, comm=COMM_SELF)
             PETSc.Sys.Print("Processor %d: DEBUG 2" % COMM_WORLD.rank, comm=COMM_SELF)
@@ -215,11 +217,15 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
                 )
                 chk.save_mesh(adaptor0.adapted_mesh)
             PETSc.Sys.Print("Processor %d: DEBUG 6" % COMM_WORLD.rank, comm=COMM_SELF)
-            saved[0] = True
+            # saved[0] = True
             PETSc.Sys.Print("Processor %d: DEBUG 7" % COMM_WORLD.rank, comm=COMM_SELF)
-        # COMM_WORLD.barrier()
-        if not COMM_WORLD.scatter(saved, root=0):
-            raise Exception
+        else:
+            PETSc.Sys.Print("Processor %d: DEBUG A" % COMM_WORLD.rank, comm=COMM_SELF)
+            # time.sleep(1e-5)
+            pass
+        COMM_WORLD.barrier()
+        # if not COMM_WORLD.scatter(saved, root=0):
+        #     raise Exception
 
         # In parallel, load from the checkpoint
         if not os.path.exists(output_fname):
