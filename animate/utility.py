@@ -17,5 +17,5 @@ def get_checkpoint_dir():
         animate_base_dir = os.path.dirname(animate.__file__)
         checkpoint_dir = os.path.join(animate_base_dir, ".checkpoints")
     if not os.path.exists(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
+        os.makedirs(checkpoint_dir, exist_ok=True)
     return checkpoint_dir
