@@ -186,12 +186,12 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         metric.intersect(*metrics[1:])
 
     if serialise:
+        # In parallel, save input mesh and metric to a checkpoint file
         checkpoint_dir = get_checkpoint_dir()
         metric_name = "tmp_metric"
         metric_fname = "metric_checkpoint"
         input_fname = os.path.join(checkpoint_dir, metric_fname + ".h5")
         output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
-        # In parallel, save input mesh and metric to a checkpoint file
         save_checkpoint(metric_fname, metric, metric_name)
 
         # In serial, load the checkpoint, adapt and write out the result
@@ -209,7 +209,7 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
             # This acts like COMM_WORLD.barrier()
             while not saved:
                 saved = COMM_WORLD.bcast(saved, root=0)
-                time.sleep(1)
+                time.sleep(1e-3)
 
         # In parallel, load from the checkpoint
         if not os.path.exists(output_fname):
