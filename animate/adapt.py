@@ -27,7 +27,7 @@ class AdaptorBase(abc.ABC):
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
         :kwarg name: name for the adapted mesh
         :type name: :class:`str`
-        :kwarg comm: MPI communicator for handling the checkpoint file
+        :kwarg comm: MPI communicator to use for the adapted mesh
         :type comm: :class:`mpi4py.MPI.Intracom`
         """
         self.mesh = mesh
