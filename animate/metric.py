@@ -133,12 +133,51 @@ class RiemannianMetric(ffunc.Function):
         return mp, vp
 
     def set_parameters(self, metric_parameters={}):
-        """
-        Set metric parameter values internally.
+        r"""
+        Set metric parameter values internally. All options have the prefix
+        `dm_plex_metric_` and are listed below (with prefix dropped for brevity):
 
-        :kwarg metric_parameters: a dictionary of parameters to be passed to PETSc's
-            Riemannian metric implementation. All such options have the prefix
-            `dm_plex_metric_`.
+        * `h_min`: Minimum tolerated metric magnitude, which allows approximate control
+            of minimum element size in the adapted mesh. Supports :class:`~.Constant`
+            and :class:`~.Function` input, as well as :class:`float`. Default: 1.0e-30.
+        * `h_max`: Maximum tolerated metric magnitude, which allows approximate control
+            of maximum element size in the adapted mesh. Supports :class:`~.Constant`
+            and :class:`~.Function` input, as well as :class:`float`. Default: 1.0e+30.
+        * `a_max`: Maximum tolerated metric anisotropy, which allows approximate control
+            of maximum element anisotropy in the adapted mesh. Supports
+            :class:`~.Constant` and :class:`~.Function` input, as well as :class:`float`.
+            Default: 1.0e+05.
+        * `p`: :math:`L^p` normalisation order. Supports ``np.inf`` as well as
+            :class:`float` values from :math:`[0,\infty)`. Default: 1.0.
+        * `target_complexity`: Strictly positive target metric complexity value. No
+            default - **must be set**.
+        * `gradation_factor`: Maximum ratio by which adjacent edges in the adapted mesh
+            may differ. Default: 1.3.
+        * `hausdorff_number`: Spatial scale factor for the problem. Default: 0.01.
+        * `boundary_tag`: Mesh boundary tag to restrict attention to during
+            boundary-specific manipulations. Unset by default, which implies all
+            boundaries are considered. (Note that this parameter does not currently exist
+            in the underlying PETSc implementation.)
+        * `no_insert`: Boolean flag for turning off node insertion and deletion during
+            adaptation. Default: False.
+        * `no_swap`: Boolean flag for turning off edge and face swapping during
+            adaptation. Default: False.
+        * `no_move`: Boolean flag for turning off node movement during adaptation.
+            Default: False.
+        * `no_surf`: Boolean flag for turning off surface modification during adaptation.
+            Default: False.
+        * `num_iterations`: Number of adaptation iterations in the parallel case.
+            Default: 3.
+        * `verbosity`: Verbosity of the mesh adaptation package (-1 = silent,
+            10 = maximum). Default: -1.
+        * `isotropic`: Optimisation for isotropic metrics. (Currently unsupported.)
+        * `uniform`: Optimisation for uniform metrics. (Currently unsupported.)
+        * `restrict_anisotropy_first`: Specify that anisotropy should be restricted
+            before normalisation? (Currently unsupported.)
+
+        :kwarg metric_parameters: parameters as above
+        :type metric_parameters: :class:`dict` with :class:`str` keys and value which
+            may take various types
         """
         mp, vp = self._process_parameters(metric_parameters)
         self._metric_parameters.update(mp)
