@@ -153,6 +153,18 @@ class TestSetParameters(MetricTestCase):
         msg = "Normalization order must be in [1, inf)"
         self.assertTrue(str(cm.exception).endswith(msg))
 
+    def test_deepcopy(self):
+        mesh = uniform_mesh(2)
+        metric1 = RiemannianMetric(TensorFunctionSpace(mesh, "CG", 1))
+        P1 = FunctionSpace(mesh, "CG", 1)
+        mp1 = {"h_min": Function(P1).assign(1.0), "h_max": 1.0}
+        metric1.set_parameters(mp1)
+        metric2 = metric1.copy(deepcopy=True)
+        mp2 = metric2.metric_parameters
+        self.assertNotEqual(id(mp1), id(mp2))
+        self.assertNotEqual(id(mp1["h_min"]), id(mp2["h_min"]))
+        self.assertNotEqual(id(mp1["h_max"]), id(mp2["h_max"]))
+
 
 class TestHessianMetric(MetricTestCase):
     """
