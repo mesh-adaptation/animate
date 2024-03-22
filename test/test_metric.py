@@ -94,13 +94,14 @@ class TestSetParameters(MetricTestCase):
 
     @parameterized.expand([["h_min"], ["h_max"], ["a_max"]])
     def test_set_variable(self, key):
-        value = Constant(1.0)
+        value = 1.0
         metric = uniform_metric(uniform_mesh(2))
-        metric.set_parameters({f"dm_plex_metric_{key}": value})
+        metric.set_parameters({f"dm_plex_metric_{key}": Constant(value)})
         self.assertTrue(f"dm_plex_metric_{key}" not in metric._metric_parameters)
         self.assertTrue(f"dm_plex_metric_{key}" in metric._variable_parameters)
         self.assertTrue(f"dm_plex_metric_{key}" in metric.metric_parameters)
-        self.assertEqual(metric._variable_parameters[f"dm_plex_metric_{key}"], value)
+        param = metric._variable_parameters[f"dm_plex_metric_{key}"]
+        self.assertEqual(float(param), value)
 
     def test_set_boundary_tag(self):
         value = "on_boundary"

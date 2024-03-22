@@ -112,10 +112,14 @@ class RiemannianMetric(ffunc.Function):
         for key in ("h_min", "h_max", "a_max"):
             key = f"dm_plex_metric_{key}"
             value = mp.get(key)
-            if value is None:
+            if not value:
                 continue
-            if isinstance(value, (firedrake.Constant, ffunc.Function)):
-                vp[key] = value
+            if isinstance(value, firedrake.Constant):
+                vp[key] = firedrake.Constant(float(value))
+                mp.pop(key)
+                self._variable_parameters_set = True
+            elif isinstance(value, ffunc.Function):
+                vp[key] = value.copy(deepcopy=True)
                 mp.pop(key)
                 self._variable_parameters_set = True
             else:
@@ -189,13 +193,14 @@ class RiemannianMetric(ffunc.Function):
         """
         Copy the metric and any associated parameters.
 
-        :kwarg deepcopy: If ``True``, the new :class:`~.RiemannianMetric` will allocate
-            new space and copy values.  If ``False``, the default, then the new
-            :class:`~.RiemannianMetric` will share the dof values.
+        :kwarg deepcopy: If ``True``, the new metric will allocate new space and copy
+            values. If ``False`` (default) then the new metric will share the DoF values.
+        :type deepcopy: :class:`bool`
         :return: a copy of the metric with the same parameters set
+        :rtype: :class:`~.RiemannianMetric`
         """
         metric = type(self)(super().copy(deepcopy=deepcopy))
-        metric.set_parameters(self.metric_parameters.copy())
+        metric.set_parameters(self.metric_parameters)
         return metric
 
     @PETSc.Log.EventDecorator()
