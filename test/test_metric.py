@@ -97,20 +97,23 @@ class TestSetParameters(MetricTestCase):
         value = Constant(1.0)
         metric = uniform_metric(uniform_mesh(2))
         metric.set_parameters({f"dm_plex_metric_{key}": value})
-        self.assertTrue(f"dm_plex_metric_{key}" not in metric.metric_parameters)
+        self.assertTrue(f"dm_plex_metric_{key}" not in metric._metric_parameters)
         self.assertTrue(f"dm_plex_metric_{key}" in metric._variable_parameters)
+        self.assertTrue(f"dm_plex_metric_{key}" in metric.metric_parameters)
         self.assertEqual(metric._variable_parameters[f"dm_plex_metric_{key}"], value)
 
     def test_set_boundary_tag(self):
         value = "on_boundary"
         metric = uniform_metric(uniform_mesh(2))
         metric.set_parameters()
-        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric._metric_parameters)
         self.assertTrue("dm_plex_metric_boundary_tag" in metric._variable_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
         self.assertIsNone(metric._variable_parameters["dm_plex_metric_boundary_tag"])
         metric.set_parameters({"dm_plex_metric_boundary_tag": value})
-        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric._metric_parameters)
         self.assertTrue("dm_plex_metric_boundary_tag" in metric._variable_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" in metric.metric_parameters)
         self.assertEqual(
             metric._variable_parameters["dm_plex_metric_boundary_tag"], value
         )

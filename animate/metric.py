@@ -48,7 +48,8 @@ class RiemannianMetric(ffunc.Function):
         """
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
-        self.metric_parameters = kwargs.pop("metric_parameters", {})
+        self._metric_parameters = {}
+        metric_parameters = kwargs.pop("metric_parameters", {})
         super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
@@ -89,8 +90,8 @@ class RiemannianMetric(ffunc.Function):
             "dm_plex_metric_boundary_tag": None,
         }
         self._variable_parameters_set = False
-        if self.metric_parameters:
-            self.set_parameters(self.metric_parameters)
+        if metric_parameters:
+            self.set_parameters(metric_parameters)
 
     def _check_space(self):
         el = self.function_space().ufl_element()
@@ -136,11 +137,11 @@ class RiemannianMetric(ffunc.Function):
             `dm_plex_metric_`.
         """
         mp, vp = self._process_parameters(metric_parameters)
-        self.metric_parameters.update(mp)
+        self._metric_parameters.update(mp)
         self._variable_parameters.update(vp)
 
         # Pass parameters to PETSc
-        with OptionsManager(self.metric_parameters, "").inserted_options():
+        with OptionsManager(self._metric_parameters, "").inserted_options():
             self._plex.metricSetFromOptions()
         if self._plex.metricIsUniform():
             raise NotImplementedError(
@@ -150,6 +151,13 @@ class RiemannianMetric(ffunc.Function):
             raise NotImplementedError(
                 "Isotropic metric optimisations are not supported in Firedrake."
             )
+
+    @property
+    def metric_parameters(self):
+        mp = self._metric_parameters.copy()
+        if self._variable_parameters_set:
+            mp.update(self._variable_parameters)
+        return mp
 
     def _create_from_array(self, array):
         bsize = self.dat.cdim
