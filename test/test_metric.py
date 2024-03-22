@@ -157,13 +157,18 @@ class TestSetParameters(MetricTestCase):
         mesh = uniform_mesh(2)
         metric1 = RiemannianMetric(TensorFunctionSpace(mesh, "CG", 1))
         P1 = FunctionSpace(mesh, "CG", 1)
-        mp1 = {"h_min": Function(P1).assign(1.0), "h_max": 1.0}
+        mp1 = {
+            "dm_plex_metric_h_min": Function(P1).assign(1.0e-08),
+            "dm_plex_metric_h_max": Constant(1.0),
+            "dm_plex_metric_a_max": 1.0e05,
+        }
         metric1.set_parameters(mp1)
         metric2 = metric1.copy(deepcopy=True)
         mp2 = metric2.metric_parameters
         self.assertNotEqual(id(mp1), id(mp2))
-        self.assertNotEqual(id(mp1["h_min"]), id(mp2["h_min"]))
-        self.assertNotEqual(id(mp1["h_max"]), id(mp2["h_max"]))
+        for key in ("h_min", "h_max", "a_max"):
+            full_key = f"dm_plex_metric_{key}"
+            self.assertNotEqual(id(mp1[full_key]), id(mp2[full_key]))
 
 
 class TestHessianMetric(MetricTestCase):
