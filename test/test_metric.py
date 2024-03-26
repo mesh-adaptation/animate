@@ -150,12 +150,36 @@ class TestSetParameters(MetricTestCase):
         msg = "Isotropic metric optimisations are not supported in Firedrake."
         self.assertEqual(str(cm.exception), msg)
 
+    def test_restrict_anisotropy_first_notimplemented_error(self):
+        metric = uniform_metric(uniform_mesh(2))
+        with self.assertRaises(NotImplementedError) as cm:
+            metric.set_parameters({"dm_plex_metric_restrict_anisotropy_first": None})
+        msg = "Restricting metric anisotropy first is not supported in Firedrake."
+        self.assertEqual(str(cm.exception), msg)
+
     def test_p_valueerror(self):
         metric = RiemannianMetric(uniform_mesh(2))
         with self.assertRaises(Exception) as cm:
             metric.set_parameters({"dm_plex_metric_p": 0.0})
         msg = "Normalization order must be in [1, inf)"
         self.assertTrue(str(cm.exception).endswith(msg))
+
+    def test_no_prefix_valueerror(self):
+        metric = RiemannianMetric(uniform_mesh(2))
+        with self.assertRaises(ValueError) as cm:
+            metric.set_parameters({"h_max": 1.0e30})
+        msg = (
+            "Unsupported metric parameter 'h_max'."
+            " Metric parameters must start with the prefix 'dm_plex_metric_'."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_unsupported_option_valueerror(self):
+        metric = RiemannianMetric(uniform_mesh(2))
+        with self.assertRaises(ValueError) as cm:
+            metric.set_parameters({"dm_plex_metric_a_min": 1.0e-10})
+        msg = "Unsupported metric parameter 'dm_plex_metric_a_min'."
+        self.assertEqual(str(cm.exception), msg)
 
 
 class TestHessianMetric(MetricTestCase):

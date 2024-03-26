@@ -35,6 +35,26 @@ class RiemannianMetric(ffunc.Function):
       https://petsc.org/release/docs/manual/dmplex/#metric-based-mesh-adaptation
     """
 
+    _supported_parameters = (
+        "dm_plex_metric_target_complexity",
+        "dm_plex_metric_h_min",
+        "dm_plex_metric_h_max",
+        "dm_plex_metric_a_max",
+        "dm_plex_metric_p",
+        "dm_plex_metric_gradation_factor",
+        "dm_plex_metric_hausdorff_number",
+        "dm_plex_metric_boundary_tag",
+        "dm_plex_metric_no_insert",
+        "dm_plex_metric_no_swap",
+        "dm_plex_metric_no_move",
+        "dm_plex_metric_no_surf",
+        "dm_plex_metric_num_iterations",
+        "dm_plex_metric_verbosity",
+        "dm_plex_metric_isotropic",
+        "dm_plex_metric_uniform",
+        "dm_plex_metric_restrict_anisotropy_first",
+    )
+
     @PETSc.Log.EventDecorator()
     def __init__(self, function_space, *args, **kwargs):
         r"""
@@ -98,14 +118,29 @@ class RiemannianMetric(ffunc.Function):
         if (el.family(), el.degree()) != ("Lagrange", 1):
             raise ValueError(f"Riemannian metric should be in P1 space, not '{el}'.")
 
-    def _process_parameters(self, metric_parameters):
-        mp = metric_parameters.copy()
+    @staticmethod
+    def _collapse_parameters(metric_parameters):
+        """
+        Account for concise nested dictionary formatting
+        """
+        if "dm_plex_metric" in metric_parameters:
+            for key, value in metric_parameters["dm_plex_metric"].items():
+                metric_parameters["_".join(["dm_plex_metric", key])] = value
+            metric_parameters.pop("dm_plex_metric")
+        return metric_parameters
 
-        # Account for concise nested dictionary formatting
-        if "dm_plex_metric" in mp:
-            for key, value in mp["dm_plex_metric"].items():
-                mp["_".join(["dm_plex_metric", key])] = value
-            mp.pop("dm_plex_metric")
+    def _process_parameters(self, metric_parameters):
+        mp = self._collapse_parameters(metric_parameters.copy())
+
+        # Check all parameters
+        for key in mp:
+            if not key.startswith("dm_plex_metric_"):
+                raise ValueError(
+                    f"Unsupported metric parameter '{key}'."
+                    " Metric parameters must start with the prefix 'dm_plex_metric_'."
+                )
+            if key not in self._supported_parameters:
+                raise ValueError(f"Unsupported metric parameter '{key}'.")
 
         # Spatially varying parameters need to be treated differently
         vp = {}
@@ -192,6 +227,10 @@ class RiemannianMetric(ffunc.Function):
         if self._plex.metricIsIsotropic():
             raise NotImplementedError(
                 "Isotropic metric optimisations are not supported in Firedrake."
+            )
+        if self._plex.metricRestrictAnisotropyFirst():
+            raise NotImplementedError(
+                "Restricting metric anisotropy first is not supported in Firedrake."
             )
 
     @property
