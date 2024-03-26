@@ -205,8 +205,9 @@ class RiemannianMetric(ffunc.Function):
             Default: False.
         * `no_surf`: Boolean flag for turning off surface modification during adaptation.
             Default: False.
-        * `num_iterations`: Number of adaptation iterations in the parallel case.
-            Default: 3.
+        * `num_iterations`: Number of adaptation-repartitioning iterations in the
+            parallel case. Default: 3. For details on the parallel algorithm, see
+            https://inria.hal.science/hal-02386837.
         * `verbosity`: Verbosity of the mesh adaptation package (-1 = silent,
             10 = maximum). Default: -1. For more detail, see
             https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-v.
