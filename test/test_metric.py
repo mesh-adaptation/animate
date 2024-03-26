@@ -306,7 +306,7 @@ class TestNormalisation(MetricTestCase):
             {
                 "dm_plex_metric": {
                     "target_complexity": target,
-                    "normalization_order": 1.0,
+                    "p": 1.0,
                 }
             }
         )
@@ -347,7 +347,7 @@ class TestNormalisation(MetricTestCase):
             {
                 "dm_plex_metric": {
                     "target_complexity": target,
-                    "normalization_order": degree,
+                    "p": degree,
                 }
             }
         )
