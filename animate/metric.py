@@ -187,7 +187,9 @@ class RiemannianMetric(ffunc.Function):
             :class:`float` values from :math:`[0,\infty)`. Default: 1.0.
         * `gradation_factor`: Maximum ratio by which adjacent edges in the adapted mesh
             may differ. Default: 1.3.
-        * `hausdorff_number`: Spatial scale factor for the problem. Default: 0.01.
+        * `hausdorff_number`: Spatial scale factor for the problem. The default value
+            0.01 corresponds to an :math:`\mathcal{O}(1)` length scale. A rule of thumb
+            is to scale this value appropriately to the length scale of your problem.
         * `boundary_tag`: Mesh boundary tag to restrict attention to during
             boundary-specific manipulations. Unset by default, which implies all
             boundaries are considered. (Note that this parameter does not currently exist
