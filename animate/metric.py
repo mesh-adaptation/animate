@@ -133,6 +133,8 @@ class RiemannianMetric(ffunc.Function):
         Set metric parameter values internally. All options have the prefix
         `dm_plex_metric_` and are listed below (with prefix dropped for brevity):
 
+        * `target_complexity`: Strictly positive target metric complexity value. No
+            default - **must be set**.
         * `h_min`: Minimum tolerated metric magnitude, which allows approximate control
             of minimum element size in the adapted mesh. Supports :class:`~.Constant`
             and :class:`~.Function` input, as well as :class:`float`. Default: 1.0e-30.
@@ -145,8 +147,6 @@ class RiemannianMetric(ffunc.Function):
             Default: 1.0e+05.
         * `p`: :math:`L^p` normalisation order. Supports ``np.inf`` as well as
             :class:`float` values from :math:`[0,\infty)`. Default: 1.0.
-        * `target_complexity`: Strictly positive target metric complexity value. No
-            default - **must be set**.
         * `gradation_factor`: Maximum ratio by which adjacent edges in the adapted mesh
             may differ. Default: 1.3.
         * `hausdorff_number`: Spatial scale factor for the problem. Default: 0.01.
