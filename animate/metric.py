@@ -131,7 +131,10 @@ class RiemannianMetric(ffunc.Function):
     def set_parameters(self, metric_parameters={}):
         r"""
         Set metric parameter values internally. All options have the prefix
-        `dm_plex_metric_` and are listed below (with prefix dropped for brevity):
+        `dm_plex_metric_` and are listed below (with prefix dropped for brevity). Note
+        that any parameter which supports :class:`~.Function` values must be in a
+        :math:`\mathbb{P}1` space defined on the same mesh as the metric, i.e., from
+        ``FunctionSpace(mesh, "CG", 1)``.
 
         * `target_complexity`: Strictly positive target metric complexity value. No
             default - **must be set**.
