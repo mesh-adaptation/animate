@@ -194,7 +194,7 @@ class RiemannianMetric(ffunc.Function):
             For more detail, see
             https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-hausd.
         * `boundary_tag`: Mesh boundary tag to restrict attention to during
-            boundary-specific manipulations. Unset by default, which implies all
+            boundary-specific metric manipulations. Unset by default, which implies all
             boundaries are considered. (Note that this parameter does not currently exist
             in the underlying PETSc implementation.)
         * `no_insert`: Boolean flag for turning off node insertion and deletion during
