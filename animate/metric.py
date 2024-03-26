@@ -114,12 +114,8 @@ class RiemannianMetric(ffunc.Function):
             value = mp.get(key)
             if not value:
                 continue
-            if isinstance(value, firedrake.Constant):
-                vp[key] = firedrake.Constant(float(value))
-                mp.pop(key)
-                self._variable_parameters_set = True
-            elif isinstance(value, ffunc.Function):
-                vp[key] = value.copy(deepcopy=True)
+            if isinstance(value, (firedrake.Constant, ffunc.Function)):
+                vp[key] = value
                 mp.pop(key)
                 self._variable_parameters_set = True
             else:
