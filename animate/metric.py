@@ -186,10 +186,13 @@ class RiemannianMetric(ffunc.Function):
         * `p`: :math:`L^p` normalisation order. Supports ``np.inf`` as well as
             :class:`float` values from :math:`[0,\infty)`. Default: 1.0.
         * `gradation_factor`: Maximum ratio by which adjacent edges in the adapted mesh
-            may differ. Default: 1.3.
+            may differ. Default: 1.3. For more detail, see
+            https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-hgrad.
         * `hausdorff_number`: Spatial scale factor for the problem. The default value
             0.01 corresponds to an :math:`\mathcal{O}(1)` length scale. A rule of thumb
             is to scale this value appropriately to the length scale of your problem.
+            For more detail, see
+            https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-hausd.
         * `boundary_tag`: Mesh boundary tag to restrict attention to during
             boundary-specific manipulations. Unset by default, which implies all
             boundaries are considered. (Note that this parameter does not currently exist
@@ -205,7 +208,8 @@ class RiemannianMetric(ffunc.Function):
         * `num_iterations`: Number of adaptation iterations in the parallel case.
             Default: 3.
         * `verbosity`: Verbosity of the mesh adaptation package (-1 = silent,
-            10 = maximum). Default: -1.
+            10 = maximum). Default: -1. For more detail, see
+            https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-v.
         * `isotropic`: Optimisation for isotropic metrics. (Currently unsupported.)
         * `uniform`: Optimisation for uniform metrics. (Currently unsupported.)
         * `restrict_anisotropy_first`: Specify that anisotropy should be restricted
