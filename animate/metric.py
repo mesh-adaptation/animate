@@ -35,6 +35,26 @@ class RiemannianMetric(ffunc.Function):
       https://petsc.org/release/docs/manual/dmplex/#metric-based-mesh-adaptation
     """
 
+    _supported_parameters = (
+        "dm_plex_metric_target_complexity",
+        "dm_plex_metric_h_min",
+        "dm_plex_metric_h_max",
+        "dm_plex_metric_a_max",
+        "dm_plex_metric_p",
+        "dm_plex_metric_gradation_factor",
+        "dm_plex_metric_hausdorff_number",
+        "dm_plex_metric_boundary_tag",
+        "dm_plex_metric_no_insert",
+        "dm_plex_metric_no_swap",
+        "dm_plex_metric_no_move",
+        "dm_plex_metric_no_surf",
+        "dm_plex_metric_num_iterations",
+        "dm_plex_metric_verbosity",
+        "dm_plex_metric_isotropic",
+        "dm_plex_metric_uniform",
+        "dm_plex_metric_restrict_anisotropy_first",
+    )
+
     @PETSc.Log.EventDecorator()
     def __init__(self, function_space, *args, **kwargs):
         r"""
@@ -48,7 +68,8 @@ class RiemannianMetric(ffunc.Function):
         """
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
-        self.metric_parameters = kwargs.pop("metric_parameters", {})
+        self._metric_parameters = {}
+        metric_parameters = kwargs.pop("metric_parameters", {})
         super().__init__(function_space, *args, **kwargs)
 
         # Check that we have an appropriate tensor P1 function
@@ -89,29 +110,44 @@ class RiemannianMetric(ffunc.Function):
             "dm_plex_metric_boundary_tag": None,
         }
         self._variable_parameters_set = False
-        if self.metric_parameters:
-            self.set_parameters(self.metric_parameters)
+        if metric_parameters:
+            self.set_parameters(metric_parameters)
 
     def _check_space(self):
         el = self.function_space().ufl_element()
         if (el.family(), el.degree()) != ("Lagrange", 1):
             raise ValueError(f"Riemannian metric should be in P1 space, not '{el}'.")
 
-    def _process_parameters(self, metric_parameters):
-        mp = metric_parameters.copy()
+    @staticmethod
+    def _collapse_parameters(metric_parameters):
+        """
+        Account for concise nested dictionary formatting
+        """
+        if "dm_plex_metric" in metric_parameters:
+            for key, value in metric_parameters["dm_plex_metric"].items():
+                metric_parameters["_".join(["dm_plex_metric", key])] = value
+            metric_parameters.pop("dm_plex_metric")
+        return metric_parameters
 
-        # Account for concise nested dictionary formatting
-        if "dm_plex_metric" in mp:
-            for key, value in mp["dm_plex_metric"].items():
-                mp["_".join(["dm_plex_metric", key])] = value
-            mp.pop("dm_plex_metric")
+    def _process_parameters(self, metric_parameters):
+        mp = self._collapse_parameters(metric_parameters.copy())
+
+        # Check all parameters
+        for key in mp:
+            if not key.startswith("dm_plex_metric_"):
+                raise ValueError(
+                    f"Unsupported metric parameter '{key}'."
+                    " Metric parameters must start with the prefix 'dm_plex_metric_'."
+                )
+            if key not in self._supported_parameters:
+                raise ValueError(f"Unsupported metric parameter '{key}'.")
 
         # Spatially varying parameters need to be treated differently
         vp = {}
         for key in ("h_min", "h_max", "a_max"):
             key = f"dm_plex_metric_{key}"
             value = mp.get(key)
-            if value is None:
+            if not value:
                 continue
             if isinstance(value, (firedrake.Constant, ffunc.Function)):
                 vp[key] = value
@@ -128,19 +164,68 @@ class RiemannianMetric(ffunc.Function):
         return mp, vp
 
     def set_parameters(self, metric_parameters={}):
-        """
-        Set metric parameter values internally.
+        r"""
+        Set metric parameter values internally. All options have the prefix
+        `dm_plex_metric_` and are listed below (with prefix dropped for brevity). Note
+        that any parameter which supports :class:`~.Function` values must be in a
+        :math:`\mathbb{P}1` space defined on the same mesh as the metric, i.e., from
+        ``FunctionSpace(mesh, "CG", 1)``.
 
-        :kwarg metric_parameters: a dictionary of parameters to be passed to PETSc's
-            Riemannian metric implementation. All such options have the prefix
-            `dm_plex_metric_`.
+        * `target_complexity`: Strictly positive target metric complexity value. No
+            default - **must be set**.
+        * `h_min`: Minimum tolerated metric magnitude, which allows approximate control
+            of minimum element size in the adapted mesh. Supports :class:`~.Constant`
+            and :class:`~.Function` input, as well as :class:`float`. Default: 1.0e-30.
+        * `h_max`: Maximum tolerated metric magnitude, which allows approximate control
+            of maximum element size in the adapted mesh. Supports :class:`~.Constant`
+            and :class:`~.Function` input, as well as :class:`float`. Default: 1.0e+30.
+        * `a_max`: Maximum tolerated metric anisotropy, which allows approximate control
+            of maximum element anisotropy in the adapted mesh. Supports
+            :class:`~.Constant` and :class:`~.Function` input, as well as :class:`float`.
+            Default: 1.0e+05.
+        * `p`: :math:`L^p` normalisation order. Supports ``np.inf`` as well as
+            :class:`float` values from :math:`[0,\infty)`. Default: 1.0.
+        * `gradation_factor`: Maximum ratio by which adjacent edges in the adapted mesh
+            may differ. Default: 1.3. For more detail, see
+            https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-hgrad.
+        * `hausdorff_number`: Spatial scale factor for the problem. The default value
+            0.01 corresponds to an :math:`\mathcal{O}(1)` length scale. A rule of thumb
+            is to scale this value appropriately to the length scale of your problem.
+            For more detail, see
+            https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-hausd.
+        * `boundary_tag`: Mesh boundary tag to restrict attention to during
+            boundary-specific metric manipulations. Unset by default, which implies all
+            boundaries are considered. (Note that this parameter does not currently exist
+            in the underlying PETSc implementation.)
+        * `no_insert`: Boolean flag for turning off node insertion and deletion during
+            adaptation. Default: False.
+        * `no_swap`: Boolean flag for turning off edge and face swapping during
+            adaptation. Default: False.
+        * `no_move`: Boolean flag for turning off node movement during adaptation.
+            Default: False.
+        * `no_surf`: Boolean flag for turning off surface modification during adaptation.
+            Default: False.
+        * `num_iterations`: Number of adaptation-repartitioning iterations in the
+            parallel case. Default: 3. For details on the parallel algorithm, see
+            https://inria.hal.science/hal-02386837.
+        * `verbosity`: Verbosity of the mesh adaptation package (-1 = silent,
+            10 = maximum). Default: -1. For more detail, see
+            https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-v.
+        * `isotropic`: Optimisation for isotropic metrics. (Currently unsupported.)
+        * `uniform`: Optimisation for uniform metrics. (Currently unsupported.)
+        * `restrict_anisotropy_first`: Specify that anisotropy should be restricted
+            before normalisation? (Currently unsupported.)
+
+        :kwarg metric_parameters: parameters as above
+        :type metric_parameters: :class:`dict` with :class:`str` keys and value which
+            may take various types
         """
         mp, vp = self._process_parameters(metric_parameters)
-        self.metric_parameters.update(mp)
+        self._metric_parameters.update(mp)
         self._variable_parameters.update(vp)
 
         # Pass parameters to PETSc
-        with OptionsManager(self.metric_parameters, "").inserted_options():
+        with OptionsManager(self._metric_parameters, "").inserted_options():
             self._plex.metricSetFromOptions()
         if self._plex.metricIsUniform():
             raise NotImplementedError(
@@ -150,6 +235,17 @@ class RiemannianMetric(ffunc.Function):
             raise NotImplementedError(
                 "Isotropic metric optimisations are not supported in Firedrake."
             )
+        if self._plex.metricRestrictAnisotropyFirst():
+            raise NotImplementedError(
+                "Restricting metric anisotropy first is not supported in Firedrake."
+            )
+
+    @property
+    def metric_parameters(self):
+        mp = self._metric_parameters.copy()
+        if self._variable_parameters_set:
+            mp.update(self._variable_parameters)
+        return mp
 
     def _create_from_array(self, array):
         bsize = self.dat.cdim
@@ -181,13 +277,14 @@ class RiemannianMetric(ffunc.Function):
         """
         Copy the metric and any associated parameters.
 
-        :kwarg deepcopy: If ``True``, the new :class:`~.RiemannianMetric` will allocate
-            new space and copy values.  If ``False``, the default, then the new
-            :class:`~.RiemannianMetric` will share the dof values.
+        :kwarg deepcopy: If ``True``, the new metric will allocate new space and copy
+            values. If ``False`` (default) then the new metric will share the DoF values.
+        :type deepcopy: :class:`bool`
         :return: a copy of the metric with the same parameters set
+        :rtype: :class:`~.RiemannianMetric`
         """
         metric = type(self)(super().copy(deepcopy=deepcopy))
-        metric.set_parameters(self.metric_parameters.copy())
+        metric.set_parameters(self.metric_parameters)
         return metric
 
     @PETSc.Log.EventDecorator()

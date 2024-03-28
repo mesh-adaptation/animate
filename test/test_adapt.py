@@ -134,7 +134,7 @@ def test_adapt_3d():
     mp = {
         "dm_plex_metric": {
             "target_complexity": 100.0,
-            "normalization_order": 1.0,
+            "p": 1.0,
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
