@@ -32,7 +32,7 @@ class TestQuality(unittest.TestCase):
         dim = mesh.topological_dimension()
         if name == "metric":
             P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-            M = interpolate(Identity(dim), P1_ten)
+            M = Function(P1_ten).interpolate(Identity(dim))
             kwargs["metric"] = M
         return QualityMeasure(mesh, **kwargs)(name)
 

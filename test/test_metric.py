@@ -501,7 +501,7 @@ class TestMetricDrivers(MetricTestCase):
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten)
         indicator = self.uniform_indicator(mesh)
-        hessian = interpolate(Identity(2), P1_ten)
+        hessian = Function(P1_ten).interpolate(Identity(2))
         with self.assertRaises(TypeError) as cm:
             metric.compute_weighted_hessian_metric(indicator, hessian)
         msg = (
@@ -661,8 +661,8 @@ class TestMetricDecompositions(MetricTestCase):
         if reorder:
             P1 = FunctionSpace(mesh, "CG", 1)
             for i in range(dim - 1):
-                f = interpolate(evalues[i], P1)
-                f -= interpolate(evalues[i + 1], P1)
+                f = Function(P1).interpolate(evalues[i])
+                f -= Function(P1).interpolate(evalues[i + 1])
                 if f.vector().gather().min() < 0.0:
                     raise ValueError(
                         f"Eigenvalues are not in descending order: {evalues.dat.data}"
