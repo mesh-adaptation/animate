@@ -2,10 +2,9 @@
 Test utility functions.
 """
 
-from firedrake import *
+from test_setup import *
 from firedrake.norms import norm as fnorm
 from firedrake.norms import errornorm as ferrnorm
-from animate import *
 from animate.utility import assemble_mass_matrix
 from test_setup import uniform_mesh
 import os
@@ -95,7 +94,7 @@ class TestNorm(unittest.TestCase):
         self.mesh = uniform_mesh(2, 4)
         self.x, self.y = SpatialCoordinate(self.mesh)
         V = FunctionSpace(self.mesh, "CG", 1)
-        self.f = assemble(interpolate(self.x**2 + self.y, V))
+        self.f = Function(V).interpolate(self.x**2 + self.y)
 
     def test_boundary_error(self):
         with self.assertRaises(NotImplementedError) as cm:
@@ -150,7 +149,7 @@ class TestNorm(unittest.TestCase):
     def test_consistency_hdiv(self):
         V = VectorFunctionSpace(self.mesh, "CG", 1)
         x, y = SpatialCoordinate(self.mesh)
-        f = assemble(interpolate(as_vector([y * y, -x * x]), V))
+        f = Function(V).interpolate(as_vector([y * y, -x * x]))
         expected = fnorm(f, norm_type="HDiv")
         got = norm(f, norm_type="HDiv")
         self.assertAlmostEqual(expected, got)
@@ -178,8 +177,8 @@ class TestErrorNorm(unittest.TestCase):
         self.mesh = uniform_mesh(2, 4)
         self.x, self.y = SpatialCoordinate(self.mesh)
         V = FunctionSpace(self.mesh, "CG", 1)
-        self.f = assemble(interpolate(self.x**2 + self.y, V))
-        self.g = assemble(interpolate(self.x + self.y**2, V))
+        self.f = Function(V).interpolate(self.x**2 + self.y)
+        self.g = Function(V).interpolate(self.x + self.y**2)
 
     def test_shape_error(self):
         with self.assertRaises(RuntimeError) as cm:
@@ -214,7 +213,7 @@ class TestErrorNorm(unittest.TestCase):
     def test_zero_hdiv(self):
         V = VectorFunctionSpace(self.mesh, "CG", 1)
         x, y = SpatialCoordinate(self.mesh)
-        f = assemble(interpolate(as_vector([y * y, -x * x]), V))
+        f = Function(V).interpolate(as_vector([y * y, -x * x]))
         err = errornorm(f, f, norm_type="HDiv")
         self.assertAlmostEqual(err, 0.0)
 
@@ -227,8 +226,8 @@ class TestErrorNorm(unittest.TestCase):
     def test_consistency_hdiv(self):
         V = VectorFunctionSpace(self.mesh, "CG", 1)
         x, y = SpatialCoordinate(self.mesh)
-        f = assemble(interpolate(as_vector([y * y, -x * x]), V))
-        g = assemble(interpolate(as_vector([x * y, 1.0]), V))
+        f = Function(V).interpolate(as_vector([y * y, -x * x]))
+        g = Function(V).interpolate(as_vector([x * y, 1.0]))
         expected = ferrnorm(f, g, norm_type="HDiv")
         got = errornorm(f, g, norm_type="HDiv")
         self.assertAlmostEqual(expected, got)
