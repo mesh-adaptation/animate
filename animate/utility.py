@@ -9,6 +9,8 @@ from firedrake.petsc import PETSc
 from firedrake.__future__ import interpolate
 import ufl
 
+__all__ = ["Mesh", "VTKFile", "norm", "errornorm"]
+
 
 @PETSc.Log.EventDecorator()
 def Mesh(arg, **kwargs):

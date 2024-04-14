@@ -6,6 +6,7 @@ from firedrake import *
 from firedrake.norms import norm as fnorm
 from firedrake.norms import errornorm as ferrnorm
 from animate import *
+from animate.utility import assemble_mass_matrix
 from test_setup import uniform_mesh
 import os
 from parameterized import parameterized
