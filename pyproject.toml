@@ -14,10 +14,16 @@ dependencies = [
   "sympy",
 ]
 authors = [
-  {name = "Joe Wallwork", email = "joe.wallwork@outlook.com"},
+  {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
   {name = "Davor Dundovic"},
   {name = "Eleda Johnson"},
-  {name = "Stephan Kramer"},
+  {name = "Stephan C. Kramer"},
+]
+maintainers = [
+  {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
+  {name = "Davor Dundovic"},
+  {name = "Eleda Johnson"},
+  {name = "Stephan C. Kramer"},
 ]
 description = "Anisotropic mesh adaptation toolkit for Firedrake"
 readme = "README.md"
