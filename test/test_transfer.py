@@ -23,8 +23,8 @@ def test_project(dim):
     # Create some fields
     V = FunctionSpace(mesh, "CG", 1)
     x = SpatialCoordinate(mesh)
-    f1 = interpolate(x[0], V)
-    g1 = interpolate(2 * x[1], V)
+    f1 = Function(V).interpolate(x[0])
+    g1 = Function(V).interpolate(2 * x[1])
 
     # Project them onto the new mesh
     f2 = adaptor.project(f1)
