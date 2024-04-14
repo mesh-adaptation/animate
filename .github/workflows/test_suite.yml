@@ -45,7 +45,6 @@ jobs:
         run: |
           . /home/firedrake/firedrake/bin/activate
           python -m pip uninstall -y animate
-          python -m pip install -r requirements.txt
           python -m pip install -e .
 
       - name: 'Lint'
