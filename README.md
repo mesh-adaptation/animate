@@ -1,7 +1,7 @@
 # Animate
 ## Anisotropic mesh adaptation toolkit for Firedrake
-![GitHub top language](https://img.shields.io/github/languages/top/pyroteus/animate)
-![GitHub repo size](https://img.shields.io/github/repo-size/pyroteus/animate)
+![GitHub top language](https://img.shields.io/github/languages/top/mesh-adaptation/animate)
+![GitHub repo size](https://img.shields.io/github/repo-size/mesh-adaptation/animate)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Animate is a mesh adaptation toolkit enabling users to anisotropically adapt a mesh based on a Riemannian metric framework with control over the shape, orientation and size of the resulting mesh elements. Animate is built for use with Firedrake and  strongly leverages PETSc DMPlex functionality. The implementation of metric-based mesh adaptation used in PETSc assumes that the metric is piece-wise linear and continuous, with its degrees of freedom at the mesh vertices.
@@ -23,8 +23,8 @@ Instructions:
 		- install/install_firedrake_custom_mpi.sh
 		- install/petsc_options.txt
 	- via curl:
-		- `curl -O https://raw.githubusercontent.com/pyroteus/animate/main/install/install_firedrake_custom_mpi.sh`
-		- `curl -O https://raw.githubusercontent.com/pyroteus/animate/main/install/petsc_options.txt`
+		- `curl -O https://raw.githubusercontent.com/mesh-adaptation/animate/main/install/install_firedrake_custom_mpi.sh`
+		- `curl -O https://raw.githubusercontent.com/mesh-adaptation/animate/main/install/petsc_options.txt`
 -  Install firedrake and associated dependencies to a local environment via `source install_firedrake_custom_mpi.sh`
 - Continue to follow the instructions below in "To install Animate via `git clone`" to complete the installation of Animate.
 
