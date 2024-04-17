@@ -29,20 +29,20 @@ RUN bash -c "source firedrake/bin/activate; \
 # Install Animate
 RUN bash -c "source firedrake/bin/activate; \
 	cd firedrake/src; \
-	git clone https://github.com/pyroteus/animate.git; \
+	git clone https://github.com/mesh-adaptation/animate.git; \
 	cd animate; \
 	make install"
 
 # Install Movement
 RUN bash -c "source firedrake/bin/activate; \
 	cd firedrake/src; \
-	git clone https://github.com/pyroteus/movement.git; \
+	git clone https://github.com/mesh-adaptation/movement.git; \
 	cd movement; \
 	make install"
 
 # Install Goalie
 RUN bash -c "source firedrake/bin/activate; \
 	cd firedrake/src; \
-	git clone https://github.com/pyroteus/goalie.git; \
+	git clone https://github.com/mesh-adaptation/goalie.git; \
 	cd goalie; \
 	make install"

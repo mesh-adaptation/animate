@@ -1,3 +1,46 @@
+[build-system]
+requires = ["setuptools"]
+
+[project]
+name = "animate"
+version = "0.2"
+dependencies = [
+  "black",
+  "flake8",
+  "parameterized",
+  "pre-commit",
+  "pytest",
+  "pytest-xdist",
+  "sympy",
+]
+authors = [
+  {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
+  {name = "Davor Dundovic"},
+  {name = "Eleda Johnson"},
+  {name = "Stephan C. Kramer"},
+]
+maintainers = [
+  {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
+  {name = "Davor Dundovic"},
+  {name = "Eleda Johnson"},
+  {name = "Stephan C. Kramer"},
+]
+description = "Anisotropic mesh adaptation toolkit for Firedrake"
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+]
+
+[project.urls]
+Homepage = "https://mesh-adaptation.github.io"
+Documentation = "https://mesh-adaptation.github.io/animate/index.html"
+Repository = "https://github.com/mesh-adaptation/animate"
+
+[tool.setuptools]
+packages = ["animate"]
+
 [tool.black]
 line-length = 88
 include = '\.pyi?$'
