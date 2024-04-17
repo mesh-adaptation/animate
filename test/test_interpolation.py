@@ -1,12 +1,15 @@
 """
 Test interpolation schemes.
 """
-from test_setup import *
-from animate.interpolation import _transfer_forward, _transfer_adjoint
-from animate.utility import function2cofunction
+
+import unittest
+
 import numpy as np
 from parameterized import parameterized
-import unittest
+from test_setup import *
+
+from animate.interpolation import _transfer_adjoint, _transfer_forward
+from animate.utility import function2cofunction
 
 
 class TestClement(unittest.TestCase):

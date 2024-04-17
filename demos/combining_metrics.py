@@ -36,8 +36,9 @@
 
 import matplotlib.pyplot as plt
 from firedrake import *
-from animate import *
 from firedrake.pyplot import triplot
+
+from animate import *
 
 mesh = UnitSquareMesh(100, 100)
 P1_ten = TensorFunctionSpace(mesh, "CG", 1)

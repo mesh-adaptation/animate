@@ -1,10 +1,12 @@
 import abc
-from firedrake.cython.dmcommon import to_petsc_local_numbering
+
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
+import firedrake.utils as futils
+from firedrake.cython.dmcommon import to_petsc_local_numbering
 from firedrake.petsc import PETSc
 from firedrake.projection import Projector
-import firedrake.utils as futils
+
 from .metric import RiemannianMetric
 
 __all__ = ["MetricBasedAdaptor", "adapt"]

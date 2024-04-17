@@ -1,12 +1,14 @@
 """
 Functions for computing mesh quality measures.
 """
+
 import os
+
 import firedrake
+import ufl
 from firedrake.petsc import PETSc
 from pyop2 import op2
 from pyop2.utils import get_petsc_dir
-import ufl
 
 PETSC_DIR, PETSC_ARCH = get_petsc_dir()
 include_dir = ["%s/include/eigen3" % PETSC_ARCH]

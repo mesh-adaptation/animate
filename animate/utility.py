@@ -3,11 +3,12 @@ Utility functions and classes for metric-based mesh adaptation.
 """
 
 from collections import OrderedDict
+
 import firedrake
 import firedrake.mesh as fmesh
-from firedrake.petsc import PETSc
-from firedrake.__future__ import interpolate
 import ufl
+from firedrake.__future__ import interpolate
+from firedrake.petsc import PETSc
 
 __all__ = ["Mesh", "VTKFile", "norm", "errornorm"]
 

@@ -2,15 +2,16 @@
 Test utility functions.
 """
 
-from test_setup import *
-from firedrake.norms import norm as fnorm
-from firedrake.norms import errornorm as ferrnorm
-from animate.utility import assemble_mass_matrix
-from test_setup import uniform_mesh
 import os
-from parameterized import parameterized
 import unittest
 
+from firedrake.norms import errornorm as ferrnorm
+from firedrake.norms import norm as fnorm
+from parameterized import parameterized
+from test_setup import *
+from test_setup import uniform_mesh
+
+from animate.utility import assemble_mass_matrix
 
 pointwise_norm_types = [["l1"], ["l2"], ["linf"]]
 integral_scalar_norm_types = [["L1"], ["L2"], ["L4"], ["H1"], ["HCurl"]]

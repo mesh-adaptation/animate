@@ -5,9 +5,9 @@ Olivier, Géraldine. Anisotropic metric-based mesh
 adaptation for unsteady CFD simulations involving
 moving geometries. Diss. 2011.
 """
-from ufl import *
-from test_setup import uniform_mesh
 
+from test_setup import uniform_mesh
+from ufl import *
 
 __all__ = ["bowl", "hyperbolic", "multiscale", "interweaved", "mesh_for_sensors"]
 

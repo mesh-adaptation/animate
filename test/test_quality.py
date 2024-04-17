@@ -1,8 +1,9 @@
-from test_setup import *
-from parameterized import parameterized
+import unittest
+
 import numpy as np
 import pytest
-import unittest
+from parameterized import parameterized
+from test_setup import *
 
 
 @pytest.fixture(params=[2, 3])
