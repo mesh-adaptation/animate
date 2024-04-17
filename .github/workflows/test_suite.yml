@@ -51,7 +51,7 @@ jobs:
         if: ${{ always() }}
         run: |
           . /home/firedrake/firedrake/bin/activate
-          flake8
+          make lint
 
       - name: 'Test Animate'
         run: |
