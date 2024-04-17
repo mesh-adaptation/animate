@@ -1,14 +1,15 @@
 """
 Checks that all demo scripts run.
 """
+
 import glob
 import os
-from os.path import splitext
-import pytest
 import shutil
 import subprocess
 import sys
+from os.path import splitext
 
+import pytest
 
 # Set environment variable to specify that tests are being run so that we can
 # cut down the length of the demos

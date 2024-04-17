@@ -1,20 +1,22 @@
-from .interpolation import clement_interpolant
-from .recovery import (
-    recover_gradient_l2,
-    recover_hessian_clement,
-    recover_boundary_hessian,
-    get_metric_kernel,
-)
 from collections.abc import Iterable
+
 import firedrake
 import firedrake.function as ffunc
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
-from firedrake.petsc import PETSc, OptionsManager
 import numpy as np
-from pyop2 import op2
 import sympy
 import ufl
+from firedrake.petsc import OptionsManager, PETSc
+from pyop2 import op2
+
+from .interpolation import clement_interpolant
+from .recovery import (
+    get_metric_kernel,
+    recover_boundary_hessian,
+    recover_gradient_l2,
+    recover_hessian_clement,
+)
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 

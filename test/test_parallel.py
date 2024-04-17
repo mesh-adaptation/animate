@@ -1,9 +1,10 @@
 """
 Tests under MPI parallelism.
 """
-from firedrake import COMM_WORLD
-import test_metric
+
 import pytest
+import test_metric
+from firedrake import COMM_WORLD
 
 
 @pytest.fixture(params=[2, 3])

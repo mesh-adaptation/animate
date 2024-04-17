@@ -1,8 +1,10 @@
-from test_setup import *
-from animate.metric import P0Metric
-from parameterized import parameterized
-import numpy as np
 import unittest
+
+import numpy as np
+from parameterized import parameterized
+from test_setup import *
+
+from animate.metric import P0Metric
 
 
 class MetricTestCase(unittest.TestCase):

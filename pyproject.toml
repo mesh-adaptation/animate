@@ -5,12 +5,11 @@ requires = ["setuptools"]
 name = "animate"
 version = "0.2"
 dependencies = [
-  "black",
-  "flake8",
   "parameterized",
   "pre-commit",
   "pytest",
   "pytest-xdist",
+  "ruff",
   "sympy",
 ]
 authors = [
@@ -41,14 +40,25 @@ Repository = "https://github.com/mesh-adaptation/animate"
 [tool.setuptools]
 packages = ["animate"]
 
-[tool.black]
+[tool.ruff]
 line-length = 88
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-)/
-'''
+
+[tool.ruff.lint]
+select = [
+#  "B",  # flake8-bugbear  TODO: enable this  (#108)
+#  "C",  # mccabe complexity  TODO: enable this (#108)
+  "E", "W",  # Pycodestyle
+  "F",  # Pyflakes
+  "I",  # isort
+]
+ignore = [
+  "E501",  # line too long
+  "E226",  # missing whitespace around arithmetic operator
+  "E402",  # module level import not at top of file
+  "E741",  # ambiguous variable name
+  "F403",  # unable to detect undefined names
+  "F405",  # name may be undefined, or defined from star imports
+]
 
 [tool.pytest.ini_options]
 filterwarnings = [

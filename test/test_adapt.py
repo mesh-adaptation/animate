@@ -1,8 +1,9 @@
-from test_setup import *
-from petsc4py import PETSc
-import pytest
-import numpy as np
 import os
+
+import numpy as np
+import pytest
+from petsc4py import PETSc
+from test_setup import *
 
 
 def load_mesh(fname):

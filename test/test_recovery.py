@@ -1,11 +1,12 @@
 """
 Test derivative recovery techniques.
 """
-from test_setup import *
-from sensors import bowl, mesh_for_sensors
-from parameterized import parameterized
+
 import unittest
 
+from parameterized import parameterized
+from sensors import bowl, mesh_for_sensors
+from test_setup import *
 
 # ---------------------------
 # standard tests for pytest
