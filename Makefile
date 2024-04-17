@@ -12,7 +12,7 @@ install:
 
 lint:
 	@echo "Checking lint..."
-	@flake8
+	@ruff check
 	@echo "PASS"
 
 test: lint
