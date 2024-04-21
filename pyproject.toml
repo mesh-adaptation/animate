@@ -9,6 +9,7 @@ dependencies = [
   "pre-commit",
   "pytest",
   "pytest-xdist",
+  "removestar",
   "ruff",
   "sympy",
 ]

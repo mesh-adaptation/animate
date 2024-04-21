@@ -4,6 +4,7 @@
 animate.egg-info/
 outputs/
 plots/
+test/demos/
 __pycache__/
 
 # Specific files
