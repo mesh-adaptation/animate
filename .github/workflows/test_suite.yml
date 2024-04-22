@@ -47,6 +47,10 @@ jobs:
           python -m pip uninstall -y animate
           python -m pip install -e .
 
+      - name: 'Convert demos to integration tests'
+        run: |
+          make convert_demos
+
       - name: 'Lint'
         if: ${{ always() }}
         run: |
