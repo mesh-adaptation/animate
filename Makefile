@@ -30,6 +30,7 @@ convert_demos:
 test: lint convert_demos
 	@echo "Running all tests..."
 	@python3 -m pytest -v -n auto --durations=20 test
+	@cd test && make clean
 	@echo "Done."
 
 coverage: convert_demos
@@ -37,6 +38,7 @@ coverage: convert_demos
 	@python3 -m coverage erase
 	@python3 -m coverage run --source=animate -m pytest -v test
 	@python3 -m coverage html
+	@cd test && make clean
 	@echo "Done."
 
 tree:
