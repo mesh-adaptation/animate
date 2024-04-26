@@ -1,3 +1,7 @@
+"""
+Utility functions and classes for metric-based mesh adaptation.
+"""
+
 import os
 from collections import OrderedDict
 
@@ -312,8 +316,3 @@ def get_checkpoint_dir():
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir, exist_ok=True)
     return checkpoint_dir
-
-
-"""
-Utility functions and classes for metric-based mesh adaptation.
-"""
