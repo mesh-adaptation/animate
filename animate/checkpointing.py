@@ -1,9 +1,11 @@
-from .metric import RiemannianMetric
-from .utility import get_checkpoint_dir
+import os
+
 import firedrake
 import firedrake.checkpointing as fchk
 import firedrake.function as ffunc
-import os
+
+from .metric import RiemannianMetric
+from .utility import get_checkpoint_dir
 
 __all__ = ["load_checkpoint", "save_checkpoint"]
 

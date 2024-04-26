@@ -1,8 +1,10 @@
-from test_setup import *
-from animate.checkpointing import _fix_checkpoint_filename
+import unittest
+
 import h5py
 import numpy as np
-import unittest
+from test_setup import *
+
+from animate.checkpointing import _fix_checkpoint_filename
 
 
 class TestCheckpointing(unittest.TestCase):

@@ -1,10 +1,15 @@
+# .gitignore
+
+# Subdirectories
 animate.egg-info/
 outputs/
 plots/
 __pycache__/
 
+# Specific files
 .coverage
 
+# File extensions
 *.jpg
 *.jpeg
 *.pdf

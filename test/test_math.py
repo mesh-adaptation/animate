@@ -1,8 +1,9 @@
-from test_setup import *
-import numpy as np
-from parameterized import parameterized
-import ufl
 import unittest
+
+import numpy as np
+import ufl
+from parameterized import parameterized
+from test_setup import *
 
 
 class TestOrthogonalisation(unittest.TestCase):

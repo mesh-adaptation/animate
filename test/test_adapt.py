@@ -1,9 +1,10 @@
-from test_setup import *
+import os
+
+import numpy as np
+import pytest
 from firedrake import COMM_WORLD
 from petsc4py import PETSc
-import pytest
-import numpy as np
-import os
+from test_setup import *
 
 
 def load_mesh(fname):
@@ -148,7 +149,7 @@ def test_adapt_3d(**kwargs):
     mp = {
         "dm_plex_metric": {
             "target_complexity": 100.0,
-            "normalization_order": 1.0,
+            "p": 1.0,
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)

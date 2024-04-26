@@ -1,8 +1,10 @@
-from test_setup import *
-from animate.metric import P0Metric
-from parameterized import parameterized
-import numpy as np
 import unittest
+
+import numpy as np
+from parameterized import parameterized
+from test_setup import *
+
+from animate.metric import P0Metric
 
 
 class MetricTestCase(unittest.TestCase):
@@ -94,24 +96,38 @@ class TestSetParameters(MetricTestCase):
 
     @parameterized.expand([["h_min"], ["h_max"], ["a_max"]])
     def test_set_variable(self, key):
-        value = Constant(1.0)
+        value = 1.0
         metric = uniform_metric(uniform_mesh(2))
-        metric.set_parameters({f"dm_plex_metric_{key}": value})
-        self.assertTrue(f"dm_plex_metric_{key}" not in metric.metric_parameters)
+        metric.set_parameters({f"dm_plex_metric_{key}": Constant(value)})
+        self.assertTrue(f"dm_plex_metric_{key}" not in metric._metric_parameters)
         self.assertTrue(f"dm_plex_metric_{key}" in metric._variable_parameters)
-        self.assertEqual(metric._variable_parameters[f"dm_plex_metric_{key}"], value)
+        self.assertTrue(f"dm_plex_metric_{key}" in metric.metric_parameters)
+        param = metric._variable_parameters[f"dm_plex_metric_{key}"]
+        self.assertEqual(float(param), value)
 
     def test_set_boundary_tag(self):
         value = "on_boundary"
         metric = uniform_metric(uniform_mesh(2))
         metric.set_parameters()
-        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric._metric_parameters)
         self.assertTrue("dm_plex_metric_boundary_tag" in metric._variable_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
         self.assertIsNone(metric._variable_parameters["dm_plex_metric_boundary_tag"])
         metric.set_parameters({"dm_plex_metric_boundary_tag": value})
-        self.assertTrue("dm_plex_metric_boundary_tag" not in metric.metric_parameters)
+        self.assertTrue("dm_plex_metric_boundary_tag" not in metric._metric_parameters)
         self.assertTrue("dm_plex_metric_boundary_tag" in metric._variable_parameters)
-        self.assertEqual(metric._variable_parameters["dm_plex_metric_boundary_tag"], value)
+        self.assertTrue("dm_plex_metric_boundary_tag" in metric.metric_parameters)
+        self.assertEqual(
+            metric._variable_parameters["dm_plex_metric_boundary_tag"], value
+        )
+
+    def test_passing_parameters_methods(self):
+        mp = {"dm_plex_metric_h_max": 1.0}
+        metric1 = uniform_metric(uniform_mesh(2), metric_parameters=mp)
+        self.assertEqual(metric1.metric_parameters["dm_plex_metric_h_max"], 1.0)
+        metric2 = uniform_metric(uniform_mesh(2))
+        metric2.set_parameters(mp)
+        self.assertEqual(metric1.metric_parameters, metric2.metric_parameters)
 
     def test_no_reset(self):
         hmin = 0.1
@@ -136,12 +152,36 @@ class TestSetParameters(MetricTestCase):
         msg = "Isotropic metric optimisations are not supported in Firedrake."
         self.assertEqual(str(cm.exception), msg)
 
+    def test_restrict_anisotropy_first_notimplemented_error(self):
+        metric = uniform_metric(uniform_mesh(2))
+        with self.assertRaises(NotImplementedError) as cm:
+            metric.set_parameters({"dm_plex_metric_restrict_anisotropy_first": None})
+        msg = "Restricting metric anisotropy first is not supported in Firedrake."
+        self.assertEqual(str(cm.exception), msg)
+
     def test_p_valueerror(self):
         metric = RiemannianMetric(uniform_mesh(2))
         with self.assertRaises(Exception) as cm:
             metric.set_parameters({"dm_plex_metric_p": 0.0})
         msg = "Normalization order must be in [1, inf)"
         self.assertTrue(str(cm.exception).endswith(msg))
+
+    def test_no_prefix_valueerror(self):
+        metric = RiemannianMetric(uniform_mesh(2))
+        with self.assertRaises(ValueError) as cm:
+            metric.set_parameters({"h_max": 1.0e30})
+        msg = (
+            "Unsupported metric parameter 'h_max'."
+            " Metric parameters must start with the prefix 'dm_plex_metric_'."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_unsupported_option_valueerror(self):
+        metric = RiemannianMetric(uniform_mesh(2))
+        with self.assertRaises(ValueError) as cm:
+            metric.set_parameters({"dm_plex_metric_a_min": 1.0e-10})
+        msg = "Unsupported metric parameter 'dm_plex_metric_a_min'."
+        self.assertEqual(str(cm.exception), msg)
 
 
 class TestHessianMetric(MetricTestCase):
@@ -268,7 +308,7 @@ class TestNormalisation(MetricTestCase):
             {
                 "dm_plex_metric": {
                     "target_complexity": target,
-                    "normalization_order": 1.0,
+                    "p": 1.0,
                 }
             }
         )
@@ -309,7 +349,7 @@ class TestNormalisation(MetricTestCase):
             {
                 "dm_plex_metric": {
                     "target_complexity": target,
-                    "normalization_order": degree,
+                    "p": degree,
                 }
             }
         )
@@ -463,7 +503,7 @@ class TestMetricDrivers(MetricTestCase):
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten)
         indicator = self.uniform_indicator(mesh)
-        hessian = interpolate(Identity(2), P1_ten)
+        hessian = Function(P1_ten).interpolate(Identity(2))
         with self.assertRaises(TypeError) as cm:
             metric.compute_weighted_hessian_metric(indicator, hessian)
         msg = (
@@ -623,8 +663,8 @@ class TestMetricDecompositions(MetricTestCase):
         if reorder:
             P1 = FunctionSpace(mesh, "CG", 1)
             for i in range(dim - 1):
-                f = interpolate(evalues[i], P1)
-                f -= interpolate(evalues[i + 1], P1)
+                f = Function(P1).interpolate(evalues[i])
+                f -= Function(P1).interpolate(evalues[i + 1])
                 if f.vector().gather().min() < 0.0:
                     raise ValueError(
                         f"Eigenvalues are not in descending order: {evalues.dat.data}"
@@ -722,10 +762,12 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_min = 0.2
         if variable:
-            metric.set_parameters({
-                "dm_plex_metric_h_min": Constant(h_min),
-                "dm_plex_metric_boundary_tag": boundary_tag,
-            })
+            metric.set_parameters(
+                {
+                    "dm_plex_metric_h_min": Constant(h_min),
+                    "dm_plex_metric_boundary_tag": boundary_tag,
+                }
+            )
         else:
             metric.set_parameters({"dm_plex_metric_h_min": h_min})
         # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)  # TODO
@@ -758,10 +800,12 @@ class TestEnforceSPD(MetricTestCase):
         metric = uniform_metric(mesh, a=1 / h**2)
         h_max = 0.05
         if variable:
-            metric.set_parameters({
-                "dm_plex_metric_h_max": Constant(h_max),
-                "dm_plex_metric_boundary_tag": boundary_tag,
-            })
+            metric.set_parameters(
+                {
+                    "dm_plex_metric_h_max": Constant(h_max),
+                    "dm_plex_metric_boundary_tag": boundary_tag,
+                }
+            )
         else:
             metric.set_parameters({"dm_plex_metric_h_max": h_max})
         # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)  # TODO
@@ -797,10 +841,12 @@ class TestEnforceSPD(MetricTestCase):
         metric.interpolate(as_matrix(M))
         a_max = 1.0
         if variable:
-            metric.set_parameters({
-                "dm_plex_metric_a_max": Constant(a_max),
-                "dm_plex_metric_boundary_tag": boundary_tag,
-            })
+            metric.set_parameters(
+                {
+                    "dm_plex_metric_a_max": Constant(a_max),
+                    "dm_plex_metric_boundary_tag": boundary_tag,
+                }
+            )
         else:
             metric.set_parameters({"dm_plex_metric_a_max": a_max})
         # metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)  # TODO

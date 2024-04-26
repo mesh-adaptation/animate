@@ -1,7 +1,0 @@
-black
-flake8
-parameterized
-pre-commit
-pytest
-pytest-xdist
-sympy

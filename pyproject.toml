@@ -1,11 +1,64 @@
-[tool.black]
+[build-system]
+requires = ["setuptools"]
+
+[project]
+name = "animate"
+version = "0.2"
+dependencies = [
+  "parameterized",
+  "pre-commit",
+  "pytest",
+  "pytest-xdist",
+  "ruff",
+  "sympy",
+]
+authors = [
+  {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
+  {name = "Davor Dundovic"},
+  {name = "Eleda Johnson"},
+  {name = "Stephan C. Kramer"},
+]
+maintainers = [
+  {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
+  {name = "Davor Dundovic"},
+  {name = "Eleda Johnson"},
+  {name = "Stephan C. Kramer"},
+]
+description = "Anisotropic mesh adaptation toolkit for Firedrake"
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+]
+
+[project.urls]
+Homepage = "https://mesh-adaptation.github.io"
+Documentation = "https://mesh-adaptation.github.io/animate/index.html"
+Repository = "https://github.com/mesh-adaptation/animate"
+
+[tool.setuptools]
+packages = ["animate"]
+
+[tool.ruff]
 line-length = 88
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-)/
-'''
+
+[tool.ruff.lint]
+select = [
+#  "B",  # flake8-bugbear  TODO: enable this  (#108)
+#  "C",  # mccabe complexity  TODO: enable this (#108)
+  "E", "W",  # Pycodestyle
+  "F",  # Pyflakes
+  "I",  # isort
+]
+ignore = [
+  "E501",  # line too long
+  "E226",  # missing whitespace around arithmetic operator
+  "E402",  # module level import not at top of file
+  "E741",  # ambiguous variable name
+  "F403",  # unable to detect undefined names
+  "F405",  # name may be undefined, or defined from star imports
+]
 
 [tool.pytest.ini_options]
 filterwarnings = [

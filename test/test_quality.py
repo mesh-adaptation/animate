@@ -1,8 +1,9 @@
-from test_setup import *
-from parameterized import parameterized
+import unittest
+
 import numpy as np
 import pytest
-import unittest
+from parameterized import parameterized
+from test_setup import *
 
 
 @pytest.fixture(params=[2, 3])
@@ -32,7 +33,7 @@ class TestQuality(unittest.TestCase):
         dim = mesh.topological_dimension()
         if name == "metric":
             P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-            M = interpolate(Identity(dim), P1_ten)
+            M = Function(P1_ten).interpolate(Identity(dim))
             kwargs["metric"] = M
         return QualityMeasure(mesh, **kwargs)(name)
 

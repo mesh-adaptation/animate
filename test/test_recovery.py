@@ -1,11 +1,12 @@
 """
 Test derivative recovery techniques.
 """
-from test_setup import *
-from sensors import bowl, mesh_for_sensors
-from parameterized import parameterized
+
 import unittest
 
+from parameterized import parameterized
+from sensors import bowl, mesh_for_sensors
+from test_setup import *
 
 # ---------------------------
 # standard tests for pytest
@@ -113,7 +114,7 @@ class TestRecoveryBowl(unittest.TestCase):
         mesh = approx.function_space().mesh()
         dim = mesh.topological_dimension()
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-        I = interpolate(Identity(dim), P1_ten)
+        I = Function(P1_ten).interpolate(Identity(dim))
 
         # Check that they agree
         cond = Constant(1.0)
@@ -140,7 +141,7 @@ class TestRecoveryBowl(unittest.TestCase):
         mesh = mesh_for_sensors(dim, 4)
         f = bowl(*mesh.coordinates)
         if method == "L2":
-            f = interpolate(f, FunctionSpace(mesh, "CG", 2))
+            f = Function(FunctionSpace(mesh, "CG", 2)).interpolate(f)
         metric = self.metric(mesh)
         metric.compute_hessian(f, method=method)
         self.assertLess(self.relative_error(metric), 1.0e-07)
@@ -148,7 +149,7 @@ class TestRecoveryBowl(unittest.TestCase):
     @parameterized.expand([[2], [3]])
     def test_interior_Clement_linear(self, dim):
         mesh = mesh_for_sensors(dim, 20)
-        f = interpolate(bowl(*mesh.coordinates), FunctionSpace(mesh, "CG", 1))
+        f = Function(FunctionSpace(mesh, "CG", 1)).interpolate(bowl(*mesh.coordinates))
         metric = self.metric(mesh)
         metric.compute_hessian(f, method="Clement")
         self.assertLess(self.relative_error(metric, ignore_boundary=True), 1.0e-05)
@@ -156,7 +157,7 @@ class TestRecoveryBowl(unittest.TestCase):
     @parameterized.expand([[2], [3]])
     def test_interior_Clement_quadratic(self, dim):
         mesh = mesh_for_sensors(dim, 20)
-        f = interpolate(bowl(*mesh.coordinates), FunctionSpace(mesh, "CG", 2))
+        f = Function(FunctionSpace(mesh, "CG", 1)).interpolate(bowl(*mesh.coordinates))
         metric = self.metric(mesh)
         metric.compute_hessian(f, method="Clement")
         self.assertLess(self.relative_error(metric, ignore_boundary=True), 1.0e-08)
