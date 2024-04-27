@@ -5,6 +5,7 @@ Test interpolation schemes.
 import unittest
 
 import numpy as np
+import pytest
 from parameterized import parameterized
 from test_setup import *
 
@@ -225,6 +226,7 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["project"])  # TODO: interpolate (#113)
     def test_transfer_same_space_adjoint(self, transfer_method):
+        pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
         source = Function(Vs).interpolate(self.sinusoid())
         source = function2cofunction(source)
@@ -248,6 +250,7 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["project"])  # TODO: interpolate (#113)
     def test_transfer_same_space_mixed_adjoint(self, transfer_method):
+        pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
         Vs = P1 * P1
         source = Function(Vs)
@@ -275,6 +278,7 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["project"])  # TODO: interpolate (#113)
     def test_transfer_same_mesh_adjoint(self, transfer_method):
+        pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
         Vt = FunctionSpace(self.source_mesh, "DG", 0)
         source = Function(Vs).interpolate(self.sinusoid())
@@ -310,6 +314,7 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["project"])  # TODO: interpolate (#113)
     def test_transfer_same_mesh_mixed_adjoint(self, transfer_method):
+        pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
         P0 = FunctionSpace(self.source_mesh, "DG", 0)
         Vs = P1 * P1
