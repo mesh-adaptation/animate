@@ -83,6 +83,9 @@ def interpolate(source, target_space, **kwargs):
 def project(source, target_space, **kwargs):
     """
     A wrapper for :func:`transfer` with ``transfer_method="interpolate"``.
+
+    :kwarg lumped: if `True`, mass lumping is applied to the mass matrix
+    :type lumped: :class:`bool`
     """
     return transfer(source, target_space, transfer_method="project", **kwargs)
 
@@ -148,12 +151,15 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
+    :kwarg lumped: if `True`, mass lumping is applied to the mass matrix (project only)
+    :type lumped: :class:`bool`
     :returns: the transferred Cofunction
     :rtype: :class:`firedrake.cofunction.Cofunction`
 
     Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
         :func:`firedrake.projection.project`.
     """
+    lumped = transfer_method == "project" and kwargs.pop("lumped", False)
 
     # Map to Functions to apply the adjoint transfer
     if not isinstance(target_b, firedrake.Function):
@@ -181,8 +187,9 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
             s_b.interpolate(t_b, **kwargs)
         elif transfer_method == "project":
             ksp = petsc4py.KSP().create()
-            ksp.setOperators(assemble_mass_matrix(t_b.function_space()))
-            mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i])
+            ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=lumped))
+            mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i], lumped=lumped)
+            # TODO: Check lumping has been applied the right way round here
             with t_b.dat.vec_ro as tb, s_b.dat.vec_wo as sb:
                 residual = tb.copy()
                 ksp.solveTranspose(tb, residual)
