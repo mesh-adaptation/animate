@@ -214,8 +214,7 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
         elif transfer_method == "project":
             ksp = petsc4py.KSP().create()
             ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=lumped))
-            mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i], lumped=lumped)
-            # TODO: Check lumping has been applied the right way round here
+            mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i])
             with t_b.dat.vec_ro as tb, s_b.dat.vec_wo as sb:
                 residual = tb.copy()
                 ksp.solveTranspose(tb, residual)

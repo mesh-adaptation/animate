@@ -244,14 +244,6 @@ def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):
     return norm(v, norm_type=norm_type, **kwargs)
 
 
-def _apply_lumping(matrix, source, target):
-    rhs = ffunc.Function(source).assign(1.0)
-    product = ffunc.Function(target)
-    with rhs.dat.vec_ro as b, product.dat.vec as x:
-        matrix.mult(b, x)
-        return matrix.createDiagonal(x)
-
-
 @PETSc.Log.EventDecorator()
 def assemble_mass_matrix(space, norm_type="L2", lumped=False):
     """
@@ -278,13 +270,17 @@ def assemble_mass_matrix(space, norm_type="L2", lumped=False):
     else:
         raise ValueError(f"Norm type '{norm_type}' not recognised.")
     mass_matrix = firedrake.assemble(lhs).petscmat
-    if lumped:
-        mass_matrix = _apply_lumping(mass_matrix, space, space)
-    return mass_matrix
+    if not lumped:
+        return mass_matrix
+    rhs = ffunc.Function(space).assign(1.0)
+    product = ffunc.Function(space)
+    with rhs.dat.vec_ro as b, product.dat.vec as x:
+        mass_matrix.mult(b, x)
+        return mass_matrix.createDiagonal(x)
 
 
 @PETSc.Log.EventDecorator()
-def assemble_mixed_mass_matrix(source, target, norm_type="L2", lumped=False):
+def assemble_mixed_mass_matrix(source, target, norm_type="L2"):
     """
     Assembled a mixed mass matrix associated with two finite element spaces and some
     norm.
@@ -295,17 +291,12 @@ def assemble_mixed_mass_matrix(source, target, norm_type="L2", lumped=False):
     :type target: :class:`firedrake.functionspaceimpl.functionspace`
     :kwarg norm_type: the type norm to build the mass matrix with
     :type norm_type: :class:`str`
-    :kwarg lumped: if `True`, mass lumping is applied
-    :type lumped: :class:`bool`
     :returns: the corresponding mass matrix
     :rtype: petsc4py.PETSc.Mat
     """
     if norm_type != "L2":
         raise NotImplementedError("Mixed matrices are only supported in the L2 norm.")
-    mixed_mass = fsup.assemble_mixed_mass_matrix(source, target)
-    if lumped:
-        mixed_mass = _apply_lumping(mixed_mass, source, target)
-    return mixed_mass
+    return fsup.assemble_mixed_mass_matrix(source, target)
 
 
 def cofunction2function(cofunc):
