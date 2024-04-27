@@ -337,3 +337,15 @@ class TestTransfer(unittest.TestCase):
         _supermesh_project(source, target, lumped=False)
         expected = Function(Vt).project(source)
         self.assertAlmostEqual(errornorm(target, expected), 0)
+        self.assertAlmostEqual(assemble(source * dx), assemble(target * dx))
+
+    @parameterized.expand([(True,), (False,)])
+    def test_mass_lumping(self, same_mesh, eps=1.0e-08):
+        Vs = FunctionSpace(self.source_mesh, "CG", 1)
+        target_mesh = self.source_mesh if same_mesh else self.target_mesh
+        Vt = FunctionSpace(target_mesh, "CG", 1)
+        source = Function(Vs).interpolate(SpatialCoordinate(self.source_mesh)[0])
+        target = project(source, Vt, lumped=True)
+        self.assertAlmostEqual(assemble(source * dx), assemble(target * dx))
+        self.assertLessEqual(target.dat.data.max(), source.dat.data.max() + eps)
+        self.assertGreaterEqual(target.dat.data.min(), source.dat.data.min() - eps)
