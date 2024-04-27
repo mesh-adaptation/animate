@@ -208,7 +208,9 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     # Apply adjoint transfer operator to each component
     for i, (t_b, s_b) in enumerate(zip(target_b_split, source_b_split)):
         if transfer_method == "interpolate":
-            s_b.interpolate(t_b, **kwargs)
+            raise NotImplementedError(
+                "Adjoint of interpolation operator not implemented."
+            )  # TODO (#113)
         elif transfer_method == "project":
             ksp = petsc4py.KSP().create()
             ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=lumped))
