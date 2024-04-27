@@ -11,7 +11,7 @@ from parameterized import parameterized
 from test_setup import *
 from test_setup import uniform_mesh
 
-from animate.utility import assemble_mass_matrix
+from animate.utility import assemble_mass_matrix, assemble_mixed_mass_matrix
 
 pointwise_norm_types = [["l1"], ["l2"], ["linf"]]
 integral_scalar_norm_types = [["L1"], ["L2"], ["L4"], ["H1"], ["HCurl"]]
@@ -65,14 +65,22 @@ class TestVTK(unittest.TestCase):
 
 class TestMassMatrix(unittest.TestCase):
     """
-    Unit tests for :func:`assemble_mass_matrix`.
+    Unit tests for :func:`~.assemble_mass_matrix` and
+    `func:`~.assemble_mixed_mass_matrix`.
     """
 
-    @parameterized.expand([["L2"], ["H1"]])
-    def test_tiny(self, norm_type):
+    @staticmethod
+    def assemble_mass_matrix(space, norm_type, mixed):
+        if mixed:
+            return assemble_mixed_mass_matrix(space, space, norm_type=norm_type)
+        else:
+            return assemble_mass_matrix(space, norm_type=norm_type)
+
+    @parameterized.expand([("L2", False), ("L2", True), ("H1", False)])
+    def test_tiny(self, norm_type, mixed):
         mesh = uniform_mesh(2, 1)
         V = FunctionSpace(mesh, "DG", 0)
-        M = assemble_mass_matrix(V, norm_type=norm_type)
+        M = self.assemble_mass_matrix(V, norm_type, mixed)
         expected = np.array([[0.5, 0], [0, 0.5]])
         got = M.convert("dense").getDenseArray()
         self.assertTrue(np.allclose(expected, got))
@@ -82,7 +90,14 @@ class TestMassMatrix(unittest.TestCase):
         V = FunctionSpace(mesh, "DG", 0)
         with self.assertRaises(ValueError) as cm:
             assemble_mass_matrix(V, norm_type="HDiv")
-        msg = "Norm type 'HDiv' not recognised."
+        self.assertEqual(str(cm.exception), "Norm type 'HDiv' not recognised.")
+
+    def test_norm_type_error_mixed(self):
+        mesh = uniform_mesh(2, 1)
+        V = FunctionSpace(mesh, "DG", 0)
+        with self.assertRaises(NotImplementedError) as cm:
+            assemble_mixed_mass_matrix(V, V, norm_type="HDiv")
+        msg = "Mixed matrices are only supported in the L2 norm."
         self.assertEqual(str(cm.exception), msg)
 
 

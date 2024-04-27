@@ -284,7 +284,7 @@ def assemble_mass_matrix(space, norm_type="L2", lumped=False):
 
 
 @PETSc.Log.EventDecorator()
-def assemble_mixed_mass_matrix(source, target, space="L2", lumped=False):
+def assemble_mixed_mass_matrix(source, target, norm_type="L2", lumped=False):
     """
     Assembled a mixed mass matrix associated with two finite element spaces and some
     norm.
@@ -300,7 +300,7 @@ def assemble_mixed_mass_matrix(source, target, space="L2", lumped=False):
     :returns: the corresponding mass matrix
     :rtype: petsc4py.PETSc.Mat
     """
-    if space != "L2":
+    if norm_type != "L2":
         raise NotImplementedError("Mixed matrices are only supported in the L2 norm.")
     mixed_mass = fsup.assemble_mixed_mass_matrix(source, target)
     if lumped:
