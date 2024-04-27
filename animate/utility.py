@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 import firedrake
 import firedrake.mesh as fmesh
+import firedrake.supermeshing as fsup
 import ufl
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
@@ -266,6 +267,27 @@ def assemble_mass_matrix(space, norm_type="L2"):
     else:
         raise ValueError(f"Norm type '{norm_type}' not recognised.")
     return firedrake.assemble(lhs).petscmat
+
+
+@PETSc.Log.EventDecorator()
+def assemble_mixed_mass_matrix(source, target, space="L2"):
+    """
+    Assembled a mixed mass matrix associated with two finite element spaces and some
+    norm.
+
+    :arg source: source finite element space
+    :type source: :class:`firedrake.functionspaceimpl.functionspace`
+    :arg target: target finite element space
+    :type target: :class:`firedrake.functionspaceimpl.functionspace`
+    :kwarg norm_type: the type norm to build the mass matrix with
+    :type norm_type: :class:`str`
+    :returns: the corresponding mass matrix
+    :rtype: petsc4py.PETSc.Mat
+    """
+    if space != "L2":
+        raise NotImplementedError("Mixed matrices are only supported in the L2 norm.")
+    mixed_mass = fsup.assemble_mixed_mass_matrix(source, target)
+    return mixed_mass
 
 
 def cofunction2function(cofunc):
