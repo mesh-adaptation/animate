@@ -5,6 +5,7 @@ Utility functions and classes for metric-based mesh adaptation.
 from collections import OrderedDict
 
 import firedrake
+import firedrake.function as ffunc
 import firedrake.mesh as fmesh
 import firedrake.supermeshing as fsup
 import ufl
@@ -44,7 +45,7 @@ def Mesh(arg, **kwargs):
 
     # Facet area
     boundary_markers = sorted(mesh.exterior_facets.unique_markers)
-    one = firedrake.Function(P1).assign(1.0)
+    one = ffunc.Function(P1).assign(1.0)
     bnd_len = OrderedDict(
         {i: firedrake.assemble(one * ufl.ds(int(i))) for i in boundary_markers}
     )
@@ -203,16 +204,16 @@ def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):
         u = cofunction2function(u)
     if isinstance(uh, firedrake.Cofunction):
         uh = cofunction2function(uh)
-    if not isinstance(uh, firedrake.Function):
+    if not isinstance(uh, ffunc.Function):
         raise TypeError(f"uh should be a Function, is a '{type(uh)}'.")
     if norm_type[0] == "l":
-        if not isinstance(u, firedrake.Function):
+        if not isinstance(u, ffunc.Function):
             raise TypeError(f"u should be a Function, is a '{type(u)}'.")
 
     if len(u.ufl_shape) != len(uh.ufl_shape):
         raise RuntimeError("Mismatching rank between u and uh.")
 
-    if isinstance(u, firedrake.Function):
+    if isinstance(u, ffunc.Function):
         degree_u = u.function_space().ufl_element().degree()
         degree_uh = uh.function_space().ufl_element().degree()
         if degree_uh > degree_u:
@@ -243,8 +244,16 @@ def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):
     return norm(v, norm_type=norm_type, **kwargs)
 
 
+def _apply_lumping(matrix, source, target):
+    rhs = ffunc.Function(source).assign(1.0)
+    product = ffunc.Function(target)
+    with rhs.dat.vec_ro as b, product.dat.vec as x:
+        matrix.mult(b, x)
+        return matrix.createDiagonal(x)
+
+
 @PETSc.Log.EventDecorator()
-def assemble_mass_matrix(space, norm_type="L2"):
+def assemble_mass_matrix(space, norm_type="L2", lumped=False):
     """
     Assemble a mass matrix associated with some finite element space and norm.
 
@@ -252,6 +261,8 @@ def assemble_mass_matrix(space, norm_type="L2"):
     :type space: :class:`firedrake.functionspaceimpl.FunctionSpace`
     :kwarg norm_type: the type norm to build the mass matrix with
     :type norm_type: :class:`str`
+    :kwarg lumped: if `True`, mass lumping is applied
+    :type lumped: :class:`bool`
     :returns: the corresponding mass matrix
     :rtype: petsc4py.PETSc.Mat
     """
@@ -266,11 +277,14 @@ def assemble_mass_matrix(space, norm_type="L2"):
         )
     else:
         raise ValueError(f"Norm type '{norm_type}' not recognised.")
-    return firedrake.assemble(lhs).petscmat
+    mass_matrix = firedrake.assemble(lhs).petscmat
+    if lumped:
+        mass_matrix = _apply_lumping(mass_matrix, space, space)
+    return mass_matrix
 
 
 @PETSc.Log.EventDecorator()
-def assemble_mixed_mass_matrix(source, target, space="L2"):
+def assemble_mixed_mass_matrix(source, target, space="L2", lumped=False):
     """
     Assembled a mixed mass matrix associated with two finite element spaces and some
     norm.
@@ -281,12 +295,16 @@ def assemble_mixed_mass_matrix(source, target, space="L2"):
     :type target: :class:`firedrake.functionspaceimpl.functionspace`
     :kwarg norm_type: the type norm to build the mass matrix with
     :type norm_type: :class:`str`
+    :kwarg lumped: if `True`, mass lumping is applied
+    :type lumped: :class:`bool`
     :returns: the corresponding mass matrix
     :rtype: petsc4py.PETSc.Mat
     """
     if space != "L2":
         raise NotImplementedError("Mixed matrices are only supported in the L2 norm.")
     mixed_mass = fsup.assemble_mixed_mass_matrix(source, target)
+    if lumped:
+        mixed_mass = _apply_lumping(mixed_mass, source, target)
     return mixed_mass
 
 
@@ -297,7 +315,7 @@ def cofunction2function(cofunc):
     :returns: a function with the same underyling data
     :rtype: :class:`firedrake.function.Function`
     """
-    func = firedrake.Function(cofunc.function_space().dual())
+    func = ffunc.Function(cofunc.function_space().dual())
     if isinstance(func.dat.data_with_halos, tuple):
         for i, arr in enumerate(func.dat.data_with_halos):
             arr[:] = cofunc.dat.data_with_halos[i]
