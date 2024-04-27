@@ -90,6 +90,21 @@ def project(source, target_space, **kwargs):
     return transfer(source, target_space, transfer_method="project", **kwargs)
 
 
+def _supermesh_project(source, target, lumped=False):
+    Vs = source.function_space()
+    Vt = target.function_space()
+    element_t = Vt.ufl_element()
+    if lumped and (element_t.family(), element_t.degree()) != ("Lagrange", 1):
+        raise ValueError("Mass lumping is not recommended for spaces other than P1.")
+    mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
+    ksp = petsc4py.KSP().create()
+    ksp.setOperators(assemble_mass_matrix(Vt, lumped=lumped))
+    with source.dat.vec_ro as s, target.dat.vec_wo as t:
+        rhs = t.copy()
+        mixed_mass.mult(s, rhs)
+        ksp.solve(rhs, t)
+
+
 @PETSc.Log.EventDecorator()
 def _transfer_forward(source, target, transfer_method, **kwargs):
     """
@@ -105,12 +120,15 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
+    :kwarg lumped: if `True`, mass lumping is applied to the mass matrix (project only)
+    :type lumped: :class:`bool`
     :returns: the transferred Function
     :rtype: :class:`firedrake.function.Function`
 
     Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
         :func:`firedrake.projection.project`.
     """
+    lumped = transfer_method == "project" and kwargs.pop("lumped", False)
     Vs = source.function_space()
     Vt = target.function_space()
     _validate_matching_spaces(Vs, Vt)
@@ -120,7 +138,10 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
             if transfer_method == "interpolate":
                 t.interpolate(s, **kwargs)
             elif transfer_method == "project":
-                t.project(s, **kwargs)
+                if lumped:
+                    _supermesh_project(s, t, lumped=True)
+                else:
+                    t.project(s, **kwargs)
             else:
                 raise ValueError(
                     f"Invalid transfer method: {transfer_method}."
@@ -130,7 +151,10 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
         if transfer_method == "interpolate":
             target.interpolate(source, **kwargs)
         elif transfer_method == "project":
-            target.project(source, **kwargs)
+            if lumped:
+                _supermesh_project(source, target, lumped=True)
+            else:
+                target.project(source, **kwargs)
         else:
             raise ValueError(
                 f"Invalid transfer method: {transfer_method}."

@@ -8,7 +8,11 @@ import numpy as np
 from parameterized import parameterized
 from test_setup import *
 
-from animate.interpolation import _transfer_adjoint, _transfer_forward
+from animate.interpolation import (
+    _supermesh_project,
+    _transfer_adjoint,
+    _transfer_forward,
+)
 from animate.utility import function2cofunction
 
 
@@ -321,3 +325,15 @@ class TestTransfer(unittest.TestCase):
         e1.project(s1)
         e2.project(s2)
         self.assertAlmostEqual(errornorm(expected, target), 0)
+
+    @parameterized.expand([(True, True), (True, False), (False, True), (False, False)])
+    def test_supermesh_project(self, same_mesh, same_degree):
+        Vs = FunctionSpace(self.source_mesh, "CG", 1)
+        target_mesh = self.source_mesh if same_mesh else self.target_mesh
+        target_degree = 1 if same_degree else 2
+        Vt = FunctionSpace(target_mesh, "CG", target_degree)
+        source = Function(Vs).interpolate(SpatialCoordinate(self.source_mesh)[0])
+        target = Function(Vt)
+        _supermesh_project(source, target, lumped=False)
+        expected = Function(Vt).project(source)
+        self.assertAlmostEqual(errornorm(target, expected), 0)
