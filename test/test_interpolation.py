@@ -130,8 +130,8 @@ class TestTransfer(unittest.TestCase):
     """
 
     def setUp(self):
-        self.source_mesh = UnitSquareMesh(1, 1, diagonal="left")
-        self.target_mesh = UnitSquareMesh(1, 1, diagonal="right")
+        self.source_mesh = UnitSquareMesh(2, 2, diagonal="left")
+        self.target_mesh = UnitSquareMesh(2, 3, diagonal="right")
 
     def sinusoid(self, source=True):
         x, y = SpatialCoordinate(self.source_mesh if source else self.target_mesh)
