@@ -215,6 +215,15 @@ class TestTransfer(unittest.TestCase):
         msg = "Inconsistent numbers of components in source and target spaces: 3 vs. 2."
         self.assertEqual(str(cm.exception), msg)
 
+    def test_lumping_space_error(self):
+        P0 = FunctionSpace(self.source_mesh, "DG", 0)
+        source = Function(P0)
+        target = Function(P0)
+        with self.assertRaises(ValueError) as cm:
+            _supermesh_project(source, target, lumped=True)
+        msg = "Mass lumping is not recommended for spaces other than P1."
+        self.assertEqual(str(cm.exception), msg)
+
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space(self, transfer_method):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
