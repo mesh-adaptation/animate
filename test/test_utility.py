@@ -70,19 +70,21 @@ class TestMassMatrix(unittest.TestCase):
     """
 
     @staticmethod
-    def assemble_mass_matrix(space, norm_type, mixed):
+    def assemble_mass_matrix(space, norm_type, mixed, lumped=False):
         if mixed:
-            return assemble_mixed_mass_matrix(space, space, norm_type=norm_type)
+            return assemble_mixed_mass_matrix(
+                space, space, norm_type=norm_type, lumped=lumped
+            )
         else:
-            return assemble_mass_matrix(space, norm_type=norm_type)
+            return assemble_mass_matrix(space, norm_type=norm_type, lumped=lumped)
 
     @parameterized.expand([("L2", False), ("L2", True), ("H1", False)])
     def test_tiny(self, norm_type, mixed):
         mesh = uniform_mesh(2, 1)
         V = FunctionSpace(mesh, "DG", 0)
-        M = self.assemble_mass_matrix(V, norm_type, mixed)
+        matrix = self.assemble_mass_matrix(V, norm_type, mixed)
         expected = np.array([[0.5, 0], [0, 0.5]])
-        got = M.convert("dense").getDenseArray()
+        got = matrix.convert("dense").getDenseArray()
         self.assertTrue(np.allclose(expected, got))
 
     def test_norm_type_error(self):
@@ -99,6 +101,16 @@ class TestMassMatrix(unittest.TestCase):
             assemble_mixed_mass_matrix(V, V, norm_type="HDiv")
         msg = "Mixed matrices are only supported in the L2 norm."
         self.assertEqual(str(cm.exception), msg)
+
+    @parameterized.expand([(True,), (False,)])
+    def test_lumping(self, mixed):
+        mesh = UnitTriangleMesh()
+        fs = FunctionSpace(mesh, "CG", 1)
+        matrix = self.assemble_mass_matrix(fs, "L2", mixed, lumped=True)
+        self.assertEqual(matrix.type, "diagonal")
+        expected = np.eye(3) / 6
+        got = matrix.convert("dense").getDenseArray()
+        self.assertTrue(np.allclose(expected, got))
 
 
 class TestNorm(unittest.TestCase):
