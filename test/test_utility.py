@@ -11,7 +11,7 @@ from parameterized import parameterized
 from test_setup import *
 from test_setup import uniform_mesh
 
-from animate.utility import assemble_mass_matrix, assemble_mixed_mass_matrix
+from animate.utility import assemble_mass_matrix
 
 pointwise_norm_types = [["l1"], ["l2"], ["linf"]]
 integral_scalar_norm_types = [["L1"], ["L2"], ["L4"], ["H1"], ["HCurl"]]
@@ -65,22 +65,14 @@ class TestVTK(unittest.TestCase):
 
 class TestMassMatrix(unittest.TestCase):
     """
-    Unit tests for :func:`~.assemble_mass_matrix` and
-    `func:`~.assemble_mixed_mass_matrix`.
+    Unit tests for :func:`~.assemble_mass_matrix`.
     """
 
-    @staticmethod
-    def assemble_mass_matrix(space, mixed, **kwargs):
-        if mixed:
-            return assemble_mixed_mass_matrix(space, space, **kwargs)
-        else:
-            return assemble_mass_matrix(space, **kwargs)
-
-    @parameterized.expand([("L2", False), ("L2", True), ("H1", False)])
-    def test_tiny(self, norm_type, mixed):
+    @parameterized.expand([("L2",), ("H1",)])
+    def test_tiny(self, norm_type):
         mesh = uniform_mesh(2, 1)
         V = FunctionSpace(mesh, "DG", 0)
-        matrix = self.assemble_mass_matrix(V, mixed, norm_type=norm_type)
+        matrix = assemble_mass_matrix(V, norm_type=norm_type)
         expected = np.array([[0.5, 0], [0, 0.5]])
         got = matrix.convert("dense").getDenseArray()
         self.assertTrue(np.allclose(expected, got))
@@ -92,18 +84,10 @@ class TestMassMatrix(unittest.TestCase):
             assemble_mass_matrix(V, norm_type="HDiv")
         self.assertEqual(str(cm.exception), "Norm type 'HDiv' not recognised.")
 
-    def test_norm_type_error_mixed(self):
-        mesh = uniform_mesh(2, 1)
-        V = FunctionSpace(mesh, "DG", 0)
-        with self.assertRaises(NotImplementedError) as cm:
-            assemble_mixed_mass_matrix(V, V, norm_type="HDiv")
-        msg = "Mixed matrices are only supported in the L2 norm."
-        self.assertEqual(str(cm.exception), msg)
-
     def test_lumping(self):
         mesh = UnitTriangleMesh()
         fs = FunctionSpace(mesh, "CG", 1)
-        matrix = self.assemble_mass_matrix(fs, False, norm_type="L2", lumped=True)
+        matrix = assemble_mass_matrix(fs, norm_type="L2", lumped=True)
         self.assertEqual(matrix.type, "diagonal")
         expected = np.eye(3) / 6
         got = matrix.convert("dense").getDenseArray()

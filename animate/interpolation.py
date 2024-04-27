@@ -7,13 +7,13 @@ import numpy as np
 import ufl
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
 from firedrake.petsc import PETSc
+from firedrake.supermeshing import assemble_mixed_mass_matrix
 from petsc4py import PETSc as petsc4py
 from pyop2 import op2
 
 from animate.quality import QualityMeasure
 from animate.utility import (
     assemble_mass_matrix,
-    assemble_mixed_mass_matrix,
     cofunction2function,
     function2cofunction,
 )
