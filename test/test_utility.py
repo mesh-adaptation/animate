@@ -7,7 +7,7 @@ from parameterized import parameterized
 from test_setup import *
 from test_setup import uniform_mesh
 
-from animate.utility import assemble_mass_matrix, get_checkpoint_dir
+from animate.utility import assemble_mass_matrix
 
 pointwise_norm_types = [["l1"], ["l2"], ["linf"]]
 integral_scalar_norm_types = [["L1"], ["L2"], ["L4"], ["H1"], ["HCurl"]]
@@ -236,16 +236,6 @@ class TestErrorNorm(unittest.TestCase):
         condition = conditional(And(self.x < 0.5, self.y < 0.5), 1.0, 0.0)
         val = errornorm(self.f, self.g, norm_type=norm_type, condition=condition)
         self.assertAlmostEqual(val, expected)
-
-
-class TestGetCheckpointDir(unittest.TestCase):
-    """
-    Unit tests for :func:`get_checkpoint_dir`.
-    """
-
-    def test_exists(self):
-        checkpoint_dir = get_checkpoint_dir()
-        self.assertTrue(os.path.exists(checkpoint_dir))
 
 
 if __name__ == "__main__":

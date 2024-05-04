@@ -2,7 +2,6 @@
 Utility functions and classes for metric-based mesh adaptation.
 """
 
-import os
 from collections import OrderedDict
 
 import firedrake
@@ -11,7 +10,7 @@ import ufl
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
 
-__all__ = ["Mesh", "VTKFile", "norm", "errornorm", "get_checkpoint_dir"]
+__all__ = ["Mesh", "VTKFile", "norm", "errornorm"]
 
 
 @PETSc.Log.EventDecorator()
@@ -299,20 +298,3 @@ def function2cofunction(func):
     else:
         cofunc.dat.data_with_halos[:] = func.dat.data_with_halos
     return cofunc
-
-
-def get_checkpoint_dir():
-    """
-    Retrieve the path to Animate's checkpoint directory.
-    """
-    if os.environ.get("ANIMATE_CHECKPOINT_DIR"):
-        checkpoint_dir = os.environ["ANIMATE_CHECKPOINT_DIR"]
-    else:
-        import animate
-
-        assert os.path.basename(animate.__file__) == "__init__.py"
-        animate_base_dir = os.path.dirname(animate.__file__)
-        checkpoint_dir = os.path.join(animate_base_dir, ".checkpoints")
-    if not os.path.exists(checkpoint_dir):
-        os.makedirs(checkpoint_dir, exist_ok=True)
-    return checkpoint_dir
