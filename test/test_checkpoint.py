@@ -1,10 +1,11 @@
 import unittest
+from shutil import rmtree
 
 import h5py
 import numpy as np
 from test_setup import *
 
-from animate.checkpointing import _fix_checkpoint_filename
+from animate.checkpointing import get_checkpoint_dir
 
 
 class TestCheckpointing(unittest.TestCase):
@@ -15,53 +16,58 @@ class TestCheckpointing(unittest.TestCase):
     def setUp(self):
         self.mesh = uniform_mesh(2, 1)
         self.metric = RiemannianMetric(TensorFunctionSpace(self.mesh, "CG", 1))
+        self.checkpoint_dir = get_checkpoint_dir()
 
-    def test_filepath_error(self):
-        with self.assertRaises(ValueError) as cm:
-            _fix_checkpoint_filename("path/to/file")
-        error_message = str(cm.exception)
-        msg = "Provide a filename, not a filepath. Checkpoints will be stored in '"
-        self.assertTrue(error_message.startswith(msg))
-        self.assertTrue(get_checkpoint_dir() in error_message)
+    def test_exists(self):
+        checkpoint_dir = get_checkpoint_dir()
+        self.assertTrue(os.path.exists(checkpoint_dir))
 
-    def test_extension_error(self):
-        with self.assertRaises(ValueError) as cm:
-            _fix_checkpoint_filename("checkpoint.wrong")
-        msg = "File extension '.wrong' not recognised. Use '.h5'."
-        self.assertEqual(str(cm.exception), msg)
+    # def test_filepath_error(self):
+    #     with self.assertRaises(ValueError) as cm:
+    #         _fix_checkpoint_filename("path/to/file")
+    #     error_message = str(cm.exception)
+    #     msg = "Provide a filename, not a filepath. Checkpoints will be stored in '"
+    #     self.assertTrue(error_message.startswith(msg))
+    #     self.assertTrue(get_checkpoint_dir() in error_message)
+
+    # def test_extension_error(self):
+    #     with self.assertRaises(ValueError) as cm:
+    #         _fix_checkpoint_filename("checkpoint.wrong")
+    #     msg = "File extension '.wrong' not recognised. Use '.h5'."
+    #     self.assertEqual(str(cm.exception), msg)
 
     def test_file_created(self):
-        filename = "test_file_created"
-        fname = _fix_checkpoint_filename(filename)
-        self.assertTrue(fname.endswith(".h5"))
-        self.assertFalse(os.path.exists(fname))
-        save_checkpoint(filename, self.metric)
-        self.assertTrue(os.path.exists(fname))
-        os.remove(fname)
-        self.assertFalse(os.path.exists(fname))
+        filename = "test_file_created.h5"
+        chk_dir = get_checkpoint_dir()
+        fpath = os.path.join(chk_dir, filename)
+        self.assertFalse(os.path.exists(fpath))
+        save_checkpoint(fpath, self.metric)
+        self.assertTrue(os.path.exists(fpath))
+        rmtree(chk_dir)
+        self.assertFalse(os.path.exists(chk_dir))
 
-    def test_save(self, filename="test_save", metric=None):
-        fname = _fix_checkpoint_filename(filename)
-        self.assertFalse(os.path.exists(fname))
+    def test_save(self, filename="test_save.h5", metric=None):
+        fpath = os.path.join(self.checkpoint_dir, filename)
+        self.assertFalse(os.path.exists(fpath))
         metric = metric or self.metric
-        save_checkpoint(filename, metric)
-        self.assertTrue(os.path.exists(fname))
+        save_checkpoint(fpath, metric)
+        self.assertTrue(os.path.exists(fpath))
         mesh_name = metric._mesh.name
         topology_name = firedrake.mesh._generate_default_mesh_topology_name(mesh_name)
-        with h5py.File(fname, "r") as h5:
+        with h5py.File(fpath, "r") as h5:
             self.assertTrue("topologies" in h5)
             self.assertTrue(topology_name in h5["topologies"].keys())
-        if filename == "test_save":
-            os.remove(fname)
-            self.assertFalse(os.path.exists(fname))
+        if filename == "test_save.h5":
+            os.remove(fpath)
+            self.assertFalse(os.path.exists(fpath))
 
-    def test_load(self, filename="test_load", metric=None):
-        fname = _fix_checkpoint_filename(filename)
+    def test_load(self, filename="test_load.h5", metric=None):
+        fpath = os.path.join(self.checkpoint_dir, filename)
         self.test_save(filename=filename, metric=metric)
         metric = metric or self.metric
-        self.loaded_metric = load_checkpoint(filename, metric._mesh.name, metric.name())
-        os.remove(fname)
-        self.assertFalse(os.path.exists(fname))
+        self.loaded_metric = load_checkpoint(fpath, metric._mesh.name, metric.name())
+        os.remove(fpath)
+        self.assertFalse(os.path.exists(fpath))
         self.assertTrue(np.allclose(self.metric.dat.data, self.loaded_metric.dat.data))
 
     def test_load_custom_mesh_name(self):
