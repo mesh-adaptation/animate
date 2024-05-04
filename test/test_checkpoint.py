@@ -70,6 +70,13 @@ class TestCheckpointing(unittest.TestCase):
         self.assertFalse(os.path.exists(fpath))
         self.assertTrue(np.allclose(self.metric.dat.data, self.loaded_metric.dat.data))
 
+    def test_load_notexist_error(self):
+        fpath = os.path.join(self.checkpoint_dir, "nonexistant.h5")
+        with self.assertRaises(Exception) as cm:
+            load_checkpoint(fpath, "mesh", "metric")
+        msg = f"Metric file does not exist! Path: {fpath}."
+        self.assertEqual(str(cm.exception), msg)
+
     def test_load_custom_mesh_name(self):
         custom_mesh_name = "custom_mesh_name"
         custom_mesh = uniform_mesh(2, 1, name=custom_mesh_name)
