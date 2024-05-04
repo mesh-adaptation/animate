@@ -22,20 +22,6 @@ class TestCheckpointing(unittest.TestCase):
         checkpoint_dir = get_checkpoint_dir()
         self.assertTrue(os.path.exists(checkpoint_dir))
 
-    # def test_filepath_error(self):
-    #     with self.assertRaises(ValueError) as cm:
-    #         _fix_checkpoint_filename("path/to/file")
-    #     error_message = str(cm.exception)
-    #     msg = "Provide a filename, not a filepath. Checkpoints will be stored in '"
-    #     self.assertTrue(error_message.startswith(msg))
-    #     self.assertTrue(get_checkpoint_dir() in error_message)
-
-    # def test_extension_error(self):
-    #     with self.assertRaises(ValueError) as cm:
-    #         _fix_checkpoint_filename("checkpoint.wrong")
-    #     msg = "File extension '.wrong' not recognised. Use '.h5'."
-    #     self.assertEqual(str(cm.exception), msg)
-
     def test_file_created(self):
         filename = "test_file_created.h5"
         chk_dir = get_checkpoint_dir()
