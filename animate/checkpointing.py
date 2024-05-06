@@ -21,6 +21,8 @@ def get_checkpoint_dir():
         checkpoint_dir = os.path.join(animate_base_dir, ".checkpoints")
     comm = firedrake.COMM_WORLD
     if comm.rank == 0:
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
         tmpdir = mkdtemp(prefix="animate-checkpoint", dir=checkpoint_dir)
         comm.bcast(tmpdir, root=0)
     else:
