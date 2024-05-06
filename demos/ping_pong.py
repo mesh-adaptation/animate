@@ -187,21 +187,55 @@ plt.savefig("ping_pong-quantities_lumped.jpg")
 # Great! The lumped projection approach is demonstrated to conserve mass *and* not
 # introduce new extrema. However, we can already see that there is a price to pay: the
 # minimum values increase significantly and the maximum values decrease significantly.
-# To check that the interpolants still resemble the sensor function after 100
-# iterations, we plot the three final fields. ::
+# To fix this issue, we apply a post-processing step to ensure that the projection has
+# minimal numerical diffusion. (See :cite:`FPP+:2009` for details.) In Animate, this is
+# done by setting the `minimal_diffusion` option to `True`. ::
 
-fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
+
+def operator(f, V):
+    return project(f, V, lumped=True, minimally_diffusive=True)
+
+
+quantities["integral"]["mindiff"] = [initial_integral]
+quantities["minimum"]["mindiff"] = [initial_min]
+quantities["maximum"]["mindiff"] = [initial_max]
+f_mindiff = Function(V_A).assign(sensor)
+for i in range(niter):
+    f_mindiff = operator(operator(f_mindiff, V_B), V_A)
+    quantities["integral"]["mindiff"].append(assemble(f_mindiff * dx))
+    quantities["minimum"]["mindiff"].append(f_mindiff.vector().gather().min())
+    quantities["maximum"]["mindiff"].append(f_mindiff.vector().gather().max())
+
+fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+for i, (key, subdict) in enumerate(quantities.items()):
+    axes[i].plot(subdict["interpolate"], label="Interpolate")
+    axes[i].plot(subdict["project"], label="Project")
+    axes[i].plot(subdict["lumped"], label="Lumped project")
+    axes[i].plot(subdict["mindiff"], label="Minimally diffusive project")
+    axes[i].set_xlabel("Iteration")
+    axes[i].set_ylabel(key.capitalize())
+    axes[i].grid(True)
+axes[1].legend()
+plt.savefig("ping_pong-quantities_mindiff.jpg")
+
+
+# To check that the interpolants still resemble the sensor function after 100
+# iterations, we plot the four final fields. ::
+
+fig, axes = plt.subplots(ncols=3, nrows=2, figsize=(10, 10))
 colourbars = []
 colourbars.append(fig.colorbar(tricontourf(sensor, axes=axes[0][0])))
 axes[0][0].set_title("Source function")
 colourbars.append(fig.colorbar(tricontourf(f_interp, axes=axes[0][1])))
 axes[0][1].set_title("Interpolate")
-colourbars.append(fig.colorbar(tricontourf(f_proj, axes=axes[1][0])))
-axes[1][0].set_title("Project")
+colourbars.append(fig.colorbar(tricontourf(f_proj, axes=axes[0][2])))
+axes[0][2].set_title("Project")
 colourbars.append(fig.colorbar(tricontourf(f_lump, axes=axes[1][1])))
 axes[1][1].set_title("Lumped")
+colourbars.append(fig.colorbar(tricontourf(f_mindiff, axes=axes[1][2])))
+axes[1][2].set_title("Minimally diffusive")
 for i in range(2):
-    for j in range(2):
+    for j in range(3):
         axes[i][j].axis(False)
         axes[i][j].set_aspect(1)
 for cbar in colourbars:
@@ -215,17 +249,20 @@ plt.savefig("ping_pong-final.jpg")
 # Whilst the first two approaches clearly resemble the input field, the lumped version
 # is a poor representation. As such, we find that, whilst the conservative projection
 # with lumping allows for an interpolation operator with attractive properties, we
-# shouldn't expect it to give smaller errors. To demonstrate this point, we print the
-# :math:`L^2` errors for each method. ::
+# shouldn't expect it to give smaller errors. With an additional post-processing step,
+# (albeit a computationally costly one), we arrive at a more satsfying result. To
+# demonstrate this, we print the :math:`L^2` errors for each method. ::
 
-print(f"Interpolate:    {errornorm(sensor, f_interp):.4e}")
-print(f"Project:        {errornorm(sensor, f_proj):.4e}")
-print(f"Lumped project: {errornorm(sensor, f_lump):.4e}")
+print(f"Interpolate:                 {errornorm(sensor, f_interp):.4e}")
+print(f"Project:                     {errornorm(sensor, f_proj):.4e}")
+print(f"Lumped project:              {errornorm(sensor, f_lump):.4e}")
+print(f"Minimally diffusive project: {errornorm(sensor, f_mindiff):.4e}")
 
 # ..code-block:: console
 #
-#   Interpolate:    1.7232e-02
-#   Project:        4.2817e-03
-#   Lumped project: 2.7868e-01
-
+#   Interpolate:                 1.7232e-02
+#   Project:                     4.2817e-03
+#   Lumped project:              2.7868e-01
+#   Minimally diffusive project: 1.2731e-01
+#
 # This demo can also be accessed as a `Python script <ping_pong.py>`__.

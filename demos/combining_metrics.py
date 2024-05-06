@@ -67,10 +67,10 @@ triplot(mesh2, axes=axes[1])
 axes[1].set_aspect("equal")
 axes[1].set_title("Mesh based on metric2")
 fig.show()
-fig.savefig("combining_two_metrics.jpg")
+fig.savefig("combining_metrics-inputs.jpg")
 
 #
-# .. figure:: combining_two_metrics.jpg
+# .. figure:: combining_metrics-inputs.jpg
 #    :figwidth: 90%
 #    :align: center
 #
@@ -88,10 +88,10 @@ triplot(mesh_intersected, axes=axes)
 axes.set_aspect("equal")
 axes.set_title("Mesh based on intersected metric")
 fig.show()
-fig.savefig("combining_intersection.jpg")
+fig.savefig("combining_metrics-intersection.jpg")
 
 #
-# .. figure:: combining_intersection.jpg
+# .. figure:: combining_metrics-intersection.jpg
 #    :figwidth: 90%
 #    :align: center
 #
@@ -112,12 +112,14 @@ triplot(mesh_averaged, axes=axes)
 axes.set_aspect("equal")
 axes.set_title("Mesh based on averaged metric")
 fig.show()
-fig.savefig("combining_averaging.jpg")
+fig.savefig("combining_metrics-averaging.jpg")
 
 #
-# .. figure:: combining_averaging.jpg
+# .. figure:: combining_metrics-averaging.jpg
 #    :figwidth: 90%
 #    :align: center
 #
 # the resolution in, e.g., the region :math:`x<0.5, y<0.3` is now based on an
 # average of :math:`hm=0.02` and :math:`hc=0.1`, i.e. an edge length of 0.06.
+#
+# This demo can also be accessed as a `Python script <combining_metrics.py>`__.
