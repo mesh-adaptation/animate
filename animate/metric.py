@@ -102,7 +102,7 @@ class RiemannianMetric(ffunc.Function):
         # Adjust the section
         entity_dofs = np.zeros(tdim + 1, dtype=np.int32)
         entity_dofs[0] = tdim**2
-        plex.setSection(mesh.create_section(entity_dofs))
+        plex.setSection(mesh.create_section(entity_dofs)[0])
 
         # Process spatially variable metric parameters
         self._variable_parameters = {
@@ -263,7 +263,7 @@ class RiemannianMetric(ffunc.Function):
         """
         entity_dofs = np.zeros(self._tdim + 1, dtype=np.int32)
         entity_dofs[0] = self._mesh.geometric_dimension()
-        coord_section = self._mesh.create_section(entity_dofs)
+        coord_section = self._mesh.create_section(entity_dofs)[0]
         # NOTE: section doesn't have any fields, but PETSc assumes it to have one
         coord_dm = self._plex.getCoordinateDM()
         coord_dm.setSection(coord_section)

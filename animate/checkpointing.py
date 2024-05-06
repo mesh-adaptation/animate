@@ -1,56 +1,55 @@
 import os
+from tempfile import mkdtemp
 
 import firedrake
 import firedrake.checkpointing as fchk
 import firedrake.function as ffunc
 
 from .metric import RiemannianMetric
-from .utility import get_checkpoint_dir
 
-__all__ = ["load_checkpoint", "save_checkpoint"]
+__all__ = ["get_checkpoint_dir", "load_checkpoint", "save_checkpoint"]
 
 
-def _fix_checkpoint_filename(filename):
+def get_checkpoint_dir():
     """
-    Convert a checkpoint filename to absolute form.
-
-    :arg filename: the filename without its path
-    :type filename: :class:`str`
-    :returns: the absolute filename
-    :rtype: :class:`str`
+    Make a temporary directory for checkpointing and return its path.
     """
-    if "/" in filename:
-        raise ValueError(
-            "Provide a filename, not a filepath. Checkpoints will be stored in"
-            f" '{get_checkpoint_dir()}'."
-        )
-    name, ext = os.path.splitext(filename)
-    ext = ext or ".h5"
-    if ext != ".h5":
-        raise ValueError(f"File extension '{ext}' not recognised. Use '.h5'.")
-    return os.path.join(get_checkpoint_dir(), name + ext)
+    if os.environ.get("ANIMATE_CHECKPOINT_DIR"):
+        checkpoint_dir = os.environ["ANIMATE_CHECKPOINT_DIR"]
+    else:
+        animate_base_dir = os.path.dirname(os.path.realpath(__file__))
+        checkpoint_dir = os.path.join(animate_base_dir, ".checkpoints")
+    comm = firedrake.COMM_WORLD
+    if comm.rank == 0:
+        tmpdir = mkdtemp(prefix="animate-checkpoint", dir=checkpoint_dir)
+        comm.bcast(tmpdir, root=0)
+    else:
+        tmpdir = comm.bcast(None, root=0)
+    comm.barrier()
+    return tmpdir
 
 
-def load_checkpoint(filename, mesh_name, metric_name, comm=firedrake.COMM_WORLD):
+def load_checkpoint(filepath, mesh_name, metric_name, comm=firedrake.COMM_WORLD):
     """
     Load a metric from a :class:`~.CheckpointFile`.
 
     Note that the checkpoint will have to be stored within Animate's ``.checkpoints``
     subdirectory.
 
-    :arg filename: the filename of the checkpoint
-    :type filename: :class:`str`
-    :arg metric_name: the name used to store the metric
+    :arg filepath: the path to the checkpoint file
+    :type filepath: :class:`str`
+    :arg mesh_name: the name under which the mesh is saved in the checkpoint file
+    :type mesh_name: :class:`str`
+    :arg metric_name: the name under which the metric is saved in the checkpoint file
     :type metric_name: :class:`str`
     :kwarg comm: MPI communicator for handling the checkpoint file
     :type comm: :class:`mpi4py.MPI.Intracom`
     :returns: the metric loaded from the checkpoint
     :rtype: :class:`animate.metric.RiemannianMetric`
     """
-    fname = _fix_checkpoint_filename(filename)
-    if not os.path.exists(fname):
-        raise Exception(f"Metric file does not exist! Path: {fname}.")
-    with fchk.CheckpointFile(fname, "r", comm=comm) as chk:
+    if not os.path.exists(filepath):
+        raise Exception(f"Metric file does not exist! Path: {filepath}.")
+    with fchk.CheckpointFile(filepath, "r", comm=comm) as chk:
         mesh = chk.load_mesh(mesh_name)
         metric = chk.load_function(mesh, metric_name)
 
@@ -65,25 +64,24 @@ def load_checkpoint(filename, mesh_name, metric_name, comm=firedrake.COMM_WORLD)
     return metric
 
 
-def save_checkpoint(filename, metric, metric_name=None, comm=firedrake.COMM_WORLD):
+def save_checkpoint(filepath, metric, metric_name=None, comm=firedrake.COMM_WORLD):
     """
     Write the metric and underlying mesh to a :class:`~.CheckpointFile`.
 
     Note that the checkpoint will be stored within Animate's ``.checkpoints``
     subdirectory.
 
+    :arg filepath: the path of the checkpoint file
+    :type filepath: :class:`str`
     :arg metric: the metric to save to the checkpoint
     :type metric: :class:`animate.metric.RiemannianMetric`
-    :arg filename: the filename to use for the checkpoint
-    :type filename: :class:`str`
-    :kwarg metric_name: the name to save the metric under
+    :kwarg metric_name: the name under which to save the metric in the checkpoint file
     :type metric_name: :class:`str`
     :kwarg comm: MPI communicator for handling the checkpoint file
     :type comm: :class:`mpi4py.MPI.Intracom`
     """
-    fname = _fix_checkpoint_filename(filename)
     mp = metric.metric_parameters.copy()
-    with fchk.CheckpointFile(fname, "w", comm=comm) as chk:
+    with fchk.CheckpointFile(filepath, "w", comm=comm) as chk:
         chk.save_mesh(metric._mesh)
         chk.save_function(metric, name=metric_name or metric.name())
 

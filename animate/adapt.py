@@ -1,6 +1,6 @@
 import abc
 import os
-import time
+from shutil import rmtree
 
 import firedrake.checkpointing as fchk
 import firedrake.functionspace as ffs
@@ -11,9 +11,8 @@ from firedrake.cython.dmcommon import to_petsc_local_numbering
 from firedrake.petsc import PETSc
 from firedrake.projection import Projector
 
-from .checkpointing import load_checkpoint, save_checkpoint
+from .checkpointing import get_checkpoint_dir, load_checkpoint, save_checkpoint
 from .metric import RiemannianMetric
-from .utility import get_checkpoint_dir
 
 __all__ = ["MetricBasedAdaptor", "adapt"]
 
@@ -188,41 +187,28 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
         metric.intersect(*metrics[1:])
 
     if serialise:
-        # In parallel, save input mesh and metric to a checkpoint file
-        checkpoint_dir = get_checkpoint_dir()
+        # In parallel, save input mesh and metric to a temporary checkpoint directory
+        chk_dir = get_checkpoint_dir()
+        chk_fpath = os.path.join(chk_dir, "adapted_mesh_checkpoint.h5")
         metric_name = "tmp_metric"
-        metric_fname = "metric_checkpoint"
-        input_fname = os.path.join(checkpoint_dir, metric_fname + ".h5")
-        output_fname = os.path.join(checkpoint_dir, "adapted_mesh_checkpoint.h5")
-        save_checkpoint(metric_fname, metric, metric_name)
+        save_checkpoint(chk_fpath, metric, metric_name)
 
-        # In serial, load the checkpoint, adapt and write out the result
-        saved = False
         if COMM_WORLD.rank == 0:
-            metric0 = load_checkpoint(
-                metric_fname, mesh.name, metric_name, comm=COMM_SELF
-            )
+            metric0 = load_checkpoint(chk_fpath, mesh.name, metric_name, comm=COMM_SELF)
             adaptor0 = MetricBasedAdaptor(metric0._mesh, metric0, name=name)
-            with fchk.CheckpointFile(output_fname, "w", comm=COMM_SELF) as chk:
+            with fchk.CheckpointFile(chk_fpath, "w", comm=COMM_SELF) as chk:
                 chk.save_mesh(adaptor0.adapted_mesh)
-            saved = True
-            saved = COMM_WORLD.bcast(saved, root=0)
-        else:
-            # This acts like COMM_WORLD.barrier()
-            while not saved:
-                saved = COMM_WORLD.bcast(saved, root=0)
-                time.sleep(1e-3)
+        COMM_WORLD.barrier()
 
         # In parallel, load from the checkpoint
-        if not os.path.exists(output_fname):
-            raise Exception(f"Adapted mesh file does not exist! Path: {output_fname}.")
-        with fchk.CheckpointFile(output_fname, "r") as chk:
+        if not os.path.exists(chk_fpath):
+            raise Exception(f"Adapted mesh file does not exist! Path: {chk_fpath}.")
+        with fchk.CheckpointFile(chk_fpath, "r") as chk:
             newmesh = chk.load_mesh(name or fmesh.DEFAULT_MESH_NAME)
 
-        # Delete temporary checkpoint files
+        # Delete temporary checkpoint directory
         if remove_checkpoints and COMM_WORLD.rank == 0:
-            os.remove(input_fname)
-            os.remove(output_fname)
+            rmtree(chk_dir)
     else:
         newmesh = MetricBasedAdaptor(mesh, metric, name=name).adapted_mesh
     return newmesh
