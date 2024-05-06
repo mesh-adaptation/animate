@@ -3,6 +3,7 @@ Driver functions for mesh-to-mesh data transfer.
 """
 
 import firedrake
+import firedrake.function as ffunc
 import numpy as np
 import ufl
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
@@ -79,30 +80,80 @@ def interpolate(source, target_space, **kwargs):
     return transfer(source, target_space, transfer_method="interpolate", **kwargs)
 
 
+# TODO: Reword docstring to have more details, integrate citation and have project as main; only mention transfer in passing
+# TODO: Citation in docs repo
 @PETSc.Log.EventDecorator()
 def project(source, target_space, **kwargs):
     """
     A wrapper for :func:`transfer` with ``transfer_method="interpolate"``.
 
+    :cite:`FPP+:2009`
+
     :kwarg lumped: if `True`, mass lumping is applied to the mass matrix
     :type lumped: :class:`bool`
+    :kwarg minimal_diffusion: post-process the output to ensure it has mminimal
+        numerical diffusion
+    :type minimal_diffusion: :class:`bool`
     """
     return transfer(source, target_space, transfer_method="project", **kwargs)
 
 
-def _supermesh_project(source, target, lumped=False):
+def _supermesh_project(source, target, lumped=False, minimal_diffusion=False):
+    if minimal_diffusion and not lumped:
+        raise ValueError(
+            "Projection operator must be lumped for the minimal_diffusion option to be used."
+        )
     Vs = source.function_space()
     Vt = target.function_space()
     element_t = Vt.ufl_element()
     if lumped and (element_t.family(), element_t.degree()) != ("Lagrange", 1):
         raise ValueError("Mass lumping is not recommended for spaces other than P1.")
+
+    # Create a linear system using the lumped mass matrix for the target space
     mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
     ksp = petsc4py.KSP().create()
     ksp.setOperators(assemble_mass_matrix(Vt, lumped=lumped))
+
+    # Solve the linear system
     with source.dat.vec_ro as s, target.dat.vec_wo as t:
         rhs = t.copy()
         mixed_mass.mult(s, rhs)
         ksp.solve(rhs, t)
+
+    # Algorithm for post-processing the output to reduce numerical diffusion
+    if not minimal_diffusion:
+        return
+    proj = project(source, Vt)
+    interp = interpolate(source, Vt)
+    minimum = ufl.min_value(proj, interp)
+    maximum = ufl.max_value(proj, interp)
+    q_dev = ffunc.Function(Vt)
+    q_alt = ffunc.Function(Vt)
+    maxiter = 1000
+    atol = 1.0e-05
+    Mt = assemble_mass_matrix(Vt, lumped=False)
+    for i in range(maxiter):
+        q_dev.interpolate(
+            ufl.conditional(
+                target > maximum,
+                target - maximum,
+                ufl.conditional(target < minimum, target - minimum, 0),
+            ),
+        )
+        with q_dev.dat.vec_ro as qdev, q_alt.dat.vec_wo as qalt:
+            rhs = t.copy()
+            Mt.mult(qdev, rhs)
+            ksp.solve(rhs, qalt)
+        if firedrake.norm(q_dev) < atol:
+            print(f"converged in {i + 1} iterations.")
+            # TODO: Log number of iterations
+            break
+        target -= q_dev
+        target += q_alt
+    else:
+        raise firedrake.ConvergenceError(
+            f"Failed to achieve minimal diffusivity in {i + 1} iterations."
+        )
 
 
 @PETSc.Log.EventDecorator()
@@ -122,13 +173,18 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     :type transfer_method: str
     :kwarg lumped: if `True`, mass lumping is applied to the mass matrix (project only)
     :type lumped: :class:`bool`
+    :kwarg minimal_diffusion: post-process the output to ensure it has mminimal
+        numerical diffusion (project only)
+    :type minimal_diffusion: :class:`bool`
     :returns: the transferred Function
     :rtype: :class:`firedrake.function.Function`
 
     Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
         :func:`firedrake.projection.project`.
     """
-    lumped = transfer_method == "project" and kwargs.pop("lumped", False)
+    is_project = transfer_method == "project"
+    lumped = is_project and kwargs.pop("lumped", False)
+    minimal_diffusion = is_project and kwargs.pop("minimal_diffusion", False)
     Vs = source.function_space()
     Vt = target.function_space()
     _validate_matching_spaces(Vs, Vt)
@@ -139,7 +195,9 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
                 t.interpolate(s, **kwargs)
             elif transfer_method == "project":
                 if lumped:
-                    _supermesh_project(s, t, lumped=True)
+                    _supermesh_project(
+                        s, t, lumped=True, minimal_diffusion=minimal_diffusion
+                    )
                 else:
                     t.project(s, **kwargs)
             else:
@@ -152,7 +210,9 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
             target.interpolate(source, **kwargs)
         elif transfer_method == "project":
             if lumped:
-                _supermesh_project(source, target, lumped=True)
+                _supermesh_project(
+                    source, target, lumped=True, minimal_diffusion=minimal_diffusion
+                )
             else:
                 target.project(source, **kwargs)
         else:
@@ -177,13 +237,18 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     :type transfer_method: str
     :kwarg lumped: if `True`, mass lumping is applied to the mass matrix (project only)
     :type lumped: :class:`bool`
+    :kwarg minimal_diffusion: post-process the output to ensure it has mminimal
+        numerical diffusion (project only)
+    :type minimal_diffusion: :class:`bool`
     :returns: the transferred Cofunction
     :rtype: :class:`firedrake.cofunction.Cofunction`
 
     Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
         :func:`firedrake.projection.project`.
     """
-    lumped = transfer_method == "project" and kwargs.pop("lumped", False)
+    is_project = transfer_method == "project"
+    lumped = is_project and kwargs.pop("lumped", False)
+    # minimal_diffusion = is_project and kwargs.pop("minimal_diffusion", False)
 
     # Map to Functions to apply the adjoint transfer
     if not isinstance(target_b, firedrake.Function):
@@ -214,6 +279,7 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
         elif transfer_method == "project":
             ksp = petsc4py.KSP().create()
             ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=lumped))
+            # TODO: Account for minimal diffusion in adjoint, too
             mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i])
             with t_b.dat.vec_ro as tb, s_b.dat.vec_wo as sb:
                 residual = tb.copy()

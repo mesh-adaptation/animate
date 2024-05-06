@@ -193,7 +193,7 @@ plt.savefig("ping_pong-quantities_lumped.jpg")
 
 
 def operator(f, V):
-    return project(f, V, lumped=True, minimally_diffusive=True)
+    return project(f, V, lumped=True, minimal_diffusion=True)
 
 
 quantities["integral"]["mindiff"] = [initial_integral]
