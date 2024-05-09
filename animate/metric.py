@@ -7,6 +7,7 @@ import firedrake.mesh as fmesh
 import numpy as np
 import sympy
 import ufl
+from firedrake.__future__ import interpolate
 from firedrake.petsc import OptionsManager, PETSc
 from pyop2 import op2
 
@@ -873,10 +874,12 @@ class RiemannianMetric(ffunc.Function):
         # Get optimal element volume
         P0 = firedrake.FunctionSpace(mesh, "DG", 0)
         K_opt = pow(error_indicator, 1 / (convergence_rate + 1))
-        K_opt_av = K_opt / firedrake.interpolate(K_opt, P0).vector().gather().sum()
+        K_opt_av = (
+            K_opt / firedrake.assemble(interpolate(K_opt, P0)).vector().gather().sum()
+        )
         K_ratio = target_complexity * pow(abs(K_opt_av * K_hat / K), 2 / dim)
 
-        if self._any_inf(firedrake.interpolate(K_ratio, P0)):
+        if self._any_inf(firedrake.assemble(interpolate(K_ratio, P0))):
             raise ValueError("K_ratio contains non-finite values.")
 
         # Interpolate from P1 to P0
