@@ -6,6 +6,7 @@ import os
 
 import firedrake
 import ufl
+from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
 from pyop2 import op2
 from pyop2.utils import get_petsc_dir
@@ -93,7 +94,7 @@ class QualityMeasure:
     @PETSc.Log.EventDecorator()
     def _call_python(self, name):
         if name in ("area", "volume"):
-            return firedrake.interpolate(ufl.CellVolume(self.mesh), self.P0)
+            return firedrake.assemble(interpolate(ufl.CellVolume(self.mesh), self.P0))
         elif name == "facet_area":
             HDivTrace = firedrake.FunctionSpace(self.mesh, "HDiv Trace", 0)
             v = firedrake.TestFunction(HDivTrace)
@@ -113,7 +114,7 @@ class QualityMeasure:
             return facet_area
         elif name == "aspect_ratio" and self.dim == 2:
             P0_ten = firedrake.TensorFunctionSpace(self.mesh, "DG", 0)
-            J = firedrake.interpolate(ufl.Jacobian(self.mesh), P0_ten)
+            J = firedrake.assemble(interpolate(ufl.Jacobian(self.mesh), P0_ten))
             edge1 = ufl.as_vector([J[0, 0], J[1, 0]])
             edge2 = ufl.as_vector([J[0, 1], J[1, 1]])
             edge3 = edge1 - edge2
@@ -125,7 +126,7 @@ class QualityMeasure:
             return ar
         elif name == "scaled_jacobian" and self.dim == 2:
             P0_ten = firedrake.TensorFunctionSpace(self.mesh, "DG", 0)
-            J = firedrake.interpolate(ufl.Jacobian(self.mesh), P0_ten)
+            J = firedrake.assemble(interpolate(ufl.Jacobian(self.mesh), P0_ten))
             edge1 = ufl.as_vector([J[0, 0], J[1, 0]])
             edge2 = ufl.as_vector([J[0, 1], J[1, 1]])
             edge3 = edge1 - edge2
@@ -138,7 +139,9 @@ class QualityMeasure:
                 ufl.max_value(ufl.max_value(a * b, a * c), ufl.max_value(b * c, b * a)),
                 ufl.max_value(c * a, c * b),
             )
-            return firedrake.interpolate(detJ / max_product * jacobian_sign, self.P0)
+            return firedrake.assemble(
+                interpolate(detJ / max_product * jacobian_sign, self.P0)
+            )
         else:
             raise NotImplementedError(
                 f"Quality measure '{name}' not implemented in the {self.dim}D case in Python."
