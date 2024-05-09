@@ -165,7 +165,7 @@ class RiemannianMetric(ffunc.Function):
 
         return mp, vp
 
-    def set_parameters(self, metric_parameters={}):
+    def set_parameters(self, metric_parameters=None):
         r"""
         Set metric parameter values internally. All options have the prefix
         `dm_plex_metric_` and are listed below (with prefix dropped for brevity). Note
@@ -222,6 +222,7 @@ class RiemannianMetric(ffunc.Function):
         :type metric_parameters: :class:`dict` with :class:`str` keys and value which
             may take various types
         """
+        metric_parameters = metric_parameters or {}
         mp, vp = self._process_parameters(metric_parameters)
         self._metric_parameters.update(mp)
         self._variable_parameters.update(vp)

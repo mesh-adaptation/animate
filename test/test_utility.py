@@ -138,7 +138,7 @@ class TestNorm(unittest.TestCase):
     def test_notimplemented_Lp_error(self):
         with self.assertRaises(ValueError) as cm:
             norm(self.f, norm_type="Lp")
-        msg = "Don't know how to interpret 'Lp' norm."
+        msg = "Unable to interpret 'Lp' norm."
         self.assertEqual(str(cm.exception), msg)
 
     @parameterized.expand(integral_scalar_norm_types)

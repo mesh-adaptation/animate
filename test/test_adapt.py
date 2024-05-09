@@ -32,7 +32,7 @@ def try_adapt(mesh, metric):
         if exc.ierr == 63:
             pytest.xfail("No mesh adaptation tools are installed")
         else:
-            raise Exception(f"PETSc error code {exc.ierr}")
+            raise Exception(f"PETSc error code {exc.ierr}") from exc
 
 
 @pytest.fixture(params=[2, 3])
