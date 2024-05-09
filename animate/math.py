@@ -23,7 +23,7 @@ def gram_schmidt(*vectors, normalise=False):
         sqrt = ufl.sqrt
 
     # Check that vector types match
-    for i, vi in enumerate(vectors[1:]):
+    for vi in vectors[1:]:
         if not isinstance(vi, expected):
             raise TypeError(
                 f"Inconsistent vector types: '{expected}' vs. '{type(vi)}'."

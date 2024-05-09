@@ -30,7 +30,7 @@ def uniform_mesh(dim, n=5, l=1, recentre=False, **kwargs):
     return mesh
 
 
-def uniform_metric(mesh, a=100.0, metric_parameters={}):
+def uniform_metric(mesh, a=100.0, metric_parameters=None):
     """
     Create a metric which is just the identity
     matrix scaled by `a` at each vertex.
@@ -39,6 +39,7 @@ def uniform_metric(mesh, a=100.0, metric_parameters={}):
     :param a: the scale factor for the identity
     :param: parameters to pass to PETSc's Riemannian metric
     """
+    metric_parameters = metric_parameters or {}
     if isinstance(mesh, firedrake.mesh.MeshGeometry):
         function_space = TensorFunctionSpace(mesh, "CG", 1)
     else:

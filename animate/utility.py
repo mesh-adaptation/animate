@@ -148,8 +148,8 @@ def norm(v, norm_type="L2", condition=None, boundary=False):
         if norm_type.startswith("L"):
             try:
                 p = int(norm_type[1:])
-            except Exception:
-                raise ValueError(f"Don't know how to interpret '{norm_type}' norm.")
+            except Exception as exc:
+                raise ValueError(f"Unable to interpret '{norm_type}' norm.") from exc
             if p < 1:
                 raise ValueError(f"'{norm_type}' norm does not make sense.")
             integrand = ufl.inner(v, v)
