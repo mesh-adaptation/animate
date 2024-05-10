@@ -6,6 +6,8 @@
 # method. The purpose of this experiment is to assess the properties of different
 # interpolation methods. ::
 
+import os
+
 import matplotlib.pyplot as plt
 from firedrake import *
 from firedrake.pyplot import tricontourf, triplot
@@ -52,7 +54,7 @@ plt.savefig("ping_pong-source_function.jpg")
 # We run the experiment for 100 iterations and track three quantities as the iterations
 # progress: the integral of the field, its global minimum, and its global maximum. ::
 
-niter = 100
+niter = 1 if os.environ.get("ANIMATE_REGRESSION_TEST") else 100
 initial_integral = assemble(sensor * dx)
 initial_min = sensor.vector().gather().min()
 initial_max = sensor.vector().gather().max()
@@ -62,7 +64,7 @@ quantities = {
     "maximum": {"interpolate": [initial_max]},
 }
 f_interp = Function(V_A).assign(sensor)
-for i in range(niter):
+for _ in range(niter):
     f_interp = interpolate(interpolate(f_interp, V_B), V_A)
     quantities["integral"]["interpolate"].append(assemble(f_interp * dx))
     quantities["minimum"]["interpolate"].append(f_interp.vector().gather().min())
@@ -120,7 +122,7 @@ quantities["integral"]["project"] = [initial_integral]
 quantities["minimum"]["project"] = [initial_min]
 quantities["maximum"]["project"] = [initial_max]
 f_proj = Function(V_A).assign(sensor)
-for i in range(niter):
+for _ in range(niter):
     f_proj = project(project(f_proj, V_B), V_A)
     quantities["integral"]["project"].append(assemble(f_proj * dx))
     quantities["minimum"]["project"].append(f_proj.vector().gather().min())
@@ -169,7 +171,7 @@ quantities["integral"]["bounded"] = [initial_integral]
 quantities["minimum"]["bounded"] = [initial_min]
 quantities["maximum"]["bounded"] = [initial_max]
 f_bounded = Function(V_A).assign(sensor)
-for i in range(niter):
+for _ in range(niter):
     f_bounded = project(project(f_bounded, V_B, bounded=True), V_A, bounded=True)
     quantities["integral"]["bounded"].append(assemble(f_bounded * dx))
     quantities["minimum"]["bounded"].append(f_bounded.vector().gather().min())
