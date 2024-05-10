@@ -72,7 +72,7 @@ class MetricBasedAdaptor(AdaptorBase):
         :type metric: :class:`animate.metric.RiemannianMetric`
         :kwarg name: name for the adapted mesh
         :type name: :class:`str`
-        :kwarg comm: MPI communicator for handling the checkpoint file
+        :kwarg comm: MPI communicator to use for the adapted mesh
         :type comm: :class:`mpi4py.MPI.Intracom`
         """
         if metric._mesh is not mesh:
