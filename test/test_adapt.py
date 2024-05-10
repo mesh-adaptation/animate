@@ -36,6 +36,22 @@ def try_adapt(mesh, metric, **kwargs):
             raise Exception(f"PETSc error code {exc.ierr}")
 
 
+def test_adapt_2dparallel_error():
+    mesh = uniform_mesh(2)
+    mp = {
+        "dm_plex_metric": {
+            "no_insert": None,
+            "no_move": None,
+            "no_swap": None,
+            "no_surf": None,
+        }
+    }
+    metric = uniform_metric(mesh, metric_parameters=mp)
+    with pytest.raises(ValueError) as e_info:
+        try_adapt(mesh, metric, serialise=False)
+    assert str(e_info.value) == "Parallel adaptation is only supported in 3D."
+
+
 @pytest.fixture(params=[2, 3])
 def dim(request):
     return request.param

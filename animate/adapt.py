@@ -152,7 +152,7 @@ class MetricBasedAdaptor(AdaptorBase):
         )  # TODO
 
 
-def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
+def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
     r"""
     Adapt a mesh with respect to a metric and some adaptor parameters.
 
@@ -164,7 +164,10 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     :type metrics: :class:`list` of :class:`.RiemannianMetric`\s
     :kwarg name: name for the adapted mesh
     :type name: :class:`str`
-    :kwarg serialise: if ``True``, adaptation is done in serial
+    :kwarg serialise: if ``True``, adaptation is done in serial using
+        :class:`firedrake.checkpointing.CheckpointFile`s. Defaults to ``True`` if
+        the mesh is 2D, and to ``False`` if the mesh is 3D or if the code is already
+        run in serial. This is because parallel adaptation is only supported in 3D.
     :type serialise: :class:`bool`
     :kwarg remove_checkpoints: if ``True``, checkpoint files are deleted after use
     :type remove_checkpoints: :class:`bool`
@@ -173,13 +176,12 @@ def adapt(mesh, *metrics, name=None, serialise=False, remove_checkpoints=True):
     """
     nprocs = COMM_WORLD.size
 
-    # Parallel adaptation is currently only supported in 3D
-    if mesh.topological_dimension() != 3:
-        serialise = nprocs > 1
-
-    # If already running in serial then no need to use checkpointing
-    if nprocs == 1:
-        serialise = False
+    PETSc.Sys.Print(f"{serialise=}", comm=COMM_SELF)
+    dim = mesh.topological_dimension()
+    if serialise is None:
+        serialise = nprocs > 1 and dim != 3
+    elif not serialise and dim != 3:
+        raise ValueError("Parallel adaptation is only supported in 3D.")
 
     # Combine metrics by intersection, if multiple are passed
     metric = metrics[0]
