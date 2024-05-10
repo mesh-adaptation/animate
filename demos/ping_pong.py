@@ -156,86 +156,52 @@ plt.savefig("ping_pong-quantities_project.jpg")
 # :math:`\mathbb P1` fields specifically, it is possible to achieve this using 'mass
 # lumping'. Recall the linear system above. Lumping amounts to replacing the mass matrix
 # :math:`\underline{\mathbf{M}_B}` with a diagonal matrix, whose entries correspond to
-# the sums over the corresponding mass matrix rows. This can be used in Animate by
-# passing passing `lumped=True` to the `project` function. ::
-
-quantities["integral"]["lumped"] = [initial_integral]
-quantities["minimum"]["lumped"] = [initial_min]
-quantities["maximum"]["lumped"] = [initial_max]
-f_lump = Function(V_A).assign(sensor)
-for i in range(niter):
-    f_lump = project(project(f_lump, V_B, lumped=True), V_A, lumped=True)
-    quantities["integral"]["lumped"].append(assemble(f_lump * dx))
-    quantities["minimum"]["lumped"].append(f_lump.vector().gather().min())
-    quantities["maximum"]["lumped"].append(f_lump.vector().gather().max())
-
-fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
-for i, (key, subdict) in enumerate(quantities.items()):
-    axes[i].plot(subdict["interpolate"], label="Interpolate")
-    axes[i].plot(subdict["project"], label="Project")
-    axes[i].plot(subdict["lumped"], label="Lumped project")
-    axes[i].set_xlabel("Iteration")
-    axes[i].set_ylabel(key.capitalize())
-    axes[i].grid(True)
-axes[1].legend()
-plt.savefig("ping_pong-quantities_lumped.jpg")
-
-# .. figure:: ping_pong-quantities_lumped.jpg
-#    :figwidth: 90%
-#    :align: center
+# the sums over the corresponding mass matrix rows.
 #
-# Great! The lumped projection approach is demonstrated to conserve mass *and* not
-# introduce new extrema. However, we can already see that there is a price to pay: the
-# minimum values increase significantly and the maximum values decrease significantly.
-# To fix this issue, we apply a post-processing step to ensure that the projection has
-# minimal numerical diffusion. (See :cite:`FPP+:2009` for details.) In Animate, this is
-# done by setting the `minimal_diffusion` option to `True`. ::
+# Whilst lumping allows us to satisfy the two desired properties, it tends to add a
+# significant amount of artifical diffusion. To remedy this, we apply a post-processing
+# algorithm, which limits the amount of diffusion. (See :cite:`FPP+:2009` for details.)
+#
+# Lumping and bounding can be used in Animate by passing passing `bounded=True` to the
+# `project` function. ::
 
-
-def operator(f, V):
-    return project(f, V, lumped=True, minimal_diffusion=True)
-
-
-quantities["integral"]["mindiff"] = [initial_integral]
-quantities["minimum"]["mindiff"] = [initial_min]
-quantities["maximum"]["mindiff"] = [initial_max]
-f_mindiff = Function(V_A).assign(sensor)
+quantities["integral"]["bounded"] = [initial_integral]
+quantities["minimum"]["bounded"] = [initial_min]
+quantities["maximum"]["bounded"] = [initial_max]
+f_bounded = Function(V_A).assign(sensor)
 for i in range(niter):
-    f_mindiff = operator(operator(f_mindiff, V_B), V_A)
-    quantities["integral"]["mindiff"].append(assemble(f_mindiff * dx))
-    quantities["minimum"]["mindiff"].append(f_mindiff.vector().gather().min())
-    quantities["maximum"]["mindiff"].append(f_mindiff.vector().gather().max())
+    f_bounded = project(project(f_bounded, V_B, bounded=True), V_A, bounded=True)
+    quantities["integral"]["bounded"].append(assemble(f_bounded * dx))
+    quantities["minimum"]["bounded"].append(f_bounded.vector().gather().min())
+    quantities["maximum"]["bounded"].append(f_bounded.vector().gather().max())
 
 fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"], label="Interpolate")
     axes[i].plot(subdict["project"], label="Project")
-    axes[i].plot(subdict["lumped"], label="Lumped project")
-    axes[i].plot(subdict["mindiff"], label="Minimally diffusive project")
+    axes[i].plot(subdict["bounded"], label="Minimally diffusive project")
     axes[i].set_xlabel("Iteration")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 axes[1].legend()
-plt.savefig("ping_pong-quantities_mindiff.jpg")
+plt.savefig("ping_pong-quantities_bounded.jpg")
 
 
 # To check that the interpolants still resemble the sensor function after 100
 # iterations, we plot the four final fields. ::
 
-fig, axes = plt.subplots(ncols=3, nrows=2, figsize=(10, 10))
+fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
 colourbars = []
 colourbars.append(fig.colorbar(tricontourf(sensor, axes=axes[0][0])))
 axes[0][0].set_title("Source function")
 colourbars.append(fig.colorbar(tricontourf(f_interp, axes=axes[0][1])))
 axes[0][1].set_title("Interpolate")
-colourbars.append(fig.colorbar(tricontourf(f_proj, axes=axes[0][2])))
-axes[0][2].set_title("Project")
-colourbars.append(fig.colorbar(tricontourf(f_lump, axes=axes[1][1])))
-axes[1][1].set_title("Lumped")
-colourbars.append(fig.colorbar(tricontourf(f_mindiff, axes=axes[1][2])))
-axes[1][2].set_title("Minimally diffusive")
+colourbars.append(fig.colorbar(tricontourf(f_proj, axes=axes[1][0])))
+axes[1][0].set_title("Project")
+colourbars.append(fig.colorbar(tricontourf(f_bounded, axes=axes[1][1])))
+axes[1][1].set_title("Minimally diffusive")
 for i in range(2):
-    for j in range(3):
+    for j in range(2):
         axes[i][j].axis(False)
         axes[i][j].set_aspect(1)
 for cbar in colourbars:
@@ -246,23 +212,20 @@ plt.savefig("ping_pong-final.jpg")
 #    :figwidth: 90%
 #    :align: center
 #
-# Whilst the first two approaches clearly resemble the input field, the lumped version
-# is a poor representation. As such, we find that, whilst the conservative projection
-# with lumping allows for an interpolation operator with attractive properties, we
-# shouldn't expect it to give smaller errors. With an additional post-processing step,
-# (albeit a computationally costly one), we arrive at a more satsfying result. To
-# demonstrate this, we print the :math:`L^2` errors for each method. ::
+# Whilst the first two approaches clearly resemble the input field, the bounded version
+# gives a poorer representation. As such, we find that, whilst the bounded conservative
+# projection allows for an interpolation operator with attractive properties, we
+# shouldn't expect it to give smaller errors. To demonstrate this, we print the
+# :math:`L^2` errors for each method. ::
 
-print(f"Interpolate:                 {errornorm(sensor, f_interp):.4e}")
-print(f"Project:                     {errornorm(sensor, f_proj):.4e}")
-print(f"Lumped project:              {errornorm(sensor, f_lump):.4e}")
-print(f"Minimally diffusive project: {errornorm(sensor, f_mindiff):.4e}")
+print(f"Interpolate:     {errornorm(sensor, f_interp):.4e}")
+print(f"Project:         {errornorm(sensor, f_proj):.4e}")
+print(f"Bounded project: {errornorm(sensor, f_bounded):.4e}")
 
 # ..code-block:: console
 #
-#   Interpolate:                 1.7232e-02
-#   Project:                     4.2817e-03
-#   Lumped project:              2.7868e-01
-#   Minimally diffusive project: 1.2731e-01
+#   Interpolate:     1.7232e-02
+#   Project:         4.2817e-03
+#   Bounded project: 1.2731e-01
 #
 # This demo can also be accessed as a `Python script <ping_pong.py>`__.

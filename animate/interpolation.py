@@ -89,30 +89,24 @@ def project(source, target_space, **kwargs):
 
     :cite:`FPP+:2009`
 
-    :kwarg lumped: if `True`, mass lumping is applied to the mass matrix
-    :type lumped: :class:`bool`
-    :kwarg minimal_diffusion: post-process the output to ensure it has mminimal
-        numerical diffusion
-    :type minimal_diffusion: :class:`bool`
+    :kwarg bounded: apply mass lumping to the mass matrix and post-process the
+        output to ensure boundedness and minimal diffusion
+    :type bounded: :class:`bool`
     """
     return transfer(source, target_space, transfer_method="project", **kwargs)
 
 
-def _supermesh_project(source, target, lumped=False, minimal_diffusion=False):
-    if minimal_diffusion and not lumped:
-        raise ValueError(
-            "Projection operator must be lumped for the minimal_diffusion option to be used."
-        )
+def _supermesh_project(source, target, bounded=False):
     Vs = source.function_space()
     Vt = target.function_space()
     element_t = Vt.ufl_element()
-    if lumped and (element_t.family(), element_t.degree()) != ("Lagrange", 1):
+    if bounded and (element_t.family(), element_t.degree()) != ("Lagrange", 1):
         raise ValueError("Mass lumping is not recommended for spaces other than P1.")
 
     # Create a linear system using the lumped mass matrix for the target space
     mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
     ksp = petsc4py.KSP().create()
-    ksp.setOperators(assemble_mass_matrix(Vt, lumped=lumped))
+    ksp.setOperators(assemble_mass_matrix(Vt, lumped=bounded))
 
     # Solve the linear system
     with source.dat.vec_ro as s, target.dat.vec_wo as t:
@@ -121,8 +115,6 @@ def _supermesh_project(source, target, lumped=False, minimal_diffusion=False):
         ksp.solve(rhs, t)
 
     # Algorithm for post-processing the output to reduce numerical diffusion
-    if not minimal_diffusion:
-        return
     proj = project(source, Vt)
     interp = interpolate(source, Vt)
     minimum = ufl.min_value(proj, interp)
@@ -171,11 +163,9 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
-    :kwarg lumped: if `True`, mass lumping is applied to the mass matrix (project only)
-    :type lumped: :class:`bool`
-    :kwarg minimal_diffusion: post-process the output to ensure it has mminimal
-        numerical diffusion (project only)
-    :type minimal_diffusion: :class:`bool`
+    :kwarg bounded: apply mass lumping to the mass matrix and post-process the
+        output to ensure boundedness and minimal diffusion (project only)
+    :type bounded: :class:`bool`
     :returns: the transferred Function
     :rtype: :class:`firedrake.function.Function`
 
@@ -183,8 +173,7 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
         :func:`firedrake.projection.project`.
     """
     is_project = transfer_method == "project"
-    lumped = is_project and kwargs.pop("lumped", False)
-    minimal_diffusion = is_project and kwargs.pop("minimal_diffusion", False)
+    bounded = is_project and kwargs.pop("bounded", False)
     Vs = source.function_space()
     Vt = target.function_space()
     _validate_matching_spaces(Vs, Vt)
@@ -194,10 +183,8 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
             if transfer_method == "interpolate":
                 t.interpolate(s, **kwargs)
             elif transfer_method == "project":
-                if lumped:
-                    _supermesh_project(
-                        s, t, lumped=True, minimal_diffusion=minimal_diffusion
-                    )
+                if bounded:
+                    _supermesh_project(s, t, bounded=True)
                 else:
                     t.project(s, **kwargs)
             else:
@@ -209,10 +196,8 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
         if transfer_method == "interpolate":
             target.interpolate(source, **kwargs)
         elif transfer_method == "project":
-            if lumped:
-                _supermesh_project(
-                    source, target, lumped=True, minimal_diffusion=minimal_diffusion
-                )
+            if bounded:
+                _supermesh_project(source, target, bounded=True)
             else:
                 target.project(source, **kwargs)
         else:
@@ -235,11 +220,9 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
-    :kwarg lumped: if `True`, mass lumping is applied to the mass matrix (project only)
-    :type lumped: :class:`bool`
-    :kwarg minimal_diffusion: post-process the output to ensure it has mminimal
-        numerical diffusion (project only)
-    :type minimal_diffusion: :class:`bool`
+    :kwarg bounded: apply mass lumping to the mass matrix and post-process the
+        output to ensure boundedness and minimal diffusion (project only)
+    :type bounded: :class:`bool`
     :returns: the transferred Cofunction
     :rtype: :class:`firedrake.cofunction.Cofunction`
 
@@ -247,8 +230,7 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
         :func:`firedrake.projection.project`.
     """
     is_project = transfer_method == "project"
-    lumped = is_project and kwargs.pop("lumped", False)
-    # minimal_diffusion = is_project and kwargs.pop("minimal_diffusion", False)
+    bounded = is_project and kwargs.pop("bounded", False)
 
     # Map to Functions to apply the adjoint transfer
     if not isinstance(target_b, firedrake.Function):
@@ -278,7 +260,7 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
             )  # TODO (#113)
         elif transfer_method == "project":
             ksp = petsc4py.KSP().create()
-            ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=lumped))
+            ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=bounded))
             # TODO: Account for minimal diffusion in adjoint, too
             mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i])
             with t_b.dat.vec_ro as tb, s_b.dat.vec_wo as sb:

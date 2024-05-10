@@ -220,7 +220,7 @@ class TestTransfer(unittest.TestCase):
         source = Function(P0)
         target = Function(P0)
         with self.assertRaises(ValueError) as cm:
-            _supermesh_project(source, target, lumped=True)
+            _supermesh_project(source, target, bounded=True)
         msg = "Mass lumping is not recommended for spaces other than P1."
         self.assertEqual(str(cm.exception), msg)
 
@@ -348,7 +348,7 @@ class TestTransfer(unittest.TestCase):
         Vt = FunctionSpace(target_mesh, "CG", target_degree)
         source = Function(Vs).interpolate(SpatialCoordinate(self.source_mesh)[0])
         target = Function(Vt)
-        _supermesh_project(source, target, lumped=False)
+        _supermesh_project(source, target, bounded=False)
         expected = Function(Vt).project(source)
         self.assertLess(errornorm(target, expected), tol)
         self.assertLess(abs(assemble(source * dx) - assemble(target * dx)), tol)
@@ -359,7 +359,8 @@ class TestTransfer(unittest.TestCase):
         target_mesh = self.source_mesh if same_mesh else self.target_mesh
         Vt = FunctionSpace(target_mesh, "CG", 1)
         source = Function(Vs).interpolate(SpatialCoordinate(self.source_mesh)[0])
-        target = project(source, Vt, lumped=True)
+        # TODO: Use an example that would fail otherwise
+        target = project(source, Vt, bounded=True)
         self.assertAlmostEqual(assemble(source * dx), assemble(target * dx))
         self.assertLessEqual(target.dat.data.max(), source.dat.data.max() + eps)
         self.assertGreaterEqual(target.dat.data.min(), source.dat.data.min() - eps)
