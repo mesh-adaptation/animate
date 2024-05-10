@@ -1,3 +1,4 @@
+import os
 import unittest
 from shutil import rmtree
 
@@ -12,6 +13,19 @@ class TestCheckpointing(unittest.TestCase):
     """
     Unit tests for methods of :class:`~.MetricBasedAdaptor` related to checkpointing.
     """
+
+    @classmethod
+    def setUpClass(cls):
+        # Get existing temporary checkpoint directories before running the tests
+        if os.environ.get("ANIMATE_CHECKPOINT_DIR"):
+            cls.chk_dir = os.environ["ANIMATE_CHECKPOINT_DIR"]
+        else:
+            animate_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+            cls.chk_dir = os.path.join(animate_dir, "animate", ".checkpoints")
+        if not os.path.exists(cls.chk_dir):
+            cls.existing_temp_dirs = set()
+        else:
+            cls.existing_temp_dirs = set(os.listdir(cls.chk_dir))
 
     def setUp(self):
         self.mesh = uniform_mesh(2, 1)
@@ -99,3 +113,10 @@ class TestCheckpointing(unittest.TestCase):
         a_max_loaded = self.get_loaded_metric_parameters().get("dm_plex_metric_a_max")
         self.assertIsNotNone(a_max_loaded)
         self.assertTrue(np.allclose(a_max.dat.data, a_max_loaded.dat.data))
+
+    @classmethod
+    def tearDownClass(cls):
+        # Remove all temporary checkpoint directories created during the tests
+        new_temp_dirs = set(os.listdir(cls.chk_dir)) - cls.existing_temp_dirs
+        for d in new_temp_dirs:
+            rmtree(os.path.join(cls.chk_dir, d))

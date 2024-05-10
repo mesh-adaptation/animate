@@ -176,7 +176,6 @@ def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
     """
     nprocs = COMM_WORLD.size
 
-    PETSc.Sys.Print(f"{serialise=}", comm=COMM_SELF)
     dim = mesh.topological_dimension()
     if serialise is None:
         serialise = nprocs > 1 and dim != 3
