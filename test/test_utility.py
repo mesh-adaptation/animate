@@ -1,7 +1,3 @@
-"""
-Test utility functions.
-"""
-
 import os
 import unittest
 

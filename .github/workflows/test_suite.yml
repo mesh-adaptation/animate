@@ -58,6 +58,7 @@ jobs:
           . /home/firedrake/firedrake/bin/activate
           export GITHUB_ACTIONS_TEST_RUN=1
           python $(which firedrake-clean)
+          export ANIMATE_CHECKPOINT_DIR=$(pwd)/.checkpoints
           python -m coverage erase
           python -m coverage run --source=animate -m pytest -v --durations=20 test
           python -m coverage report
