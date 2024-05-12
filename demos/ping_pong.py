@@ -51,10 +51,10 @@ plt.savefig("ping_pong-source_function.jpg")
 
 # To start with, let's consider the `interpolate` approach, which point evaluates the
 # input field at the locations where degrees of freedom of the target function space.
-# We run the experiment for 100 iterations and track three quantities as the iterations
+# We run the experiment for 50 iterations and track three quantities as the iterations
 # progress: the integral of the field, its global minimum, and its global maximum. ::
 
-niter = 1 if os.environ.get("ANIMATE_REGRESSION_TEST") else 100
+niter = 1 if os.environ.get("ANIMATE_REGRESSION_TEST") else 50
 initial_integral = assemble(sensor * dx)
 initial_min = sensor.vector().gather().min()
 initial_max = sensor.vector().gather().max()
@@ -189,8 +189,8 @@ axes[1].legend()
 plt.savefig("ping_pong-quantities_bounded.jpg")
 
 
-# To check that the interpolants still resemble the sensor function after 100
-# iterations, we plot the four final fields. ::
+# To check that the interpolants still resemble the sensor function after 50 iterations,
+# we plot the four final fields. ::
 
 fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
 colourbars = []
