@@ -74,24 +74,52 @@ def transfer(source, target_space, transfer_method="project", **kwargs):
 
 @PETSc.Log.EventDecorator()
 def interpolate(source, target_space, **kwargs):
-    """
-    A wrapper for :func:`transfer` with ``transfer_method="interpolate"``.
+    r"""
+    Overload function :func:`firedrake.__future__.interpolate` to account for the case
+    of two mixed function spaces defined on different meshes and for the adjoint
+    interpolation operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
+
+    :arg source: the function to be transferred
+    :type source: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
+    :arg target_space: the function space which we seek to transfer onto, or the
+        function or cofunction to use as the target
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`,
+        :class:`firedrake.function.Function` or :class:`firedrake.cofunction.Cofunction`
+    :returns: the transferred function
+    :rtype: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
+
+    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate`
     """
     return transfer(source, target_space, transfer_method="interpolate", **kwargs)
 
 
-# TODO: Reword docstring to have more details, integrate citation and have project as main; only mention transfer in passing
-# TODO: Citation in docs repo
 @PETSc.Log.EventDecorator()
 def project(source, target_space, **kwargs):
-    """
-    A wrapper for :func:`transfer` with ``transfer_method="interpolate"``.
+    r"""
+    Overload function :func:`firedrake.projection.project` to account for the case of
+    two mixed function spaces defined on different meshes and for the adjoint
+    projection operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
 
-    :cite:`FPP+:2009`
+    For details on the approach for achieving boundedness through mass lumping and
+    post-processing, see :cite:`FPP+:2009`.
 
+    :arg source: the function to be transferred
+    :type source: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
+    :arg target_space: the function space which we seek to transfer onto, or the
+        function or cofunction to use as the target
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`,
+        :class:`firedrake.function.Function` or :class:`firedrake.cofunction.Cofunction`
+    :returns: the transferred function
+    :rtype: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
     :kwarg bounded: apply mass lumping to the mass matrix and post-process the
         output to ensure boundedness and minimal diffusion
     :type bounded: :class:`bool`
+
+    Extra keyword arguments are passed to :func:`firedrake.projection.project`.
     """
     return transfer(source, target_space, transfer_method="project", **kwargs)
 
