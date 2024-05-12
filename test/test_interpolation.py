@@ -362,8 +362,9 @@ class TestTransfer(unittest.TestCase):
         _supermesh_project(source, target, bounded=False)
         expected = Function(Vt).project(source)
         self.assertLess(errornorm(target, expected), tol)
+        # TODO: The above check should be met at small tolerance; requires the same
+        #       implementation as in SupermeshProjector (#123)
         self.assertTrue(self.check_conservation(source, target, tol=tol))
-        # self.assertFalse(self.check_no_new_extrema(source, target, tol=tol))
 
     @parameterized.expand([(True,), (False,)])
     def test_mass_lumping(self, same_mesh, tol=1.0e-08):

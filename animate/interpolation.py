@@ -96,6 +96,8 @@ def project(source, target_space, **kwargs):
     return transfer(source, target_space, transfer_method="project", **kwargs)
 
 
+# TODO: Reimplement by introducing a LumpedSupermeshProjector subclass of
+#       firedrake.projection.SupermeshProjector (#123)
 def _supermesh_project(source, target, bounded=False):
     Vs = source.function_space()
     Vt = target.function_space()
