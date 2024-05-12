@@ -226,8 +226,8 @@ print(f"Bounded project: {errornorm(sensor, f_bounded):.4e}")
 
 # ..code-block:: console
 #
-#   Interpolate:     1.7232e-02
-#   Project:         4.2817e-03
-#   Bounded project: 1.2731e-01
+#   Interpolate:     1.7144e-02
+#   Project:         2.5693e-03
+#   Bounded project: 6.1404e-02
 #
 # This demo can also be accessed as a `Python script <ping_pong.py>`__.

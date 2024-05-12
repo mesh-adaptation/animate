@@ -340,27 +340,38 @@ class TestTransfer(unittest.TestCase):
         e2.project(s2)
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
+    @staticmethod
+    def check_conservation(source, target, tol=1.0e-08):
+        return np.isclose(assemble(source * dx), assemble(target * dx), atol=tol)
+
+    @staticmethod
+    def check_no_new_extrema(source, target, tol=1.0e-08):
+        return (target.dat.data.max() <= source.dat.data.max() + tol) and (
+            target.dat.data.min() >= source.dat.data.min() - tol
+        )
+
     @parameterized.expand([(True, True), (True, False), (False, True), (False, False)])
-    def test_supermesh_project(self, same_mesh, same_degree, tol=1.0e-06):
+    def test_supermesh_project(self, same_mesh, same_degree, tol=1.0e-07):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
         target_mesh = self.source_mesh if same_mesh else self.target_mesh
-        target_degree = 1 if same_degree else 2
-        Vt = FunctionSpace(target_mesh, "CG", target_degree)
-        source = Function(Vs).interpolate(SpatialCoordinate(self.source_mesh)[0])
+        target_degree = 1 if same_degree else 0
+        Vt = FunctionSpace(target_mesh, "DG", target_degree)
+        x, y = SpatialCoordinate(self.source_mesh)
+        source = Function(Vs).interpolate(self.sinusoid())
         target = Function(Vt)
         _supermesh_project(source, target, bounded=False)
         expected = Function(Vt).project(source)
         self.assertLess(errornorm(target, expected), tol)
-        self.assertLess(abs(assemble(source * dx) - assemble(target * dx)), tol)
+        self.assertTrue(self.check_conservation(source, target, tol=tol))
+        # self.assertFalse(self.check_no_new_extrema(source, target, tol=tol))
 
     @parameterized.expand([(True,), (False,)])
-    def test_mass_lumping(self, same_mesh, eps=1.0e-08):
+    def test_mass_lumping(self, same_mesh, tol=1.0e-08):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
         target_mesh = self.source_mesh if same_mesh else self.target_mesh
         Vt = FunctionSpace(target_mesh, "CG", 1)
-        source = Function(Vs).interpolate(SpatialCoordinate(self.source_mesh)[0])
-        # TODO: Use an example that would fail otherwise
+        x, y = SpatialCoordinate(self.source_mesh)
+        source = Function(Vs).interpolate(self.sinusoid())
         target = project(source, Vt, bounded=True)
-        self.assertAlmostEqual(assemble(source * dx), assemble(target * dx))
-        self.assertLessEqual(target.dat.data.max(), source.dat.data.max() + eps)
-        self.assertGreaterEqual(target.dat.data.min(), source.dat.data.min() - eps)
+        self.assertTrue(self.check_conservation(source, target, tol=tol))
+        self.assertTrue(self.check_no_new_extrema(source, target, tol=tol))
