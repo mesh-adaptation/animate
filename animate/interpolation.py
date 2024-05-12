@@ -133,7 +133,6 @@ def _supermesh_project(source, target, bounded=False):
             ),
         )
         if firedrake.norm(q_dev) < atol:
-            print(f"converged in {i + 1} iterations")
             # TODO: Log number of iterations (#122)
             break
         with q_dev.dat.vec_ro as qdev, q_alt.dat.vec_wo as qalt:
