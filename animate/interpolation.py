@@ -109,10 +109,7 @@ def _supermesh_project(source, target, bounded=False):
         element_s = Vs.ufl_element()
         Vs_sub = firedrake.FunctionSpace(s_mesh, element_s.family(), element_s.degree())
         Vt_sub = firedrake.FunctionSpace(t_mesh, element_t.family(), element_t.degree())
-        # source_sub = ffunc.Function(Vs_sub).assign(source.sub(i))
-        source_sub = ffunc.Function(Vs_sub)
-        ss = source.sub(i)
-        source_sub.assign(ss)  # this is where the error is raised
+        source_sub = ffunc.Function(Vs_sub).assign(source.sub(i))
         target_sub = ffunc.Function(Vt_sub)
 
         # Create a linear system using the lumped mass matrix for the target space
@@ -133,8 +130,8 @@ def _supermesh_project(source, target, bounded=False):
         maximum = ufl.max_value(proj, interp)
         q_dev = ffunc.Function(Vt_sub)
         q_alt = ffunc.Function(Vt_sub)
-        maxiter = 10_000
-        atol = 1.0e-05
+        maxiter = 100_000
+        atol = 1.0e-07
         Mt = assemble_mass_matrix(Vt_sub, lumped=False)
         for j in range(maxiter):
             q_dev.interpolate(
