@@ -103,49 +103,63 @@ def _supermesh_project(source, target, bounded=False):
     if bounded and (element_t.family(), element_t.degree()) != ("Lagrange", 1):
         raise ValueError("Mass lumping is not recommended for spaces other than P1.")
 
-    # Create a linear system using the lumped mass matrix for the target space
-    mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
-    ksp = petsc4py.KSP().create()
-    ksp.setOperators(assemble_mass_matrix(Vt, lumped=bounded))
+    for i in range(element_t.value_size):
+        s_mesh = Vs.mesh()
+        t_mesh = Vt.mesh()
+        element_s = Vs.ufl_element()
+        Vs_sub = firedrake.FunctionSpace(s_mesh, element_s.family(), element_s.degree())
+        Vt_sub = firedrake.FunctionSpace(t_mesh, element_t.family(), element_t.degree())
+        # source_sub = ffunc.Function(Vs_sub).assign(source.sub(i))
+        source_sub = ffunc.Function(Vs_sub)
+        ss = source.sub(i)
+        source_sub.assign(ss)  # this is where the error is raised
+        target_sub = ffunc.Function(Vt_sub)
 
-    # Solve the linear system
-    with source.dat.vec_ro as s, target.dat.vec_wo as t:
-        rhs = t.copy()
-        mixed_mass.mult(s, rhs)
-        ksp.solve(rhs, t)
+        # Create a linear system using the lumped mass matrix for the target space
+        mixed_mass = assemble_mixed_mass_matrix(Vs_sub, Vt_sub)
+        ksp = petsc4py.KSP().create()
+        ksp.setOperators(assemble_mass_matrix(Vt_sub, lumped=bounded))
 
-    # Algorithm for post-processing the output to reduce numerical diffusion
-    proj = project(source, Vt)
-    interp = interpolate(source, Vt)
-    minimum = ufl.min_value(proj, interp)
-    maximum = ufl.max_value(proj, interp)
-    q_dev = ffunc.Function(Vt)
-    q_alt = ffunc.Function(Vt)
-    maxiter = 1000
-    atol = 1.0e-05
-    Mt = assemble_mass_matrix(Vt, lumped=False)
-    for i in range(maxiter):
-        q_dev.interpolate(
-            ufl.conditional(
-                target > maximum,
-                target - maximum,
-                ufl.conditional(target < minimum, target - minimum, 0),
-            ),
-        )
-        with q_dev.dat.vec_ro as qdev, q_alt.dat.vec_wo as qalt:
+        # Solve the linear system
+        with source_sub.dat.vec_ro as s, target_sub.dat.vec_wo as t:
             rhs = t.copy()
-            Mt.mult(qdev, rhs)
-            ksp.solve(rhs, qalt)
-        if firedrake.norm(q_dev) < atol:
-            print(f"converged in {i + 1} iterations.")
-            # TODO: Log number of iterations
-            break
-        target -= q_dev
-        target += q_alt
-    else:
-        raise firedrake.ConvergenceError(
-            f"Failed to achieve minimal diffusivity in {i + 1} iterations."
-        )
+            mixed_mass.mult(s, rhs)
+            ksp.solve(rhs, t)
+
+        # Algorithm for post-processing the output to reduce numerical diffusion
+        proj = project(source_sub, Vt_sub)
+        interp = interpolate(source_sub, Vt_sub)
+        minimum = ufl.min_value(proj, interp)
+        maximum = ufl.max_value(proj, interp)
+        q_dev = ffunc.Function(Vt_sub)
+        q_alt = ffunc.Function(Vt_sub)
+        maxiter = 10_000
+        atol = 1.0e-05
+        Mt = assemble_mass_matrix(Vt_sub, lumped=False)
+        for j in range(maxiter):
+            q_dev.interpolate(
+                ufl.conditional(
+                    target_sub > maximum,
+                    target_sub - maximum,
+                    ufl.conditional(target_sub < minimum, target_sub - minimum, 0),
+                ),
+            )
+            with q_dev.dat.vec_ro as qdev, q_alt.dat.vec_wo as qalt:
+                rhs = t.copy()
+                Mt.mult(qdev, rhs)
+                ksp.solve(rhs, qalt)
+            if firedrake.norm(q_dev) < atol:
+                print(f"converged in {j + 1} iterations.")
+                # TODO: Log number of iterations
+                break
+            target_sub -= q_dev
+            target_sub += q_alt
+        else:
+            raise firedrake.ConvergenceError(
+                f"Failed to achieve minimal diffusivity in {j + 1} iterations."
+            )
+
+        target.sub(i).assign(target_sub)
 
 
 @PETSc.Log.EventDecorator()
