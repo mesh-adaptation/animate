@@ -158,14 +158,10 @@ plt.savefig("ping_pong-quantities_project.jpg")
 # :math:`\mathbb P1` fields specifically, it is possible to achieve this using 'mass
 # lumping'. Recall the linear system above. Lumping amounts to replacing the mass matrix
 # :math:`\underline{\mathbf{M}_B}` with a diagonal matrix, whose entries correspond to
-# the sums over the corresponding mass matrix rows.
+# the sums over the corresponding mass matrix rows. (See :cite:`FPP+:2009` for details.)
 #
-# Whilst lumping allows us to satisfy the two desired properties, it tends to add a
-# significant amount of artifical diffusion. To remedy this, we apply a post-processing
-# algorithm, which limits the amount of diffusion. (See :cite:`FPP+:2009` for details.)
-#
-# Lumping and bounding can be used in Animate by passing passing `bounded=True` to the
-# `project` function. ::
+# The resulting bounded projection operator can be used in Animate by passing
+# `bounded=True` to the `project` function. ::
 
 quantities["integral"]["bounded"] = [initial_integral]
 quantities["minimum"]["bounded"] = [initial_min]
@@ -181,7 +177,7 @@ fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"], label="Interpolate")
     axes[i].plot(subdict["project"], label="Project")
-    axes[i].plot(subdict["bounded"], label="Minimally diffusive project")
+    axes[i].plot(subdict["bounded"], label="Bounded project")
     axes[i].set_xlabel("Iteration")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
@@ -190,18 +186,22 @@ plt.savefig("ping_pong-quantities_bounded.jpg")
 
 
 # To check that the interpolants still resemble the sensor function after 50 iterations,
-# we plot the four final fields. ::
+# we plot the final fields alongside it. ::
 
 fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
 colourbars = []
-colourbars.append(fig.colorbar(tricontourf(sensor, axes=axes[0][0])))
-axes[0][0].set_title("Source function")
-colourbars.append(fig.colorbar(tricontourf(f_interp, axes=axes[0][1])))
-axes[0][1].set_title("Interpolate")
-colourbars.append(fig.colorbar(tricontourf(f_proj, axes=axes[1][0])))
-axes[1][0].set_title("Project")
-colourbars.append(fig.colorbar(tricontourf(f_bounded, axes=axes[1][1])))
-axes[1][1].set_title("Minimally diffusive")
+ax = axes[0][0]
+colourbars.append(fig.colorbar(tricontourf(sensor, axes=ax), ax=ax))
+ax.set_title("Source function")
+ax = axes[0][1]
+colourbars.append(fig.colorbar(tricontourf(f_interp, axes=ax), ax=ax))
+ax.set_title("Interpolate")
+ax = axes[1][0]
+colourbars.append(fig.colorbar(tricontourf(f_proj, axes=ax), ax=ax))
+ax.set_title("Project")
+ax = axes[1][1]
+colourbars.append(fig.colorbar(tricontourf(f_bounded, axes=ax), ax=ax))
+ax.set_title("Bounded")
 for i in range(2):
     for j in range(2):
         axes[i][j].axis(False)
@@ -215,10 +215,10 @@ plt.savefig("ping_pong-final.jpg")
 #    :align: center
 #
 # Whilst the first two approaches clearly resemble the input field, the bounded version
-# gives a poorer representation. As such, we find that, whilst the bounded conservative
-# projection allows for an interpolation operator with attractive properties, we
-# shouldn't expect it to give smaller errors. To demonstrate this, we print the
-# :math:`L^2` errors for each method. ::
+# gives a much poorer representation. As such, we find that, whilst the bounded
+# conservative projection allows for an interpolation operator with attractive
+# properties, we shouldn't expect it to give smaller errors. To demonstrate this, we
+# print the :math:`L^2` errors for each method. ::
 
 print(f"Interpolate:     {errornorm(sensor, f_interp):.4e}")
 print(f"Project:         {errornorm(sensor, f_proj):.4e}")
@@ -228,6 +228,6 @@ print(f"Bounded project: {errornorm(sensor, f_bounded):.4e}")
 #
 #   Interpolate:     1.7144e-02
 #   Project:         2.5693e-03
-#   Bounded project: 6.1404e-02
+#   Bounded project: 2.3513e-01
 #
 # This demo can also be accessed as a `Python script <ping_pong.py>`__.
