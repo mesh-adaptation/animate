@@ -114,8 +114,7 @@ def project(source, target_space, **kwargs):
     :returns: the transferred function
     :rtype: :class:`firedrake.function.Function` or
         :class:`firedrake.cofunction.Cofunction`
-    :kwarg bounded: apply mass lumping to the mass matrix and post-process the
-        output to ensure boundedness and minimal diffusion
+    :kwarg bounded: apply mass lumping to the mass matrix to ensure boundedness
     :type bounded: :class:`bool`
 
     Extra keyword arguments are passed to :func:`firedrake.projection.project`.
@@ -160,8 +159,8 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
-    :kwarg bounded: apply mass lumping to the mass matrix and post-process the
-        output to ensure boundedness and minimal diffusion (project only)
+    :kwarg bounded: apply mass lumping to the mass matrix to ensure boundedness
+        (project only)
     :type bounded: :class:`bool`
     :returns: the transferred Function
     :rtype: :class:`firedrake.function.Function`
@@ -217,8 +216,8 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
-    :kwarg bounded: apply mass lumping to the mass matrix and post-process the
-        output to ensure boundedness and minimal diffusion (project only)
+    :kwarg bounded: apply mass lumping to the mass matrix to ensure boundedness
+        (project only)
     :type bounded: :class:`bool`
     :returns: the transferred Cofunction
     :rtype: :class:`firedrake.cofunction.Cofunction`
