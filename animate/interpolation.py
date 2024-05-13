@@ -3,7 +3,6 @@ Driver functions for mesh-to-mesh data transfer.
 """
 
 import firedrake
-import firedrake.function as ffunc
 import numpy as np
 import ufl
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
@@ -126,6 +125,7 @@ def project(source, target_space, **kwargs):
 
 # TODO: Reimplement by introducing a LumpedSupermeshProjector subclass of
 #       firedrake.projection.SupermeshProjector (#123)
+# TODO: Implement minimal diffusion correction (#124)
 def _supermesh_project(source, target, bounded=False):
     Vs = source.function_space()
     Vt = target.function_space()
@@ -143,38 +143,6 @@ def _supermesh_project(source, target, bounded=False):
         rhs = t.copy()
         mixed_mass.mult(s, rhs)
         ksp.solve(rhs, t)
-
-    # Algorithm for post-processing the output to reduce numerical diffusion
-    proj = project(source, Vt)
-    interp = interpolate(source, Vt)
-    minimum = ufl.min_value(proj, interp)
-    maximum = ufl.max_value(proj, interp)
-    q_dev = ffunc.Function(Vt)
-    q_alt = ffunc.Function(Vt)
-    maxiter = 1000
-    atol = 1.0e-05
-    Mt = assemble_mass_matrix(Vt, lumped=False)
-    for i in range(maxiter):
-        q_dev.interpolate(
-            ufl.conditional(
-                target > maximum,
-                target - maximum,
-                ufl.conditional(target < minimum, target - minimum, 0),
-            ),
-        )
-        if firedrake.norm(q_dev) < atol:
-            # TODO: Log number of iterations (#122)
-            break
-        with q_dev.dat.vec_ro as qdev, q_alt.dat.vec_wo as qalt:
-            rhs = t.copy()
-            Mt.mult(qdev, rhs)
-            ksp.solve(rhs, qalt)
-        target -= q_dev
-        target += q_alt
-    else:
-        raise firedrake.ConvergenceError(
-            f"Failed to achieve minimal diffusivity in {i + 1} iterations."
-        )
 
 
 @PETSc.Log.EventDecorator()
@@ -290,7 +258,6 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
         elif transfer_method == "project":
             ksp = petsc4py.KSP().create()
             ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=bounded))
-            # TODO: Account for minimal diffusion in adjoint, too
             mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i])
             with t_b.dat.vec_ro as tb, s_b.dat.vec_wo as sb:
                 residual = tb.copy()
