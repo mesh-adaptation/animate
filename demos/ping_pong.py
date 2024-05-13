@@ -1,7 +1,7 @@
 # 'Ping pong' interpolation experiment
 # ====================================
 #
-# In this demo, we perform a 'ping poing test', which amounts to interpolating a given
+# In this demo, we perform a 'ping pong test', which amounts to interpolating a given
 # sensor function repeatedly between the two meshes using a particular interpolation
 # method. The purpose of this experiment is to assess the properties of different
 # interpolation methods. ::
@@ -16,18 +16,19 @@ from animate import *
 
 # Consider two different meshes of the unit square: mesh A, which is laid out
 # :math:`20\times25` with diagonals from top left to bottom right and mesh B
-# :math:`20\times20` with diagonals from bottom left to top right. ::
+# :math:`20\times20` with diagonals from bottom left to top right. Note that mesh A has
+# higher resolution in the vertical direction. ::
 
-mesh_A = UnitSquareMesh(20, 25, diagonal="left")
-mesh_B = UnitSquareMesh(20, 20, diagonal="right")
+mesh_A = UnitSquareMesh(20, 25, diagonal="left", name="Mesh A")
+mesh_B = UnitSquareMesh(20, 20, diagonal="right", name="Mesh B")
 
 fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 for i, mesh in enumerate((mesh_A, mesh_B)):
     triplot(mesh, axes=axes[i])
-    axes[i].set_title(f"Mesh {'B' if i else 'A'}")
+    axes[i].set_title(mesh.name)
     axes[i].axis(False)
     axes[i].set_aspect(1)
-plt.savefig("ping_pong-meshes.jpg")
+plt.savefig("ping_pong-meshes.jpg", bbox_inches="tight")
 
 # Define the sensor function
 #
@@ -40,19 +41,20 @@ plt.savefig("ping_pong-meshes.jpg")
 V_A = FunctionSpace(mesh_A, "CG", 1)
 V_B = FunctionSpace(mesh_B, "CG", 1)
 x, y = SpatialCoordinate(mesh_A)
-sensor = Function(V_A).interpolate(sin(pi * x) * sin(pi * y))
+sensor = Function(V_A, name="Sensor").interpolate(sin(pi * x) * sin(pi * y))
 
 fig, axes = plt.subplots()
 tricontourf(sensor, axes=axes)
 axes.set_title("Source function")
 axes.axis(False)
 axes.set_aspect(1)
-plt.savefig("ping_pong-source_function.jpg")
+plt.savefig("ping_pong-source_function.jpg", bbox_inches="tight")
 
-# To start with, let's consider the `interpolate` approach, which point evaluates the
-# input field at the locations where degrees of freedom of the target function space.
-# We run the experiment for 50 iterations and track three quantities as the iterations
-# progress: the integral of the field, its global minimum, and its global maximum. ::
+# To start with, let's consider the `interpolate` approach, which evaluates the input
+# field at the locations corresponding to degrees of freedom of the target function
+# space. We run the experiment for 50 iterations and track three quantities as the
+# iterations progress: the integral of the field, its global minimum, and its global
+# maximum. ::
 
 niter = 1 if os.environ.get("ANIMATE_REGRESSION_TEST") else 50
 initial_integral = assemble(sensor * dx)
@@ -69,6 +71,7 @@ for _ in range(niter):
     quantities["integral"]["interpolate"].append(assemble(f_interp * dx))
     quantities["minimum"]["interpolate"].append(f_interp.vector().gather().min())
     quantities["maximum"]["interpolate"].append(f_interp.vector().gather().max())
+f_interp.rename("Interpolate")
 
 fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
@@ -76,17 +79,19 @@ for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].set_xlabel("Iteration")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
-plt.savefig("ping_pong-quantities_interpolate.jpg")
+plt.savefig("ping_pong-quantities_interpolate.jpg", bbox_inches="tight")
 
 # .. figure:: ping_pong-quantities_interpolate.jpg
 #    :figwidth: 90%
 #    :align: center
 #
-# The first plot shows the integral of the field (the 'mass') as the interpolation
-# iterations progress. Note that the mass drops steeply, before leveling out after
+# The first plot shows the integral of the field (i.e., the 'mass') as the interpolation
+# iterations progress. Note that the mass drops steeply, before levelling out after
 # around 50 iterations. Minimum values are perfectly maintained for this example,
 # staying at zero for all iterations. Maximum values, however, decrease for several
-# iterations before leveling out after around 30 iterations.
+# iterations before levelling out after around 30 iterations. The reason minima are
+# attained but not maxima is that global minimum values are attained at the boundaries
+# for this example, wheras the global maximum is attained at the centre of the domain.
 #
 # In this example, we observe two general properties of the point interpolation method:
 #
@@ -127,6 +132,7 @@ for _ in range(niter):
     quantities["integral"]["project"].append(assemble(f_proj * dx))
     quantities["minimum"]["project"].append(f_proj.vector().gather().min())
     quantities["maximum"]["project"].append(f_proj.vector().gather().max())
+f_proj.rename("Project")
 
 fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
@@ -136,7 +142,7 @@ for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 axes[1].legend()
-plt.savefig("ping_pong-quantities_project.jpg")
+plt.savefig("ping_pong-quantities_project.jpg", bbox_inches="tight")
 
 # .. figure:: ping_pong-quantities_project.jpg
 #    :figwidth: 90%
@@ -146,7 +152,9 @@ plt.savefig("ping_pong-quantities_project.jpg")
 # unlike the `interpolate` approach. However, contrary to the `interpolate` approach
 # not introducing new extrema, the `project` approach can be seen to introduce new
 # minimum values. No new maximum values are introduced, although the maximum values do
-# decrease slightly.
+# decrease slightly. Extrema are not attained because the conservative projection
+# approach used here is known to be diffusive. The fact that new minima are introduced
+# is again due to those values being on the boundary.
 #
 # To summarise, the `project` approach:
 #
@@ -172,6 +180,7 @@ for _ in range(niter):
     quantities["integral"]["bounded"].append(assemble(f_bounded * dx))
     quantities["minimum"]["bounded"].append(f_bounded.vector().gather().min())
     quantities["maximum"]["bounded"].append(f_bounded.vector().gather().max())
+f_bounded.rename("Bounded project")
 
 fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
@@ -182,43 +191,35 @@ for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 axes[1].legend()
-plt.savefig("ping_pong-quantities_bounded.jpg")
+plt.savefig("ping_pong-quantities_bounded.jpg", bbox_inches="tight")
 
 
 # To check that the interpolants still resemble the sensor function after 50 iterations,
 # we plot the final fields alongside it. ::
 
 fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
-colourbars = []
-ax = axes[0][0]
-colourbars.append(fig.colorbar(tricontourf(sensor, axes=ax), ax=ax))
-ax.set_title("Source function")
-ax = axes[0][1]
-colourbars.append(fig.colorbar(tricontourf(f_interp, axes=ax), ax=ax))
-ax.set_title("Interpolate")
-ax = axes[1][0]
-colourbars.append(fig.colorbar(tricontourf(f_proj, axes=ax), ax=ax))
-ax.set_title("Project")
-ax = axes[1][1]
-colourbars.append(fig.colorbar(tricontourf(f_bounded, axes=ax), ax=ax))
-ax.set_title("Bounded")
-for i in range(2):
-    for j in range(2):
-        axes[i][j].axis(False)
-        axes[i][j].set_aspect(1)
-for cbar in colourbars:
-    cbar.set_ticks([-0.05, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05])
-plt.savefig("ping_pong-final.jpg")
+levels = [-0.05, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.05]
+labels = ["<0.0", "0.0", "0.2", "0.4", "0.6", "0.8", "1.0", ">1.0"]
+for ax, f in zip(axes.flatten(), (sensor, f_interp, f_proj, f_bounded)):
+    ax.set_title(f.name())
+    im = tricontourf(f, axes=ax, levels=levels)
+    ax.axis(False)
+    ax.set_aspect(1)
+cbar = fig.colorbar(im, ax=axes, orientation="horizontal", fraction=0.046, pad=0.04)
+cbar.set_ticks(levels)
+cbar.set_ticklabels(labels)
+plt.savefig("ping_pong-final.jpg", bbox_inches="tight")
 
 # .. figure:: ping_pong-final.jpg
 #    :figwidth: 90%
 #    :align: center
 #
 # Whilst the first two approaches clearly resemble the input field, the bounded version
-# gives a much poorer representation. As such, we find that, whilst the bounded
-# conservative projection allows for an interpolation operator with attractive
-# properties, we shouldn't expect it to give smaller errors. To demonstrate this, we
-# print the :math:`L^2` errors for each method. ::
+# gives a much poorer representation. This is because it introduces even more numerical
+# diffusion than the standard conservative projection approach. As such, we find that,
+# whilst the bounded conservative projection allows for an interpolation operator with
+# attractive properties, we shouldn't expect it to give smaller errors. To demonstrate
+# this, we print the :math:`L^2` errors for each method. ::
 
 print(f"Interpolate:     {errornorm(sensor, f_interp):.4e}")
 print(f"Project:         {errornorm(sensor, f_proj):.4e}")
