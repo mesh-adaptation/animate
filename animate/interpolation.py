@@ -73,18 +73,75 @@ def transfer(source, target_space, transfer_method="project", **kwargs):
 
 @PETSc.Log.EventDecorator()
 def interpolate(source, target_space, **kwargs):
-    """
-    A wrapper for :func:`transfer` with ``transfer_method="interpolate"``.
+    r"""
+    Overload function :func:`firedrake.__future__.interpolate` to account for the case
+    of two mixed function spaces defined on different meshes and for the adjoint
+    interpolation operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
+
+    :arg source: the function to be transferred
+    :type source: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
+    :arg target_space: the function space which we seek to transfer onto, or the
+        function or cofunction to use as the target
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`,
+        :class:`firedrake.function.Function` or :class:`firedrake.cofunction.Cofunction`
+    :returns: the transferred function
+    :rtype: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
+
+    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate`
     """
     return transfer(source, target_space, transfer_method="interpolate", **kwargs)
 
 
 @PETSc.Log.EventDecorator()
 def project(source, target_space, **kwargs):
-    """
-    A wrapper for :func:`transfer` with ``transfer_method="interpolate"``.
+    r"""
+    Overload function :func:`firedrake.projection.project` to account for the case of
+    two mixed function spaces defined on different meshes and for the adjoint
+    projection operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
+
+    For details on the approach for achieving boundedness through mass lumping and
+    post-processing, see :cite:`FPP+:2009`.
+
+    :arg source: the function to be transferred
+    :type source: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
+    :arg target_space: the function space which we seek to transfer onto, or the
+        function or cofunction to use as the target
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`,
+        :class:`firedrake.function.Function` or :class:`firedrake.cofunction.Cofunction`
+    :returns: the transferred function
+    :rtype: :class:`firedrake.function.Function` or
+        :class:`firedrake.cofunction.Cofunction`
+    :kwarg bounded: apply mass lumping to the mass matrix to ensure boundedness
+    :type bounded: :class:`bool`
+
+    Extra keyword arguments are passed to :func:`firedrake.projection.project`.
     """
     return transfer(source, target_space, transfer_method="project", **kwargs)
+
+
+# TODO: Reimplement by introducing a LumpedSupermeshProjector subclass of
+#       firedrake.projection.SupermeshProjector (#123)
+# TODO: Implement minimal diffusion correction (#124)
+def _supermesh_project(source, target, bounded=False):
+    Vs = source.function_space()
+    Vt = target.function_space()
+    element_t = Vt.ufl_element()
+    if bounded and (element_t.family(), element_t.degree()) != ("Lagrange", 1):
+        raise ValueError("Mass lumping is not recommended for spaces other than P1.")
+
+    # Create a linear system using the lumped mass matrix for the target space
+    mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
+    ksp = petsc4py.KSP().create()
+    ksp.setOperators(assemble_mass_matrix(Vt, lumped=bounded))
+
+    # Solve the linear system
+    with source.dat.vec_ro as s, target.dat.vec_wo as t:
+        rhs = t.copy()
+        mixed_mass.mult(s, rhs)
+        ksp.solve(rhs, t)
 
 
 @PETSc.Log.EventDecorator()
@@ -102,12 +159,17 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
+    :kwarg bounded: apply mass lumping to the mass matrix to ensure boundedness
+        (project only)
+    :type bounded: :class:`bool`
     :returns: the transferred Function
     :rtype: :class:`firedrake.function.Function`
 
     Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
         :func:`firedrake.projection.project`.
     """
+    is_project = transfer_method == "project"
+    bounded = is_project and kwargs.pop("bounded", False)
     Vs = source.function_space()
     Vt = target.function_space()
     _validate_matching_spaces(Vs, Vt)
@@ -117,7 +179,10 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
             if transfer_method == "interpolate":
                 t.interpolate(s, **kwargs)
             elif transfer_method == "project":
-                t.project(s, **kwargs)
+                if bounded:
+                    _supermesh_project(s, t, bounded=True)
+                else:
+                    t.project(s, **kwargs)
             else:
                 raise ValueError(
                     f"Invalid transfer method: {transfer_method}."
@@ -127,7 +192,10 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
         if transfer_method == "interpolate":
             target.interpolate(source, **kwargs)
         elif transfer_method == "project":
-            target.project(source, **kwargs)
+            if bounded:
+                _supermesh_project(source, target, bounded=True)
+            else:
+                target.project(source, **kwargs)
         else:
             raise ValueError(
                 f"Invalid transfer method: {transfer_method}."
@@ -148,12 +216,17 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     :kwarg transfer_method: the method to use for the transfer. Options are
         "interpolate" (default) and "project"
     :type transfer_method: str
+    :kwarg bounded: apply mass lumping to the mass matrix to ensure boundedness
+        (project only)
+    :type bounded: :class:`bool`
     :returns: the transferred Cofunction
     :rtype: :class:`firedrake.cofunction.Cofunction`
 
     Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
         :func:`firedrake.projection.project`.
     """
+    is_project = transfer_method == "project"
+    bounded = is_project and kwargs.pop("bounded", False)
 
     # Map to Functions to apply the adjoint transfer
     if not isinstance(target_b, firedrake.Function):
@@ -178,10 +251,12 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     # Apply adjoint transfer operator to each component
     for i, (t_b, s_b) in enumerate(zip(target_b_split, source_b_split)):
         if transfer_method == "interpolate":
-            s_b.interpolate(t_b, **kwargs)
+            raise NotImplementedError(
+                "Adjoint of interpolation operator not implemented."
+            )  # TODO (#113)
         elif transfer_method == "project":
             ksp = petsc4py.KSP().create()
-            ksp.setOperators(assemble_mass_matrix(t_b.function_space()))
+            ksp.setOperators(assemble_mass_matrix(t_b.function_space(), lumped=bounded))
             mixed_mass = assemble_mixed_mass_matrix(Vt[i], Vs[i])
             with t_b.dat.vec_ro as tb, s_b.dat.vec_wo as sb:
                 residual = tb.copy()

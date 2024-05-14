@@ -61,16 +61,16 @@ class TestVTK(unittest.TestCase):
 
 class TestMassMatrix(unittest.TestCase):
     """
-    Unit tests for :func:`assemble_mass_matrix`.
+    Unit tests for :func:`~.assemble_mass_matrix`.
     """
 
-    @parameterized.expand([["L2"], ["H1"]])
+    @parameterized.expand([("L2",), ("H1",)])
     def test_tiny(self, norm_type):
         mesh = uniform_mesh(2, 1)
         V = FunctionSpace(mesh, "DG", 0)
-        M = assemble_mass_matrix(V, norm_type=norm_type)
+        matrix = assemble_mass_matrix(V, norm_type=norm_type)
         expected = np.array([[0.5, 0], [0, 0.5]])
-        got = M.convert("dense").getDenseArray()
+        got = matrix.convert("dense").getDenseArray()
         self.assertTrue(np.allclose(expected, got))
 
     def test_norm_type_error(self):
@@ -78,8 +78,16 @@ class TestMassMatrix(unittest.TestCase):
         V = FunctionSpace(mesh, "DG", 0)
         with self.assertRaises(ValueError) as cm:
             assemble_mass_matrix(V, norm_type="HDiv")
-        msg = "Norm type 'HDiv' not recognised."
-        self.assertEqual(str(cm.exception), msg)
+        self.assertEqual(str(cm.exception), "Norm type 'HDiv' not recognised.")
+
+    def test_lumping(self):
+        mesh = UnitTriangleMesh()
+        fs = FunctionSpace(mesh, "CG", 1)
+        matrix = assemble_mass_matrix(fs, norm_type="L2", lumped=True)
+        self.assertEqual(matrix.type, "diagonal")
+        expected = np.eye(3) / 6
+        got = matrix.convert("dense").getDenseArray()
+        self.assertTrue(np.allclose(expected, got))
 
 
 class TestNorm(unittest.TestCase):
