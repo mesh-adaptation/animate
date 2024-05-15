@@ -1,5 +1,5 @@
-# 'Ping pong' interpolation experiment
-# ====================================
+# Methods for interpolating fields between different meshes
+# =========================================================
 #
 # In this demo, we perform a 'ping pong test', which amounts to interpolating a given
 # sensor function repeatedly between the two meshes using a particular interpolation
