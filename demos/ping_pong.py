@@ -1,5 +1,5 @@
-# 'Ping pong' interpolation experiment
-# ====================================
+# Methods for interpolating fields between different meshes
+# =========================================================
 #
 # In this demo, we perform a 'ping pong test', which amounts to interpolating a given
 # sensor function repeatedly between the two meshes using a particular interpolation
@@ -15,9 +15,9 @@ from firedrake.pyplot import tricontourf, triplot
 from animate import *
 
 # Consider two different meshes of the unit square: mesh A, which is laid out
-# :math:`20\times25` with diagonals from top left to bottom right and mesh B
-# :math:`20\times20` with diagonals from bottom left to top right. Note that mesh A has
-# higher resolution in the vertical direction. ::
+# :math:`20\times25` with diagonals from top left to bottom right and mesh B, which is
+# laid out :math:`20\times20` with diagonals from bottom left to top right. Note that
+# mesh A has higher resolution in the vertical direction. ::
 
 mesh_A = UnitSquareMesh(20, 25, diagonal="left", name="Mesh A")
 mesh_B = UnitSquareMesh(20, 20, diagonal="right", name="Mesh B")
@@ -32,8 +32,8 @@ plt.savefig("ping_pong-meshes.jpg", bbox_inches="tight")
 
 # Define the sensor function
 #
-# ..math::
-#   f(x,y) = \sin(\pi x) \sin(\pi y).
+# .. math::
+#    f(x,y) = \sin(\pi x) \sin(\pi y).
 #
 # Let's plot the sensor function as represented in :math:`\mathbb{P}1` spaces on mesh A.
 # ::
@@ -50,7 +50,7 @@ axes.axis(False)
 axes.set_aspect(1)
 plt.savefig("ping_pong-source_function.jpg", bbox_inches="tight")
 
-# To start with, let's consider the `interpolate` approach, which evaluates the input
+# To start with, let's consider the ``interpolate`` approach, which evaluates the input
 # field at the locations corresponding to degrees of freedom of the target function
 # space. We run the experiment for 50 iterations and track three quantities as the
 # iterations progress: the integral of the field, its global minimum, and its global
@@ -75,10 +75,10 @@ for _ in range(niter):
     quantities["maximum"]["interpolate"].append(f_interp.vector().gather().max())
 f_interp.rename("Interpolate")
 
-fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"])
-    axes[i].set_xlabel("Iteration")
+    axes[i].set_xlabel("Number of transfers back and forth")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 plt.savefig("ping_pong-quantities_interpolate.jpg", bbox_inches="tight")
@@ -103,21 +103,21 @@ plt.savefig("ping_pong-quantities_interpolate.jpg", bbox_inches="tight")
 # To elaborate on the second point, whilst the maximum value does decrease, new maxima
 # are not introduced. Similarly, no new minima are introduced.
 #
-# Next, we move on to the `project` approach, which uses the concept of a 'supermesh'
+# Next, we move on to the ``project`` approach, which uses the concept of a 'supermesh'
 # to set up a conservative projection operator. The clue is in the name: we expect this
 # approach to conserve 'mass', i.e., the integral of the field. In fact, the approach
 # is designed to satisfy this property. Let :math:`f\in V_A` denote the source field.
 # Then the projection operator, :math:`\Pi`, is chosen such that
 #
-# ..math::
+# .. math::
 #
-#   \int_\Omega f\;\mathrm{d}x = \int_\Omega \Pi(f)\;\mathrm{d}x.
+#    \int_\Omega f\;\mathrm{d}x = \int_\Omega \Pi(f)\;\mathrm{d}x.
 #
 # This is achieved by solving the equation
 #
-# ..math::
+# .. math::
 #
-#   \underline{\mathbf{M}_B} \boldsymbol{\pi} = \underline{\mathbf{M}_{BA}} \mathbf{f},
+#    \underline{\mathbf{M}_B} \boldsymbol{\pi} = \underline{\mathbf{M}_{BA}} \mathbf{f},
 #
 # for :math:`\boldsymbol{\pi}` - the vector of data underlying :math:`\Pi(f)` - where
 # :math:`\mathbf{f}` is the vector of data underlying :math:`f`,
@@ -137,11 +137,11 @@ for _ in range(niter):
     quantities["maximum"]["project"].append(f_proj.vector().gather().max())
 f_proj.rename("Project")
 
-fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"], label="Interpolate")
     axes[i].plot(subdict["project"], label="Project")
-    axes[i].set_xlabel("Iteration")
+    axes[i].set_xlabel("Number of transfers back and forth")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 axes[1].legend()
@@ -151,15 +151,15 @@ plt.savefig("ping_pong-quantities_project.jpg", bbox_inches="tight")
 #    :figwidth: 90%
 #    :align: center
 #
-# The first subfigure shows that mass is indeed conserved by the `project` approach,
-# unlike the `interpolate` approach. However, contrary to the `interpolate` approach
-# not introducing new extrema, the `project` approach can be seen to introduce new
+# The first subfigure shows that mass is indeed conserved by the ``project`` approach,
+# unlike the ``interpolate`` approach. However, contrary to the ``interpolate`` approach
+# not introducing new extrema, the ``project`` approach can be seen to introduce new
 # minimum values. No new maximum values are introduced, although the maximum values do
 # decrease slightly. Extrema are not attained because the conservative projection
 # approach used here is known to be diffusive. The fact that new minima are introduced
 # is again due to those values being on the boundary.
 #
-# To summarise, the `project` approach:
+# To summarise, the ``project`` approach:
 #
 # 1. It is conservative.
 # 2. It may introduce new extrema.
@@ -172,7 +172,7 @@ plt.savefig("ping_pong-quantities_project.jpg", bbox_inches="tight")
 # the sums over the corresponding mass matrix rows. (See :cite:`FPP+:2009` for details.)
 #
 # The resulting bounded projection operator can be used in Animate by passing
-# `bounded=True` to the `project` function. ::
+# ``bounded=True`` to the ``project`` function. ::
 
 quantities["integral"]["bounded"] = [initial_integral]
 quantities["minimum"]["bounded"] = [initial_min]
@@ -186,18 +186,22 @@ for _ in range(niter):
     quantities["maximum"]["bounded"].append(f_bounded.vector().gather().max())
 f_bounded.rename("Bounded project")
 
-fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"], label="Interpolate")
     axes[i].plot(subdict["project"], label="Project")
     axes[i].plot(subdict["bounded"], label="Bounded project")
-    axes[i].set_xlabel("Iteration")
+    axes[i].set_xlabel("Number of transfers back and forth")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 axes[1].legend()
 plt.savefig("ping_pong-quantities_bounded.jpg", bbox_inches="tight")
 
 
+# .. figure:: ping_pong-quantities_bounded.jpg
+#    :figwidth: 90%
+#    :align: center
+#
 # To check that the interpolants still resemble the sensor function after 50 iterations,
 # we plot the final fields alongside it. ::
 
@@ -215,7 +219,7 @@ cbar.set_ticklabels(labels)
 plt.savefig("ping_pong-final.jpg", bbox_inches="tight")
 
 # .. figure:: ping_pong-final.jpg
-#    :figwidth: 90%
+#    :figwidth: 80%
 #    :align: center
 #
 # Whilst the first two approaches clearly resemble the input field, the bounded version
@@ -229,10 +233,15 @@ print(f"Interpolate:     {errornorm(sensor, f_interp):.4e}")
 print(f"Project:         {errornorm(sensor, f_proj):.4e}")
 print(f"Bounded project: {errornorm(sensor, f_bounded):.4e}")
 
-# ..code-block:: console
+# .. code-block:: console
 #
-#   Interpolate:     1.7144e-02
-#   Project:         2.5693e-03
-#   Bounded project: 2.3513e-01
+#    Interpolate:     1.7144e-02
+#    Project:         2.5693e-03
+#    Bounded project: 2.3513e-01
 #
 # This demo can also be accessed as a `Python script <ping_pong.py>`__.
+#
+# .. rubric:: References
+#
+# .. bibliography:: demo_references.bib
+#    :filter: docname in docnames

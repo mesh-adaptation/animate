@@ -29,6 +29,9 @@ def transfer(source, target_space, transfer_method="project", **kwargs):
     function spaces defined on different meshes and for the adjoint interpolation
     operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
 
+    Note that the "interpolate" option works straightforwardly with MPI parallelism,
+    whereas the "project" option can be difficult to set up to make use of this.
+
     :arg source: the function to be transferred
     :type source: :class:`firedrake.function.Function` or
         :class:`firedrake.cofunction.Cofunction`
