@@ -240,3 +240,8 @@ print(f"Bounded project: {errornorm(sensor, f_bounded):.4e}")
 #    Bounded project: 2.3513e-01
 #
 # This demo can also be accessed as a `Python script <ping_pong.py>`__.
+#
+# .. rubric:: References
+#
+# .. bibliography:: demo_references.bib
+#    :filter: docname in docnames
