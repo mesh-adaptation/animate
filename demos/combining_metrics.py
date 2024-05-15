@@ -1,5 +1,6 @@
 # Intersecting and averaging metric fields
 # ===========================================
+#
 # As we saw in the `previous demo <./simple_metric.py.html>`__, the metric
 # tells the mesh adaptivity library what the desired edge lengths is in
 # different directions, in different parts of the domain.  As we will see these
@@ -25,7 +26,6 @@
 # .. figure:: combining_ellipse_intersection.jpg
 #    :figwidth: 70%
 #    :align: center
-#
 #
 # Below we first set up two metrics: Metric 1 asks for a medium resolution of
 # :math:`hm=0.025` in the left, and a coarse resolution of :math:`hc=0.1` in
@@ -121,5 +121,8 @@ fig.savefig("combining_metrics-averaging.jpg")
 #
 # the resolution in, e.g., the region :math:`x<0.5, y<0.3` is now based on an
 # average of :math:`hm=0.02` and :math:`hc=0.1`, i.e. an edge length of 0.06.
+
+# The `next demo <./ping_pong.py.html>`__ will consider a different topic: transferring
+# fields between meshes.
 #
 # This demo can also be accessed as a `Python script <combining_metrics.py>`__.
