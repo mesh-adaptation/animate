@@ -75,10 +75,10 @@ for _ in range(niter):
     quantities["maximum"]["interpolate"].append(f_interp.vector().gather().max())
 f_interp.rename("Interpolate")
 
-fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"])
-    axes[i].set_xlabel("Iteration")
+    axes[i].set_xlabel("Number of transfers back and forth")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 plt.savefig("ping_pong-quantities_interpolate.jpg", bbox_inches="tight")
@@ -137,11 +137,11 @@ for _ in range(niter):
     quantities["maximum"]["project"].append(f_proj.vector().gather().max())
 f_proj.rename("Project")
 
-fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"], label="Interpolate")
     axes[i].plot(subdict["project"], label="Project")
-    axes[i].set_xlabel("Iteration")
+    axes[i].set_xlabel("Number of transfers back and forth")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 axes[1].legend()
@@ -186,12 +186,12 @@ for _ in range(niter):
     quantities["maximum"]["bounded"].append(f_bounded.vector().gather().max())
 f_bounded.rename("Bounded project")
 
-fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
 for i, (key, subdict) in enumerate(quantities.items()):
     axes[i].plot(subdict["interpolate"], label="Interpolate")
     axes[i].plot(subdict["project"], label="Project")
     axes[i].plot(subdict["bounded"], label="Bounded project")
-    axes[i].set_xlabel("Iteration")
+    axes[i].set_xlabel("Number of transfers back and forth")
     axes[i].set_ylabel(key.capitalize())
     axes[i].grid(True)
 axes[1].legend()
