@@ -14,6 +14,8 @@ from pyop2.utils import get_petsc_dir
 PETSC_DIR, PETSC_ARCH = get_petsc_dir()
 include_dir = ["%s/include/eigen3" % PETSC_ARCH]
 
+__all__ = ["QualityMeasure"]
+
 
 class QualityMeasure:
     """
