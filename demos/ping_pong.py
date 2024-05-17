@@ -30,6 +30,10 @@ for i, mesh in enumerate((mesh_A, mesh_B)):
     axes[i].set_aspect(1)
 plt.savefig("ping_pong-meshes.jpg", bbox_inches="tight")
 
+# .. figure:: ping_pong-meshes.jpg
+#    :figwidth: 80%
+#    :align: center
+#
 # Define the sensor function
 #
 # .. math::
