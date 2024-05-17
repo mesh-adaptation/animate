@@ -47,6 +47,11 @@ jobs:
           python -m pip uninstall -y animate
           python -m pip install -e .
 
+      - name: 'Check citation'
+        run: |
+          . /home/firedrake/firedrake/bin/activate
+          make check_citation
+
       - name: 'Lint'
         if: ${{ always() }}
         run: |
