@@ -149,7 +149,7 @@ class MetricBasedAdaptor(AdaptorBase):
         """
         raise NotImplementedError(
             "Consistent interpolation has not yet been implemented in parallel"
-        )  # TODO
+        )  # TODO (#132)
 
 
 def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):

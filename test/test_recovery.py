@@ -137,7 +137,7 @@ class TestRecoveryBowl(unittest.TestCase):
         ]
     )
     def test_interior_L2_quadratic(self, dim, method):
-        # TODO: parallel version
+        # TODO: parallel version (#33)
         mesh = mesh_for_sensors(dim, 4)
         f = bowl(*mesh.coordinates)
         if method == "L2":
@@ -187,6 +187,3 @@ class TestRecoveryBowl(unittest.TestCase):
         for s in construct_basis(FacetNormal(mesh))[1:]:
             dHds = abs(assemble(dot(div(metric), s) * ds))
             self.assertLess(dHds, 2.0e-08)
-
-
-# TODO: Implement a difficult recovery test that force use of an LU solver.

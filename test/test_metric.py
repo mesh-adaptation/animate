@@ -770,8 +770,8 @@ class TestEnforceSPD(MetricTestCase):
             )
         else:
             metric.set_parameters({"dm_plex_metric_h_min": h_min})
-        # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)  # TODO
-        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
+        # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
+        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)  # TODO (#133)
         if boundary_tag is None:
             expected = uniform_metric(mesh, a=1 / h_min**2)
         else:
@@ -808,8 +808,8 @@ class TestEnforceSPD(MetricTestCase):
             )
         else:
             metric.set_parameters({"dm_plex_metric_h_max": h_max})
-        # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)  # TODO
-        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
+        # metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=False)
+        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)  # TODO (#133)
         if boundary_tag is None:
             expected = uniform_metric(mesh, a=1 / h_max**2)
         else:
@@ -849,8 +849,8 @@ class TestEnforceSPD(MetricTestCase):
             )
         else:
             metric.set_parameters({"dm_plex_metric_a_max": a_max})
-        # metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)  # TODO
-        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
+        # metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=True)
+        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)  # TODO (#133)
         if boundary_tag is None:
             expected = uniform_metric(mesh, a=10.0)
         else:

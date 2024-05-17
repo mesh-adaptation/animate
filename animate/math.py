@@ -29,8 +29,6 @@ def gram_schmidt(*vectors, normalise=False):
                 f"Inconsistent vector types: '{expected}' vs. '{type(vi)}'."
             )
 
-        # TODO: Check that valid UFL types are used
-
     def proj(x, y):
         return dot(x, y) / dot(x, x) * x
 
@@ -79,5 +77,5 @@ def construct_basis(vector, normalise=True):
     else:
         vectors.append(as_vector((vector[1], vector[2], vector[0])))
         vectors.append(as_vector((vector[2], vector[0], vector[1])))
-        # TODO: Account for the case where all three components match
+        # TODO: Account for the case where all three components match (#129)
     return gram_schmidt(*vectors, normalise=normalise)
