@@ -6,7 +6,6 @@
 # method. The purpose of this experiment is to assess the properties of different
 # interpolation methods. ::
 
-import os
 
 import matplotlib.pyplot as plt
 from firedrake import *
@@ -63,7 +62,7 @@ plt.savefig("ping_pong-source_function.jpg", bbox_inches="tight")
 # iterations progress: the integral of the field, its global minimum, and its global
 # maximum. ::
 
-niter = 1 if os.environ.get("ANIMATE_REGRESSION_TEST") else 50
+niter = 50
 initial_integral = assemble(source * dx)
 initial_min = source.vector().gather().min()
 initial_max = source.vector().gather().max()
