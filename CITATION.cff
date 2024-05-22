@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: If you use this software in a publication, please cite it using these metadata.
+title: Animate
+abstract: Anisotropic mesh adaptation toolkit for Firedrake.
+authors:
+  - family-names: Wallwork
+    given-names: Joseph G.
+    orcid: "https://orcid.org/0000-0002-3646-091X"
+  - family-names: Dundovic
+    given-names: Davor
+    orcid: "https://orcid.org/0009-0000-6085-4794"
+  - family-names: Johnson
+    given-names: Eleda
+    orcid: "https://orcid.org/0009-0008-9741-7836"
+  - family-names: Kramer
+    given-names: Stephan C.
+    orcid: "https://orcid.org/0000-0002-9193-5092"
+version: 0.2
+date-released: "2024-05-17"
+license: MIT
+repository-code: "https://github.com/mesh-adaptation/animate"

@@ -2,7 +2,7 @@
 # =========================================================
 #
 # In this demo, we perform a 'ping pong test', which amounts to interpolating a given
-# sensor function repeatedly between the two meshes using a particular interpolation
+# source function repeatedly between the two meshes using a particular interpolation
 # method. The purpose of this experiment is to assess the properties of different
 # interpolation methods. ::
 
@@ -30,26 +30,33 @@ for i, mesh in enumerate((mesh_A, mesh_B)):
     axes[i].set_aspect(1)
 plt.savefig("ping_pong-meshes.jpg", bbox_inches="tight")
 
-# Define the sensor function
+# .. figure:: ping_pong-meshes.jpg
+#    :figwidth: 80%
+#    :align: center
+#
+# Define the source function
 #
 # .. math::
 #    f(x,y) = \sin(\pi x) \sin(\pi y).
 #
-# Let's plot the sensor function as represented in :math:`\mathbb{P}1` spaces on mesh A.
-# ::
+# Let's plot it as represented in :math:`\mathbb{P}1` spaces on mesh A. ::
 
 V_A = FunctionSpace(mesh_A, "CG", 1)
 V_B = FunctionSpace(mesh_B, "CG", 1)
 x, y = SpatialCoordinate(mesh_A)
-sensor = Function(V_A, name="Sensor").interpolate(sin(pi * x) * sin(pi * y))
+source = Function(V_A, name="Source").interpolate(sin(pi * x) * sin(pi * y))
 
 fig, axes = plt.subplots()
-tricontourf(sensor, axes=axes)
+tricontourf(source, axes=axes)
 axes.set_title("Source function")
 axes.axis(False)
 axes.set_aspect(1)
 plt.savefig("ping_pong-source_function.jpg", bbox_inches="tight")
 
+# .. figure:: ping_pong-source_function.jpg
+#    :figwidth: 80%
+#    :align: center
+#
 # To start with, let's consider the ``interpolate`` approach, which evaluates the input
 # field at the locations corresponding to degrees of freedom of the target function
 # space. We run the experiment for 50 iterations and track three quantities as the
@@ -57,15 +64,15 @@ plt.savefig("ping_pong-source_function.jpg", bbox_inches="tight")
 # maximum. ::
 
 niter = 1 if os.environ.get("ANIMATE_REGRESSION_TEST") else 50
-initial_integral = assemble(sensor * dx)
-initial_min = sensor.vector().gather().min()
-initial_max = sensor.vector().gather().max()
+initial_integral = assemble(source * dx)
+initial_min = source.vector().gather().min()
+initial_max = source.vector().gather().max()
 quantities = {
     "integral": {"interpolate": [initial_integral]},
     "minimum": {"interpolate": [initial_min]},
     "maximum": {"interpolate": [initial_max]},
 }
-f_interp = Function(V_A).assign(sensor)
+f_interp = Function(V_A).assign(source)
 tmp = Function(V_B)
 for _ in range(niter):
     interpolate(f_interp, tmp)
@@ -128,7 +135,7 @@ plt.savefig("ping_pong-quantities_interpolate.jpg", bbox_inches="tight")
 quantities["integral"]["project"] = [initial_integral]
 quantities["minimum"]["project"] = [initial_min]
 quantities["maximum"]["project"] = [initial_max]
-f_proj = Function(V_A).assign(sensor)
+f_proj = Function(V_A).assign(source)
 for _ in range(niter):
     project(f_proj, tmp)
     project(tmp, f_proj)
@@ -177,7 +184,7 @@ plt.savefig("ping_pong-quantities_project.jpg", bbox_inches="tight")
 quantities["integral"]["bounded"] = [initial_integral]
 quantities["minimum"]["bounded"] = [initial_min]
 quantities["maximum"]["bounded"] = [initial_max]
-f_bounded = Function(V_A).assign(sensor)
+f_bounded = Function(V_A).assign(source)
 for _ in range(niter):
     project(f_bounded, tmp, bounded=True)
     project(tmp, f_bounded, bounded=True)
@@ -202,13 +209,13 @@ plt.savefig("ping_pong-quantities_bounded.jpg", bbox_inches="tight")
 #    :figwidth: 90%
 #    :align: center
 #
-# To check that the interpolants still resemble the sensor function after 50 iterations,
+# To check that the interpolants still resemble the source function after 50 iterations,
 # we plot the final fields alongside it. ::
 
 fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
 levels = [-0.05, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.05]
 labels = ["<0.0", "0.0", "0.2", "0.4", "0.6", "0.8", "1.0", ">1.0"]
-for ax, f in zip(axes.flatten(), (sensor, f_interp, f_proj, f_bounded)):
+for ax, f in zip(axes.flatten(), (source, f_interp, f_proj, f_bounded)):
     ax.set_title(f.name())
     im = tricontourf(f, axes=ax, levels=levels)
     ax.axis(False)
@@ -229,9 +236,9 @@ plt.savefig("ping_pong-final.jpg", bbox_inches="tight")
 # attractive properties, we shouldn't expect it to give smaller errors. To demonstrate
 # this, we print the :math:`L^2` errors for each method. ::
 
-print(f"Interpolate:     {errornorm(sensor, f_interp):.4e}")
-print(f"Project:         {errornorm(sensor, f_proj):.4e}")
-print(f"Bounded project: {errornorm(sensor, f_bounded):.4e}")
+print(f"Interpolate:     {errornorm(source, f_interp):.4e}")
+print(f"Project:         {errornorm(source, f_proj):.4e}")
+print(f"Bounded project: {errornorm(source, f_bounded):.4e}")
 
 # .. code-block:: console
 #

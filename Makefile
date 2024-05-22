@@ -27,5 +27,10 @@ coverage:
 	@python3 -m coverage html
 	@echo "Done."
 
+check_citation:
+	@echo "Checking CITATION.cff formatting..."
+	@cffconvert --validate
+	@echo "PASS"
+
 tree:
 	@tree -d .

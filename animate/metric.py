@@ -319,7 +319,7 @@ class RiemannianMetric(ffunc.Function):
         elif method == "ZZ":
             raise NotImplementedError(
                 "Zienkiewicz-Zhu recovery not yet implemented."
-            )  # TODO
+            )  # TODO (#130)
         else:
             raise ValueError(f"Recovery method '{method}' not recognised.")
 
@@ -1026,6 +1026,7 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
 
 
 # TODO: Use the intersection functionality in PETSc
+#       See https://gitlab.com/petsc/petsc/-/issues/1452
 @PETSc.Log.EventDecorator()
 def intersect_on_boundary(*metrics, boundary_tag="on_boundary"):
     """

@@ -198,7 +198,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
                 l2_proj[i][j].dat.data_with_halos[:] = firedrake.assemble(
                     p1test * ufl.dot(ufl.dot(s0, H), s1) / fa * ufl.ds
                 ).dat.data_with_halos
-                # TODO: Avoid accessing .dat.data_with_halos
+                # TODO: Avoid accessing .dat.data_with_halos (#131)
     else:
         raise ValueError(
             f"Recovery method '{method}' not supported for Hessians on the boundary."
@@ -227,7 +227,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
             Hsub.dat(op2.READ),
         )
         Hsub.assign(metric)
-        # TODO: Could this be supported using RiemannianMetric.enforce_spd?
+        # TODO: Could this be supported using RiemannianMetric.enforce_spd? (#131)
 
         # Construct Hessian
         H = ufl.as_matrix(
