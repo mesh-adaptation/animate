@@ -44,7 +44,7 @@ plt.savefig("ping_pong-meshes.jpg", bbox_inches="tight")
 V_A = FunctionSpace(mesh_A, "CG", 1)
 V_B = FunctionSpace(mesh_B, "CG", 1)
 x, y = SpatialCoordinate(mesh_A)
-source = Function(V_A, name="Sensor").interpolate(sin(pi * x) * sin(pi * y))
+source = Function(V_A, name="Source").interpolate(sin(pi * x) * sin(pi * y))
 
 fig, axes = plt.subplots()
 tricontourf(source, axes=axes)
