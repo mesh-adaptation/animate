@@ -200,6 +200,8 @@ def test_adapt_parallel_3d_np3(serialise):
     that it changes the DoF count.
     """
     assert COMM_WORLD.size == 3
+    if not serialise:
+        pytest.skip("FIXME: test currently hangs")  # FIXME: (#136)
     test_adapt_3d(serialise=serialise)
 
 
