@@ -88,7 +88,7 @@ class QualityMeasure:
         with open(self.fname, "r") as f:
             code = f.read()
         func = firedrake.Function(self.P0, name=name)
-        kwargs = dict(cpp=True, include_dirs=include_dir)
+        kwargs = {"cpp": True, "include_dirs": include_dir}
         kernel = op2.Kernel(code, f"get_{name}", **kwargs)
         op2.par_loop(kernel, self.mesh.cell_set, *self._get_dats(func))
         return func
