@@ -326,15 +326,15 @@ def clement_interpolant(source, target_space=None, boundary=False):
     # Process target space
     Vt = target_space
     if Vt is None:
-        if rank == 0:
-            Vt = firedrake.FunctionSpace(mesh, "CG", 1)
-        elif rank == 1:
-            Vt = firedrake.VectorFunctionSpace(mesh, "CG", 1)
-        else:
-            Vt = firedrake.TensorFunctionSpace(mesh, "CG", 1)
+        Vt_ranks = {
+            0: firedrake.FunctionSpace(mesh, "CG", 1),
+            1: firedrake.VectorFunctionSpace(mesh, "CG", 1),
+            2: firedrake.TensorFunctionSpace(mesh, "CG", 1),
+        }
+        Vt = Vt_ranks[rank]
     elif isinstance(Vt, FiredrakeDualSpace):
         Vt = Vt.dual()
-    elif not isinstance(Vt, FiredrakeDualSpace):
+    else:
         is_cofunction = False
     Vt_e = Vt.ufl_element()
     if not (Vt_e.family() == "Lagrange" and Vt_e.degree() == 1):
@@ -346,14 +346,12 @@ def clement_interpolant(source, target_space=None, boundary=False):
     P1 = firedrake.FunctionSpace(mesh, "CG", 1)
 
     # Determine target domain
-    if rank == 0:
-        tdomain = "{[i]: 0 <= i < t.dofs}"
-    elif rank == 1:
-        tdomain = f"{{[i, j]: 0 <= i < t.dofs and 0 <= j < {dim}}}"
-    else:
-        tdomain = (
-            f"{{[i, j, k]: 0 <= i < t.dofs and 0 <= j < {dim} and 0 <= k < {dim}}}"
-        )
+    tdomain_ranks = {
+        0: "{[i]: 0 <= i < t.dofs}",
+        1: f"{{[i, j]: 0 <= i < t.dofs and 0 <= j < {dim}}}",
+        2: f"{{[i, j, k]: 0 <= i < t.dofs and 0 <= j < {dim} and 0 <= k < {dim}}}",
+    }
+    tdomain = tdomain_ranks[rank]
 
     # Compute the patch volume at each vertex
     if not boundary:
@@ -368,12 +366,12 @@ def clement_interpolant(source, target_space=None, boundary=False):
         firedrake.par_loop((domain, instructions), dX, keys)
 
         # Take weighted average
-        if rank == 0:
-            instructions = "t[i] = t[i] + v[0] * s[0]"
-        elif rank == 1:
-            instructions = "t[i, j] = t[i, j] + v[0] * s[0, j]"
-        else:
-            instructions = f"t[i, {dim} * j + k] = t[i, {dim} * j + k] + v[0] * s[0, {dim} * j + k]"
+        instructions_ranks = {
+            0: "t[i] = t[i] + v[0] * s[0]",
+            1: "t[i, j] = t[i, j] + v[0] * s[0, j]",
+            2: f"t[i, {dim} * j + k] = t[i, {dim} * j + k] + v[0] * s[0, {dim} * j + k]",
+        }
+        instructions = instructions_ranks[rank]
         keys = {
             "s": (source, op2.READ),
             "v": (volume, op2.READ),
@@ -408,12 +406,12 @@ def clement_interpolant(source, target_space=None, boundary=False):
         firedrake.par_loop((domain, instructions), dX, keys)
 
         # Take weighted average
-        if rank == 0:
-            instructions = "t[i] = t[i] + v[0] * b[i] * s[0]"
-        elif rank == 1:
-            instructions = "t[i, j] = t[i, j] + v[0] * b[i] * s[0, j]"
-        else:
-            instructions = f"t[i, {dim} * j + k] = t[i, {dim} * j + k] + v[0] * b[i] * s[0, {dim} * j + k]"
+        instructions_ranks = {
+            0: "t[i] = t[i] + v[0] * b[i] * s[0]",
+            1: "t[i, j] = t[i, j] + v[0] * b[i] * s[0, j]",
+            2: f"t[i, {dim} * j + k] = t[i, {dim} * j + k] + v[0] * b[i] * s[0, {dim} * j + k]",
+        }
+        instructions = instructions_ranks[rank]
         keys = {
             "s": (source, op2.READ),
             "v": (bnd_volume, op2.READ),

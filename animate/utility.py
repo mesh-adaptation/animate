@@ -126,8 +126,7 @@ def norm(v, norm_type="L2", condition=None, boundary=False):
     """
     if isinstance(v, firedrake.Cofunction):
         v = cofunction2function(v)
-    if condition is None:
-        condition = firedrake.Constant(1.0)
+    condition = condition or firedrake.Constant(1.0)
     norm_codes = {"l1": 0, "l2": 2, "linf": 3}
     p = 2
     if norm_type in norm_codes or norm_type == "Linf":
@@ -154,19 +153,20 @@ def norm(v, norm_type="L2", condition=None, boundary=False):
             if p < 1:
                 raise ValueError(f"'{norm_type}' norm does not make sense.")
             integrand = ufl.inner(v, v)
-        elif norm_type.lower() == "h1":
-            integrand = ufl.inner(v, v) + ufl.inner(ufl.grad(v), ufl.grad(v))
-        elif norm_type.lower() == "hdiv":
-            integrand = ufl.inner(v, v) + ufl.div(v) * ufl.div(v)
-        elif norm_type.lower() == "hcurl":
-            integrand = ufl.inner(v, v) + ufl.inner(ufl.curl(v), ufl.curl(v))
+        elif norm_type.lower() in ("h1", "hdiv", "hcurl"):
+            integrands_dict = {
+                "h1": ufl.inner(v, v) + ufl.inner(ufl.grad(v), ufl.grad(v)),
+                "hdiv": ufl.inner(v, v) + ufl.div(v) * ufl.div(v),
+                "hcurl": ufl.inner(v, v) + ufl.inner(ufl.curl(v), ufl.curl(v)),
+            }
+            integrand = integrands_dict[norm_type.lower()]
         else:
             raise ValueError(f"Unknown norm type '{norm_type}'.")
         return firedrake.assemble(condition * integrand ** (p / 2) * dX) ** (1 / p)
 
 
 @PETSc.Log.EventDecorator()
-def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):
+def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):  # noqa: C901
     r"""
     Overload :func:`firedrake.norms.errornorm` to allow for :math:`\ell^p` norms.
 
