@@ -154,12 +154,12 @@ def norm(v, norm_type="L2", condition=None, boundary=False):
                 raise ValueError(f"'{norm_type}' norm does not make sense.")
             integrand = ufl.inner(v, v)
         elif norm_type.lower() in ("h1", "hdiv", "hcurl"):
-            integrands_dict = {
-                "h1": ufl.inner(v, v) + ufl.inner(ufl.grad(v), ufl.grad(v)),
-                "hdiv": ufl.inner(v, v) + ufl.div(v) * ufl.div(v),
-                "hcurl": ufl.inner(v, v) + ufl.inner(ufl.curl(v), ufl.curl(v)),
-            }
-            integrand = integrands_dict[norm_type.lower()]
+            integrand = {
+                "h1": lambda w: ufl.inner(w, w) + ufl.inner(ufl.grad(w), ufl.grad(w)),
+                "hdiv": lambda w: ufl.inner(w, w) + ufl.div(w) * ufl.div(w),
+                "hcurl": lambda w: ufl.inner(w, w)
+                + ufl.inner(ufl.curl(w), ufl.curl(w)),
+            }[norm_type.lower()](v)
         else:
             raise ValueError(f"Unknown norm type '{norm_type}'.")
         return firedrake.assemble(condition * integrand ** (p / 2) * dX) ** (1 / p)
