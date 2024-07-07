@@ -228,8 +228,13 @@ class RiemannianMetric(ffunc.Function):
         self._metric_parameters.update(mp)
         self._variable_parameters.update(vp)
 
+        mp = self._metric_parameters.copy()
+        if "dm_plex_metric_p" in mp:
+            if mp["dm_plex_metric_p"] == np.inf:
+                mp["dm_plex_metric_p"] = 1.79769e308
+
         # Pass parameters to PETSc
-        with OptionsManager(self._metric_parameters, "").inserted_options():
+        with OptionsManager(mp, "").inserted_options():
             self._plex.metricSetFromOptions()
         if self._plex.metricIsUniform():
             raise NotImplementedError(
