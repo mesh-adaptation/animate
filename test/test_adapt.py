@@ -1,3 +1,7 @@
+"""
+Unit tests for invoking mesh adaptation tools Mmg2d, Mmg3d, and ParMmg.
+"""
+
 import os
 
 import numpy as np
@@ -11,24 +15,30 @@ def load_mesh(fname):
     """
     Load a mesh in gmsh format.
 
-    :param fname: file name, without the .msh extension
+    :arg fname: file name, without the .msh extension
+    :type fname: :class:`str`
+    :return: the mesh
+    :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
     venv = os.environ.get("VIRTUAL_ENV")
     mesh_dir = os.path.join(venv, "src", "firedrake", "tests", "meshes")
     return Mesh(os.path.join(mesh_dir, fname + ".msh"))
 
 
-def try_adapt(mesh, metric, **kwargs):
+def try_adapt(mesh, metric, serialise=None):
     """
-    Attempt to invoke PETSc's mesh adaptation functionality
-    and xfail if it is not installed.
+    Attempt to invoke PETSc's mesh adaptation functionality and xfail if it is not
+    installed.
 
-    :param mesh: the current mesh
-    :param metric: the :class:`RiemannianMetric` instance
-    :return: the adapted mesh w.r.t. the metric
+    :arg mesh: mesh to be adapted
+    :type mesh: :class:`firedrake.mesh.MeshGeometry`
+    :arg metric: Riemannian metric to adapt with respect to
+    :type metric: :class:`animate.metric.RiemannianMetric`
+    :return: mesh adapted according to the metric
+    :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
     try:
-        return adapt(mesh, metric, **kwargs)
+        return adapt(mesh, metric, serialise=serialise)
     except PETSc.Error as exc:
         if exc.ierr == 63:
             pytest.xfail("No mesh adaptation tools are installed")
@@ -36,35 +46,26 @@ def try_adapt(mesh, metric, **kwargs):
             raise Exception(f"PETSc error code {exc.ierr}") from exc
 
 
+@pytest.mark.parallel(nprocs=2)
 def test_adapt_2dparallel_error():
+    """
+    Ensure adapting a 2D mesh in parallel raises a ``ValueError`` with the message
+    "Parallel adaptation is only supported in 3D."
+    """
     mesh = uniform_mesh(2)
-    mp = {
-        "dm_plex_metric": {
-            "no_insert": None,
-            "no_move": None,
-            "no_swap": None,
-            "no_surf": None,
-        }
-    }
-    metric = uniform_metric(mesh, metric_parameters=mp)
     with pytest.raises(ValueError) as e_info:
-        try_adapt(mesh, metric, serialise=False)
+        try_adapt(mesh, uniform_metric(mesh), serialise=False)
     assert str(e_info.value) == "Parallel adaptation is only supported in 3D."
 
 
-@pytest.fixture(params=[2, 3])
-def dim(request):
-    return request.param
-
-
-@pytest.fixture(params=[True, False])
-def serialise(request):
-    return request.param
-
-
-def test_no_adapt(dim, **kwargs):
+@pytest.mark.parametrize(
+    "dim,serialise",
+    [(2, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
+    ids=["mmg2d"],  # ["mmg2d", "mmg3d, ParMmg"],
+)
+def test_no_adapt(dim, serialise):
     """
-    Test that we can turn off mesh adaptation operations.
+    Ensure mesh adaptation operations can be turned off.
     """
     mesh = uniform_mesh(dim)
     dofs = mesh.coordinates.vector().gather().shape
@@ -77,40 +78,29 @@ def test_no_adapt(dim, **kwargs):
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
-    newmesh = try_adapt(mesh, metric, **kwargs)
+    newmesh = try_adapt(mesh, metric, serialise=serialise)
     assert newmesh.coordinates.vector().gather().shape == dofs
 
 
 @pytest.mark.parallel(nprocs=2)
-def test_no_adapt_2d_parallel():
+@pytest.mark.parametrize(
+    "dim,serialise", [(3, True), (3, False)], ids=["mmg3d", "ParMmg"]
+)
+def test_no_adapt_parallel(dim, serialise):
     """
-    Test that we can turn off mesh adaptation operations in 2D.
-    """
-    assert COMM_WORLD.size == 2
-    test_no_adapt(2, serialise=True)
-
-
-@pytest.mark.parallel(nprocs=2)
-def test_no_adapt_3d_parallel(serialise):
-    """
-    Test that we can turn off mesh adaptation operations in 3D.
+    Ensure mesh adaptation operations can be turned off when running in parallel.
     """
     assert COMM_WORLD.size == 2
-    test_no_adapt(3, serialise=serialise)
+    test_no_adapt(dim, serialise=serialise)
 
 
 @pytest.mark.parametrize(
     "meshname",
-    [
-        "annulus",
-        "cell-sets",
-        "square_with_embedded_line",
-    ],
+    ["annulus", "cell-sets", "square_with_embedded_line"],
 )
 def test_preserve_cell_tags_2d(meshname):
     """
-    Test that cell tags are preserved
-    after mesh adaptation.
+    Ensure cell tags are preserved after mesh adaptation.
     """
     mesh = load_mesh(meshname)
     metric = uniform_metric(mesh)
@@ -129,15 +119,11 @@ def test_preserve_cell_tags_2d(meshname):
 
 @pytest.mark.parametrize(
     "meshname",
-    [
-        "annulus",
-        "circle_in_square",
-    ],
+    ["annulus", "circle_in_square"],
 )
 def test_preserve_facet_tags_2d(meshname):
     """
-    Test that facet tags are preserved
-    after mesh adaptation.
+    Ensure facet tags are preserved after mesh adaptation.
     """
     mesh = load_mesh(meshname)
     metric = uniform_metric(mesh)
@@ -155,12 +141,16 @@ def test_preserve_facet_tags_2d(meshname):
         assert np.isclose(bnd, newbnd), f"Length of arc {tag} not preserved"
 
 
-def test_adapt_3d(**kwargs):
+@pytest.mark.parametrize(
+    "dim,serialise",
+    [(2, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
+    ids=["mmg2d"],  # ids=["mmg2d", "mmg3d, ParMmg"],
+)
+def test_adapt(dim, serialise):
     """
-    Test that we can successfully invoke
-    Mmg3d and that it changes the DoF count.
+    Test that we can successfully invoke Mmg and that it changes the DoF count.
     """
-    mesh = uniform_mesh(3)
+    mesh = uniform_mesh(dim)
     dofs = mesh.coordinates.vector().gather().shape
     mp = {
         "dm_plex_metric": {
@@ -169,45 +159,46 @@ def test_adapt_3d(**kwargs):
         }
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
-    newmesh = try_adapt(mesh, metric, **kwargs)
+    newmesh = try_adapt(mesh, metric, serialise=serialise)
     assert newmesh.coordinates.vector().gather().shape != dofs
 
 
 @pytest.mark.parallel(nprocs=2)
-def test_adapt_parallel_2d_np2(serialise):
+@pytest.mark.parametrize(
+    "dim,serialise",
+    [(2, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
+    ids=["mmg2d"],  # ["mmg2d", "mmg3d, ParMmg"],
+)
+def test_adapt_parallel_np2(dim, serialise):
     """
-    Test that we can successfully invoke Mmg for a 2D run with 2 MPI processes and that
-    it changes the DoF count.
-    """
-    assert COMM_WORLD.size == 2
-    test_adapt_3d(serialise=True)
-
-
-@pytest.mark.parallel(nprocs=2)
-def test_adapt_parallel_3d_np2(serialise):
-    """
-    Test that we can successfully invoke [Par]Mmg for a 3D run with 2 MPI processes and
-    that it changes the DoF count.
+    Test that we can successfully invoke [Par]Mmg with 2 MPI processes and that it
+    changes the DoF count.
     """
     assert COMM_WORLD.size == 2
-    test_adapt_3d(serialise=serialise)
+    test_adapt(dim, serialise=serialise)
 
 
 @pytest.mark.parallel(nprocs=3)
-def test_adapt_parallel_3d_np3(serialise):
+@pytest.mark.parametrize(
+    "dim,serialise",
+    [(2, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
+    ids=["mmg2d"],  # ["mmg2d", "mmg3d, ParMmg"],
+)
+def test_adapt_parallel_np3(dim, serialise):
     """
-    Test that we can successfully invoke [Par]Mmg for a 3D run with 3 MPI processes and
-    that it changes the DoF count.
+    Test that we can successfully invoke [Par]Mmg with 3 MPI processes and that it
+    changes the DoF count.
     """
     assert COMM_WORLD.size == 3
-    if not serialise:
-        pytest.skip("FIXME: test currently hangs")  # FIXME: (#136)
-    test_adapt_3d(serialise=serialise)
+    test_adapt(dim, serialise=serialise)
 
 
+# @pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])  # FIXME: hang (#136)
+@pytest.mark.parametrize("dim", [2], ids=["mmg2d"])
 def test_enforce_spd_h_min(dim):
     """
-    Tests that the :meth:`enforce_spd` method applies minimum magnitudes as expected.
+    Tests that :meth:`animate.metric.RiemannianMetric.enforce_spd` applies minimum
+    magnitudes as expected.
     """
     mesh = uniform_mesh(dim)
     h = 0.1
@@ -220,9 +211,12 @@ def test_enforce_spd_h_min(dim):
     assert newmesh.coordinates.vector().gather().shape[0] < num_vertices
 
 
+# @pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])  # FIXME: hang (#136)
+@pytest.mark.parametrize("dim", [2], ids=["mmg2d"])
 def test_enforce_spd_h_max(dim):
     """
-    Tests that the :meth:`enforce_spd` method applies maximum magnitudes as expected.
+    Tests that :meth:`animate.metric.RiemannianMetric.enforce_spd` applies maximum
+    magnitudes as expected.
     """
     mesh = uniform_mesh(dim)
     h = 0.1
@@ -235,5 +229,6 @@ def test_enforce_spd_h_max(dim):
     assert newmesh.coordinates.vector().gather().shape[0] > num_vertices
 
 
+# Debugging
 if __name__ == "__main__":
-    test_no_adapt_2d_parallel()
+    test_adapt(3)
