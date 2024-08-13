@@ -84,12 +84,12 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(fs.dof_count, Iterable):
             raise ValueError("Riemannian metric cannot be built in a mixed space.")
         self._check_space()
-        rank = len(fs.dof_dset.dim)
-        if rank != 2:
-            raise ValueError(
-                "Riemannian metric should be matrix-valued,"
-                f" not rank-{rank} tensor-valued."
-            )
+        # rank = len(fs.dof_dset.dim)
+        # if rank != 2:
+        #     raise ValueError(
+        #         "Riemannian metric should be matrix-valued,"
+        #         f" not rank-{rank} tensor-valued."
+        #     )
 
         # Stash mesh data
         plex = mesh.topology_dm.clone()
