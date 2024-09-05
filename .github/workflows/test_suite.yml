@@ -25,7 +25,7 @@ jobs:
     name: 'Test suite'
     runs-on: ubuntu-latest
     container:
-      image: jwallwork/firedrake-parmmg:latest
+      image: ghcr.io/mesh-adaptation/firedrake-parmmg:latest
       options: --user root
     steps:
       - uses: actions/checkout@v2
