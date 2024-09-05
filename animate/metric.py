@@ -229,9 +229,8 @@ class RiemannianMetric(ffunc.Function):
         self._variable_parameters.update(vp)
 
         mp = self._metric_parameters.copy()
-        if "dm_plex_metric_p" in mp:
-            if mp["dm_plex_metric_p"] == np.inf:
-                mp["dm_plex_metric_p"] = 1.79769e308
+        if mp.get("dm_plex_metric_p") == np.inf:
+            mp["dm_plex_metric_p"] = 1.79769e308
 
         # Pass parameters to PETSc
         with OptionsManager(mp, "").inserted_options():
