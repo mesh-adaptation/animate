@@ -1,14 +1,17 @@
 # On-the-fly time-dependent mesh adaptation
-###########################################
-
+# #########################################
+#
 # In this demo we consider the 2-dimensional version of the mesh adaptation experiment
 # presented in :cite:<Barral:2016>. The problem comprises a bubble of tracer
 # concentration field advected by a time-varying flow.
 # We will consider two different mesh adaptation strategies: the classical mesh
-# adaptation algorithm, which adapts the mesh several times throughout the simulation,
-# before solving the advection equation, and the metric advection algorithm, which
+# adaptation algorithm, which adapts the mesh several times throughout the simulation
+# based on the solution at the current time, and the metric advection algorithm, which
 # advects the initial metric tensor along the flow in order to predict where to
-# prescribe fine resolution in the future.
+# prescribe fine resolution in the future. Both algorithms are an example of
+# *on-the-fly* time-dependent mesh adaptation algorithms, where the mesh is adapted
+# before each subinterval of the simulation, as opposed to fixed-point iteration
+# algorithms, where the mesh is iteratively adapted at the end of the simulation.
 #
 # We begin by defining the advection problem. We consider the advection equation
 #
@@ -21,7 +24,8 @@
 #
 # where :math:`c=c(x,y,t)` is the sought tracer concentration,
 # :math:`\mathbf{u}=\mathbf{u}(x,y,t)` is the background velocity field, and
-# :math:`\Omega=[0, 1]^2` is the spatial domain of interest.
+# :math:`\Omega=[0, 1]^2` is the spatial domain of interest with boundary
+# :math:`\partial\Omega`.
 #
 # The background velocity field :math:`\mathbf{u}(x, y, t)` is chosen to be periodic in
 # time, and is given by
@@ -71,7 +75,14 @@ def get_initial_condition(mesh):
 # for each subinterval. The function takes the mesh over which to solve the problem,
 # time interval :math:`[t_{\text{start}}, t_{\text{end}}]` over which to solve it, and
 # the initial condition :math:`c_0 = c(x, y, t_{\text{start}})`. The function returns
-# the solution :math:`c(x, y, t_{\text{end}})`. ::
+# the solution :math:`c(x, y, t_{\text{end}})`.
+#
+# Note that we must include streamline upwind Petrov Galerkin (SUPG) stabilisation in
+# the test function in order to ensure numerical stability. ::
+
+# Time-stepping parameters
+# dt = 0.01  # timestep size
+# theta = 0.5  # Crank-Nicolson implicitness
 
 
 def run_simulation(mesh, t_start, t_end, c0):
@@ -85,14 +96,14 @@ def run_simulation(mesh, t_start, t_end, c0):
     u_ = Function(V).interpolate(velocity_expression(mesh, t_start))  # vel. at t_start
     u = Function(V)  # velocity field at current timestep
 
-    # SUPG stabilisation parameters
+    # SUPG stabilisation
     D = Function(R).assign(0.1)  # diffusivity coefficient
     h = CellSize(mesh)  # mesh cell size
     U = sqrt(dot(u, u))  # velocity magnitude
     tau = 0.5 * h / U
     tau = min_value(tau, U * h / (6 * D))
 
-    # Apply SUPG stabilisation
+    # Apply SUPG stabilisation to the test function
     phi = TestFunction(Q)
     phi += tau * dot(u, grad(phi))
 
@@ -129,29 +140,17 @@ def run_simulation(mesh, t_start, t_end, c0):
 # Finally, we are ready to run the simulation. We will first solve the entire
 # problem over two uniform meshes: one with 32 elements in each direction and another
 # with 128 elements in each direction. Since the flow reverts to its initial state at
-# time :math:`t=T/2`, we run the simulations over the interval :math:`[0, T/2]`. In
-# order to compare the efficacy of mesh adaptation methods, we will also keep track
-# of the time it takes to run the simulation. ::
-
-import time
+# time :math:`t=T/2`, we run the simulations over the interval :math:`[0, T/2]`. ::
 
 simulation_end_time = T / 2.0
 
-# mesh_coarse = UnitSquareMesh(32, 32)
-mesh_coarse = UnitSquareMesh(256, 256)
+mesh_coarse = UnitSquareMesh(32, 32)
 c0_coarse = get_initial_condition(mesh_coarse)
-cpu_time_coarse = time.time()
 c_coarse_final = run_simulation(mesh_coarse, 0.0, simulation_end_time, c0_coarse)
-cpu_time_coarse = time.time() - cpu_time_coarse
 
 mesh_fine = UnitSquareMesh(128, 128)
 c0_fine = get_initial_condition(mesh_fine)
-cpu_time_fine = time.time()
 c_fine_final = run_simulation(mesh_fine, 0.0, simulation_end_time, c0_fine)
-cpu_time_fine = time.time() - cpu_time_fine
-
-print(f"CPU time on the coarse mesh: {cpu_time_coarse:.2f} s")
-print(f"CPU time on the fine mesh: {cpu_time_fine:.2f} s")
 
 # We can now visualise the final concentration fields on the two meshes. ::
 
@@ -161,7 +160,7 @@ from firedrake.pyplot import *
 fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=True)
 for ax, c, mesh in zip(axes, [c_coarse_final, c_fine_final], [mesh_coarse, mesh_fine]):
     tripcolor(c, axes=ax)
-    ax.set_title(f"{mesh.num_cells()} mesh elements")
+    ax.set_title(f"{mesh.num_vertices()} mesh vertices")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.set_aspect("equal")
@@ -184,7 +183,8 @@ fig.savefig("bubble_shear-uniform.jpg", dpi=300, bbox_inches="tight")
 # is, the more diffusion is added. We encourage the reader to verify this by running the
 # simulation on a sequence of finer uniform meshes.
 #
-# In ... ::
+# In order to quantify the above observation, we will compute the relative L2 error
+# between the initial condition and the final concentration field on the final mesh. ::
 
 
 def compute_rel_error(c_init, c_final):
@@ -196,40 +196,59 @@ def compute_rel_error(c_init, c_final):
 coarse_error = compute_rel_error(c0_coarse, c_coarse_final)
 print(f"Relative L2 error on the coarse mesh: {coarse_error:.2f}%")
 fine_error = compute_rel_error(c0_fine, c_fine_final)
-print(f"Relative L2 error on the fine mesh: {fine_error:.2f}%")
+print(f"Relative L2 error on the fine mesh: {fine_error:.2f}%.")
 
 # .. code-block:: console
 #
-#    Relative L2 error on the coarse mesh: 58.85%
-#    Relative L2 error on the fine mesh: 34.60%
+#    Relative L2 error on the coarse mesh: 56.52%
+#    Relative L2 error on the fine mesh: 32.29%
 #
-# TODO Explain the error
-#
-# Instead of running the simulation on a very fine mesh, we can use mesh adaptation
-# techniques to refine the mesh only in regions and at times where that is necessary.
-# For the purposes of this demo, we are going to adapt the mesh 20 times throughout the
-# simulation, at equal time intervals (i.e., every 0.15s of simulation time). ::
+# Since accurate simulations require very fine resolution, which may be computationally
+# too prohitibive, we will now demonstrate how to use mesh adaptation techniques to
+# refine the mesh only in regions and at times where that is necessary.
+# For the purposes of this demo, we are going to adapt the mesh 15 times throughout the
+# simulation, at equal time intervals (i.e., every 0.2s of simulation time). ::
 
-num_adaptations = 20
+num_adaptations = 15
 interval_length = simulation_end_time / num_adaptations
+
+# We will also define a function that will allow us to easily plot the adapted mesh, as
+# well as the solution fields at the beginning and end of each subinterval. ::
+
+
+def plot_mesh(mesh, c0, c1, i, method):
+    fig, ax = plt.subplots(1, 3, sharey=True, figsize=(12, 4))
+    triplot(mesh, axes=ax[0])
+    tripcolor(c0, axes=ax[1])
+    tripcolor(c1, axes=ax[2])
+    ax[0].set_title(f"Mesh {i} ({mesh.num_vertices()} vertices)")
+    ax[1].set_title(f"Solution at t={i*interval_length:.1f}s")
+    ax[2].set_title(f"Solution at t={(i+1)*interval_length:.1f}s")
+    for axes in ax:
+        axes.set_xlim(0, 1)
+        axes.set_ylim(0, 1)
+        axes.set_aspect("equal")
+    fig.savefig(f"bubble_shear-{method}_{i}.jpg", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
 
 # As mentioned in the introduction, we shall demonstrate two different mesh adaptation
 # strategies. Let us begin with the classical mesh adaptation algorithm, which adapts
 # each mesh before solving the advection equation over the corresponding subinterval.
 # Here we will use the :class:`RiemannianMetric` class to define the metric, which we
 # will compute based on the Hessian of the concentration field. Let us therefore define
-# a function which takes the original mesh and the concentration field as arguments. We
-# will also define parameters for computing the metric. ::
+# a function which takes the original mesh and the concentration field as arguments, and
+# returns the adapted mesh. We will also define parameters for computing the metric. ::
 
 from animate.adapt import adapt
 from animate.metric import RiemannianMetric
 
 metric_params = {
     "dm_plex_metric": {
-        "target_complexity": 2000.0,
-        "p": 2.0,
-        "h_min": 1e-04,  # minimum edge length
-        "h_max": 1.0,  # maximum edge length
+        "target_complexity": 1500.0,
+        "p": 2.0,  # normalisation order
+        "h_min": 1e-04,  # minimum allowed edge length
+        "h_max": 1.0,  # maximum allowed edge length
     }
 }
 
@@ -244,55 +263,78 @@ def adapt_classical(mesh, c):
     return adapted_mesh
 
 
-# We can now run the simulation over each subinterval. ::
+# We can now run the simulation, but we adapt the mesh before each subinterval. We begin
+# with a coarse uniform mesh and track the number of vertices of each adapted mesh. ::
 
-mesh = mesh_coarse
-c = get_initial_condition(mesh_coarse)
-cpu_time_classical = time.time()
+mesh = UnitSquareMesh(32, 32)
+mesh_numVertices = []
+c = get_initial_condition(mesh)
 for i in range(num_adaptations):
     t0 = i * interval_length  # subinterval start time
     t1 = (i + 1) * interval_length  # subinterval end time
 
     # Adapt the mesh based on the concentration field at t0
     mesh = adapt_classical(mesh, c)
+    mesh_numVertices.append(mesh.num_vertices())
+
+    # Make a copy of the initial condition for plotting purposes
+    c0 = c.copy(deepcopy=True)
 
     # Solve the advection equation over the subinterval (t0, t1]
     c = run_simulation(mesh, t0, t1, c)
-cpu_time_classical = time.time() - cpu_time_classical
-print(f"CPU time with classical adaptation algorithm: {cpu_time_classical:.2f} s")
 
-# Now let us plot the final adapted mesh and final concentration field computed on it.
+    # Plot the adapted mesh and the concentration field at t0 and t1
+    plot_mesh(mesh, c0, c, i, "classical")
+
+# Now let us examine the final adapted mesh and final concentration field computed on it.
 # We will also compute the relative L2 error. ::
-
-fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=True)
-triplot(mesh, axes=axes[0])
-tripcolor(c, axes=axes[1])
-
-for ax in axes.flat:
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.set_aspect("equal")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-fig.tight_layout()
-fig.savefig("bubble_shear-classical.jpg", dpi=300, bbox_inches="tight")
 
 # Redefine the initial condition on the final adapted mesh
 c0 = get_initial_condition(mesh)
 classical_c0 = Function(FunctionSpace(mesh, "CG", 1)).interpolate(c0)
 classical_error = compute_rel_error(classical_c0, c)
 
-print(f"Relative L2 error with classical adaptation algorithm: {classical_error:.2f}%")
+print(
+    f"Classical mesh adaptation.\n"
+    f"   Avg. number of vertices: {np.average(mesh_numVertices):.1f}\n"
+    f"   Relative L2 error: {classical_error:.2f}%"
+)
 
 # .. code-block:: console
 #
-#    Relative L2 error with classical adaptation algorithm: 26.54%
+#    Classical mesh adaptation.
+#       Avg. number of vertices: 2302.3
+#       Relative L2 error: 31.76%
 #
-# .. figure:: bubble_shear-classical.jpg
+# .. figure:: bubble_shear-classical_14.jpg
 #    :figwidth: 80%
 #    :align: center
 #
-# TODO talk about this ::
+# As we can see, the relative L2 error is lower than the one obtained with the uniform
+# fine mesh, even though the average number of vertices is more than 8 times smaller.
+# This demonstrates the effectiveness of mesh adaptation, which we can also observe in
+# the figure above. We see that final mesh has clearly been refined around the bubble
+# at the beginning of the final subinterval and coarsened elsewhere.
+#
+# However, we also observe that the bubble has advected out of the fine resolution
+# region by the end of the subinterval. This is a common occurence in time-dependent
+# mesh adaptation, known as the *lagging mesh* problem, where the mesh is said to lag
+# with respect to the solution.
+# Ensuring that the bubble remains well-resolved throughout the simulation
+# is not a trivial task, as it requires predicting where the bubble will be in the
+# future. Earliest attempts at preventing the lagging mesh problem introduced a safety
+# margin around the fine-resolution region. While potentially very effective, depending
+# on the size of the margin, this approach is also likely to be inefficient as it may
+# prescribe fine resolution in regions where it is not needed.
+#
+# For advection-dominated problems, as is the case here, a *metric advection* algorithm
+# has been proposed in :cite:<Wilson:2010>. The idea is to still compute the metric
+# based on the solution at the current time, but then to advect the metric along the
+# flow in order to predict where to prescribe fine resolution in the future. By
+# combining the advected metrics in time, we obtain a final metric that is
+# representative of the evolving solution throughout the subinterval. We achieve this in
+# the following function, where we solve the before-seen advection equation for each
+# component of the metric tensor. ::
 
 
 def adapt_metric_advection(mesh, t_start, t_end, c):
@@ -301,16 +343,16 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     metric_ = RiemannianMetric(P1_ten)
     metric_intersect = RiemannianMetric(P1_ten)
 
+    # Compute the Hessian metric at t_start
     for mtrc in [metric, metric_, metric_intersect]:
         mtrc.set_parameters(metric_params)
-    # metric_.set_parameters(mp)
     metric_.compute_hessian(c)
-    metric_.normalise()
+    metric_.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
 
     Q = FunctionSpace(mesh, "CG", 1)
-    m_ = Function(Q)
-    m = Function(Q)
-    h = Function(Q)
+    h_bc = Function(Q)  # used to set the boundary condition below
+    m_ = Function(Q)  # metric component at previous timestep
+    m = Function(Q)  # metric component at current timestep
 
     V = VectorFunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -320,36 +362,45 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     dt = Function(R).assign(0.01)  # timestep size
     theta = Function(R).assign(0.5)  # Crank-Nicolson implicitness
 
-    # Metric advection by component
-    trial = TrialFunction(Q)
+    # SUPG stabilisation
+    D = Function(R).assign(0.1)
+    h = CellSize(mesh)
+    U = sqrt(dot(u, u))
+    tau = 0.5 * h / U
+    tau = min_value(tau, U * h / (6 * D))
+
+    # Apply SUPG stabilisation
     phi = TestFunction(Q)
+    phi += tau * dot(u, grad(phi))
+
+    # Variational form of the advection equation, as before
+    trial = TrialFunction(Q)
     a = inner(trial, phi) * dx + dt * theta * inner(dot(u, grad(trial)), phi) * dx
     L = inner(m_, phi) * dx - dt * (1 - theta) * inner(dot(u_, grad(m_)), phi) * dx
-    lvp = LinearVariationalProblem(a, L, m, bcs=DirichletBC(Q, h, "on_boundary"))
+    lvp = LinearVariationalProblem(a, L, m, bcs=DirichletBC(Q, h_bc, "on_boundary"))
     lvs = LinearVariationalSolver(lvp)
 
+    # Integrate from t_start to t_end
     t = t_start + float(dt)
     while t < t_end + 0.5 * float(dt):
         u.interpolate(velocity_expression(mesh, t))
 
-        # Advect each metric component
-        for i in range(2):
-            for j in range(2):
-                h_max = metric_params["dm_plex_metric"]["h_max"]
-                h.assign(1.0 / h_max**2 if i == j else 0.0)
-                m_.assign(metric_.sub(2 * i + j))
-                lvs.solve()
-                metric.sub(2 * i + j).assign(m)
+        # Advect each metric component M_ij individually
+        for i, j in [(0, 0), (0, 1), (1, 1)]:
+            # print(i, j)
+            h_max = metric_params["dm_plex_metric"]["h_max"]
+            h_bc.assign(1.0 / h_max**2 if i == j else 0.0)
+            m_.assign(metric_.sub(2 * i + j))
+            lvs.solve()
+            metric.sub(2 * i + j).assign(m)
+        # Metric is symmetric so we can copy the other off-diagonal component
+        metric.sub(2).assign(metric.sub(1))
 
-        # Ensure symmetry
-        m_.assign(0.5 * (metric.sub(1) + metric.sub(2)))
-        metric.sub(1).assign(m_)
-        metric.sub(2).assign(m_)
-
-        # Intersect metrics at each timestep
+        # Intersect metrics at every timestep
         metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
         metric_intersect.intersect(metric)
 
+        # Update fields at the previous timestep
         metric_.assign(metric)
         u_.assign(u)
         t += float(dt)
@@ -359,72 +410,82 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     return amesh
 
 
+# We can now run the simulation over the entire time interval, but now we will adapt the
+# mesh at the beginning of each subinterval using the metric advection algorithm. ::
+
 mesh = UnitSquareMesh(32, 32)
+mesh_numVertices = []
 c = get_initial_condition(mesh)
-cpu_time_metric_advection = time.time()
 for i in range(num_adaptations):
     t0 = i * interval_length  # subinterval start time
     t1 = (i + 1) * interval_length  # subinterval end time
 
     # Adapt the mesh based on the concentration field at t0
     mesh = adapt_metric_advection(mesh, t0, t1, c)
+    mesh_numVertices.append(mesh.num_vertices())
+
+    c0 = c.copy(deepcopy=True)
 
     # Solve the advection equation over the subinterval (t0, t1]
     c = run_simulation(mesh, t0, t1, c)
-cpu_time_metric_advection = time.time() - cpu_time_metric_advection
 
-print(f"CPU time with metric advection: {cpu_time_metric_advection:.2f} s")
+    plot_mesh(mesh, c0, c, i, "metric_advection")
 
-fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=True)
-triplot(mesh, axes=axes[0])
-tripcolor(c, axes=axes[1])
-
-for ax in axes.flat:
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.set_aspect("equal")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-fig.tight_layout()
-fig.savefig("bubble_shear-metric_advection.jpg", dpi=300, bbox_inches="tight")
-
-# Redefine the initial condition on the final adapted mesh
 c0 = get_initial_condition(mesh)
 metric_adv_c0 = Function(FunctionSpace(mesh, "CG", 1)).interpolate(c0)
 metric_adv_error = compute_rel_error(metric_adv_c0, c)
 
-print(f"Relative L2 error with metric advection: {metric_adv_error:.2f}%")
+print(
+    f"Metric advection mesh adaptation.\n"
+    f"   Avg. number of vertices: {np.average(mesh_numVertices):.1f}\n"
+    f"   Relative L2 error: {metric_adv_error:.2f}%"
+)
 
 # .. code-block:: console
 #
-#    Relative L2 error with metric advection: 29.31%
+#    Metric advection mesh adaptation.
+#       Avg. number of vertices: 1932.5
+#       Relative L2 error: 31.07%
 #
-# .. figure:: bubble_shear-metric_advection.jpg
+# .. figure:: bubble_shear-metric_advection_14.jpg
 #    :figwidth: 80%
 #    :align: center
-
-fig, ax = plt.subplots()
-errors = [coarse_error, fine_error, classical_error, metric_adv_error]
-cpu_times = [
-    cpu_time_coarse,
-    cpu_time_fine,
-    cpu_time_classical,
-    cpu_time_metric_advection,
-]
-ax.plot(cpu_times, errors, "o")
-# label each point
-for i, txt in enumerate(["Coarse mesh", "Fine mesh", "Classical", "Metric advection"]):
-    ax.annotate(
-        txt,
-        (cpu_times[i], errors[i]),
-        textcoords="offset points",
-        xytext=(0, 10),
-        ha="center",
-    )
-ax.set_xlabel("CPU time (s)")
-ax.set_ylabel("Relative L2 error (%)")
-fig.savefig("bubble_shear-time_error.jpg", dpi=300, bbox_inches="tight")
-
-# .. figure:: bubble_shear-time_error.jpg
+#
+# The relative L2 error of 31.07% is slightly lower than the one obtained with the
+# classical mesh adaptation algorithm, but note that the average number of vertices is
+# about 20% smaller. Looking into the final adapted mesh and concentration fields in
+# the above figure, we now observe that the mesh is indeed refined in a much wider
+# region - ensuring that the bubble remains well-resolved throughout the subinterval.
+# However, this also means that the available resolution is more widely distributed,
+# leading to a coarser local resolution compared to classical mesh adaptation.
+#
+# Let us now consider the implications and limitations of each approach. Firstly,
+# given a high enough adaptation frequency (i.e. number of adaptations/subintervals),
+# the lagging mesh problem can be mitigated with the classical mesh adaptation
+# algorithm. This may end up being more computationally efficient than the metric
+# advection algorithm, which requires solving the advection equation four times in total
+# at each timestep, as well as potentially expensive metric computations.
+# However, while increasing the mesh adaptation frequency would alleviate the mesh lag,
+# doing so may introduce large errors due to frequent solution transfers between meshes.
+#
+# This is where the advantage of the metric advection algorithm lies: it predicts where
+# to prescribe fine resolution in the future, and thus avoids the need for frequent
+# solution transfers. We can assure ourselves of that by repeating the above simulations
+# with `num_adaptations = 5`, which yields relative L2 errors of 61.06% and 42.23% for
+# the classical and metric advection algorithms, respectively. Furthermore, the problem
+# considered in this example is relatively well-suited for classical mesh adaptation,
+# as the bubble concentration field reverses and therefore often indeed remains in the
+# finely-resolved region. We can observe that in the below figure, at the subinterval
+# :math:`(1.4 s, 1.6 s]`.
+#
+# .. figure:: bubble_shear-classical_7.jpg
 #    :figwidth: 80%
 #    :align: center
+#
+# In conclusion, the choice of mesh adaptation algorithm depends on the specific problem
+# at hand, as well as the computational resources available. We encourage the reader to
+# experiment with different metric parameters, different adaptation frequencies, and
+# even different velocity fields to further explore the capabilities and limitations of
+# the above-presented mesh adaptation algorithms.
+#
+# This demo can also be accessed as a `Python script <bubble_shear.py>`__.
