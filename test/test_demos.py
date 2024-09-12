@@ -21,6 +21,10 @@ all_demos = glob.glob(os.path.join(demo_dir, "*.py"))
 # -- The value is the replacement string (use "" to remove the original code)
 modifications = {
     "ping_pong.py": {"niter = 50": "niter = 1"},
+    "bubble_shear.py": {
+        "simulation_end_time = T / 2.0": "simulation_end_time = T / 10.0",
+        "num_adaptations = 15": "num_adaptations = 2",
+    },
 }
 
 
