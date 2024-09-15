@@ -13,24 +13,9 @@ on:
     paths:
       - '**/*.cff'
 
-  # Allow manual triggerings
+  # Allow manual triggering
   workflow_dispatch:
 
 jobs:
   citation_check:
-    name: 'Check Citation'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 'Check out the repo'
-        uses: actions/checkout@v4
-
-      - name: 'Setup Python'
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: 'Check citation'
-        run: |
-          pip install cffconvert
-          make check_citation
+    uses: mesh-adaptation/mesh-adaptation-docs/.github/workflows/reusable_citation_check.yml@main
