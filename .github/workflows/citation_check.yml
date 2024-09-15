@@ -18,4 +18,4 @@ on:
 
 jobs:
   citation_check:
-    uses: mesh-adaptation/mesh-adaptation-docs/.github/workflows/reusable_citation_check.yml@45_reusing_workflows
+    uses: mesh-adaptation/mesh-adaptation-docs/.github/workflows/reusable_citation_check.yml@main
