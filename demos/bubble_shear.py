@@ -209,7 +209,7 @@ print(f"Relative L2 error on the fine mesh: {fine_error:.2f}%.")
 # For the purposes of this demo, we are going to adapt the mesh 15 times throughout the
 # simulation, at equal time intervals (i.e., every 0.2s of simulation time). ::
 
-num_adaptations = 15
+num_adaptations = 5
 interval_length = simulation_end_time / num_adaptations
 
 # We will also define a function that will allow us to easily plot the adapted mesh, as
@@ -339,20 +339,20 @@ print(
 
 def adapt_metric_advection(mesh, t_start, t_end, c):
     P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-    metric = RiemannianMetric(P1_ten)
-    metric_ = RiemannianMetric(P1_ten)
+    m = RiemannianMetric(P1_ten)  # metric at current timestep
+    m_ = RiemannianMetric(P1_ten)  # metric at previous timestep
     metric_intersect = RiemannianMetric(P1_ten)
 
     # Compute the Hessian metric at t_start
-    for mtrc in [metric, metric_, metric_intersect]:
+    for mtrc in [m, m_, metric_intersect]:
         mtrc.set_parameters(metric_params)
-    metric_.compute_hessian(c)
-    metric_.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
+    m_.compute_hessian(c)
+    m_.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
 
-    Q = FunctionSpace(mesh, "CG", 1)
-    h_bc = Function(Q)  # used to set the boundary condition below
-    m_ = Function(Q)  # metric component at previous timestep
-    m = Function(Q)  # metric component at current timestep
+    # Set the boundary condition for the metric tensor
+    h_bc = Function(P1_ten)
+    h_max = metric_params["dm_plex_metric"]["h_max"]
+    h_bc.interpolate(Constant([[1.0 / h_max**2, 0.0], [0.0, 1.0 / h_max**2]]))
 
     V = VectorFunctionSpace(mesh, "CG", 1)
     u = Function(V)
@@ -370,14 +370,15 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     tau = min_value(tau, U * h / (6 * D))
 
     # Apply SUPG stabilisation
-    phi = TestFunction(Q)
+    phi = TestFunction(P1_ten)
     phi += tau * dot(u, grad(phi))
 
-    # Variational form of the advection equation, as before
-    trial = TrialFunction(Q)
+    # Variational form of the advection equation for the metric tensor
+    trial = TrialFunction(P1_ten)
     a = inner(trial, phi) * dx + dt * theta * inner(dot(u, grad(trial)), phi) * dx
     L = inner(m_, phi) * dx - dt * (1 - theta) * inner(dot(u_, grad(m_)), phi) * dx
-    lvp = LinearVariationalProblem(a, L, m, bcs=DirichletBC(Q, h_bc, "on_boundary"))
+    bcs = DirichletBC(P1_ten, h_bc, "on_boundary")
+    lvp = LinearVariationalProblem(a, L, m, bcs=bcs)
     lvs = LinearVariationalSolver(lvp)
 
     # Integrate from t_start to t_end
@@ -385,23 +386,14 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     while t < t_end + 0.5 * float(dt):
         u.interpolate(velocity_expression(mesh, t))
 
-        # Advect each metric component M_ij individually
-        for i, j in [(0, 0), (0, 1), (1, 1)]:
-            # print(i, j)
-            h_max = metric_params["dm_plex_metric"]["h_max"]
-            h_bc.assign(1.0 / h_max**2 if i == j else 0.0)
-            m_.assign(metric_.sub(2 * i + j))
-            lvs.solve()
-            metric.sub(2 * i + j).assign(m)
-        # Metric is symmetric so we can copy the other off-diagonal component
-        metric.sub(2).assign(metric.sub(1))
+        lvs.solve()
 
         # Intersect metrics at every timestep
-        metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
-        metric_intersect.intersect(metric)
+        m.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
+        metric_intersect.intersect(m)
 
         # Update fields at the previous timestep
-        metric_.assign(metric)
+        m_.assign(m)
         u_.assign(u)
         t += float(dt)
 
@@ -444,16 +436,16 @@ print(
 # .. code-block:: console
 #
 #    Metric advection mesh adaptation.
-#       Avg. number of vertices: 1932.5
-#       Relative L2 error: 31.07%
+#       Avg. number of vertices: 2032.7
+#       Relative L2 error: 31.30%
 #
 # .. figure:: bubble_shear-metric_advection_14.jpg
 #    :figwidth: 80%
 #    :align: center
 #
-# The relative L2 error of 31.07% is slightly lower than the one obtained with the
+# The relative L2 error of 31.00% is slightly lower than the one obtained with the
 # classical mesh adaptation algorithm, but note that the average number of vertices is
-# about 20% smaller. Looking into the final adapted mesh and concentration fields in
+# about 15% smaller. Looking into the final adapted mesh and concentration fields in
 # the above figure, we now observe that the mesh is indeed refined in a much wider
 # region - ensuring that the bubble remains well-resolved throughout the subinterval.
 # However, this also means that the available resolution is more widely distributed,
@@ -463,7 +455,7 @@ print(
 # given a high enough adaptation frequency (i.e. number of adaptations/subintervals),
 # the lagging mesh problem can be mitigated with the classical mesh adaptation
 # algorithm. This may end up being more computationally efficient than the metric
-# advection algorithm, which requires solving the advection equation four times in total
+# advection algorithm, which requires solving the advection equation once more
 # at each timestep, as well as potentially expensive metric computations.
 # However, while increasing the mesh adaptation frequency would alleviate the mesh lag,
 # doing so may introduce large errors due to frequent solution transfers between meshes.
@@ -471,7 +463,7 @@ print(
 # This is where the advantage of the metric advection algorithm lies: it predicts where
 # to prescribe fine resolution in the future, and thus avoids the need for frequent
 # solution transfers. We can assure ourselves of that by repeating the above simulations
-# with `num_adaptations = 5`, which yields relative L2 errors of 61.06% and 42.23% for
+# with `num_adaptations = 5`, which yields relative L2 errors of 61.06% and 36.86% for
 # the classical and metric advection algorithms, respectively. Furthermore, the problem
 # considered in this example is relatively well-suited for classical mesh adaptation,
 # as the bubble concentration field reverses and therefore often indeed remains in the
