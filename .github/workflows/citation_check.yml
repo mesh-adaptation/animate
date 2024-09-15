@@ -1,18 +1,21 @@
 name: 'Citation Check'
 
 on:
+  # Run when a branch that modifies a .cff file is merged into main
   push:
     branches:
       - main
     paths:
       - '**/*.cff'
 
+  # Run when commits are pushed to a branch or a PR that modifies a .cff file
   pull_request:
     paths:
       - '**/*.cff'
 
+  # Allow manual triggering
   workflow_dispatch:
 
 jobs:
   citation_check:
-    uses: mesh-adaptation/mesh-adaptation-docs/.github/workflows/citation_check.yml@45_reusing_workflows
+    uses: mesh-adaptation/mesh-adaptation-docs/.github/workflows/reusable_citation_check.yml@45_reusing_workflows
