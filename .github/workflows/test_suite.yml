@@ -1,4 +1,4 @@
-name: 'Run Animate test suite'
+name: 'Run Animate Test Suite'
 
 on:
   # Run test suite whenever main is updated
@@ -13,67 +13,18 @@ on:
   schedule:
     - cron: '0 1 * * 0'
 
-concurrency:
-  # Cancel jobs running if new commits are pushed
-  group: >
-    ${{ github.workflow }}-
-    ${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   test_suite:
-    name: 'Test suite'
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/mesh-adaptation/firedrake-parmmg:latest
-      options: --user root
-    steps:
-      - name: 'Check out the repo'
-        id: checkout
-        uses: actions/checkout@v4
-
-      - name: 'Determine files differing from target branch'
-        id: changed-files
-        if: ${{ github.event_name != 'push' && github.ref != 'refs/heads/main' }}
-        uses: tj-actions/changed-files@v44
-        with:
-          files: |
-            .github/workflows/test_suite.yml
-            *.py
-            *.cxx
-
-      - name: 'Cleanup'
-        if: ${{ always() }}
-        run: |
-          cd ..
-          rm -rf build
-
-      - name: 'Setup Python'
-        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: 'Install Animate'
-        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
-        run: |
-          . /home/firedrake/firedrake/bin/activate
-          python -m pip uninstall -y goalie
-          python -m pip install -e .
-
-      - name: 'Lint'
-        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
-        run: |
-          . /home/firedrake/firedrake/bin/activate
-          make lint
-
-      - name: 'Test Animate'
-        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
-        run: |
-          . /home/firedrake/firedrake/bin/activate
-          export GITHUB_ACTIONS_TEST_RUN=1
-          python $(which firedrake-clean)
-          export ANIMATE_CHECKPOINT_DIR=$(pwd)/.checkpoints
-          python -m coverage erase
-          python -m coverage run --source=animate -m pytest -v --durations=20 test
-          python -m coverage report
+    uses: mesh-adaptation/mesh-adaptation-docs/.github/workflows/reusable_test_suite.yml@main
+    with:
+      install-command: 'python -m pip uninstall -y animate && python -m pip install -e .'
+      test-command: |
+        export GITHUB_ACTIONS_TEST_RUN=1
+        python $(which firedrake-clean)
+        export ANIMATE_CHECKPOINT_DIR=$(pwd)/.checkpoints
+        python -m coverage erase
+        python -m coverage run --source=animate -m pytest -v --durations=20 test
+        python -m coverage report
+      changed-files-patterns: |
+        **/*.py
+        **/*.cxx
