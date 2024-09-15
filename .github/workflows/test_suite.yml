@@ -25,10 +25,22 @@ jobs:
     name: 'Test suite'
     runs-on: ubuntu-latest
     container:
-      image: jwallwork/firedrake-parmmg:latest
+      image: ghcr.io/mesh-adaptation/firedrake-parmmg:latest
       options: --user root
     steps:
-      - uses: actions/checkout@v2
+      - name: 'Check out the repo'
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: 'Determine files differing from target branch'
+        id: changed-files
+        if: ${{ github.event_name != 'push' && github.ref != 'refs/heads/main' }}
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            .github/workflows/test_suite.yml
+            *.py
+            *.cxx
 
       - name: 'Cleanup'
         if: ${{ always() }}
@@ -37,28 +49,26 @@ jobs:
           rm -rf build
 
       - name: 'Setup Python'
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
 
       - name: 'Install Animate'
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
         run: |
           . /home/firedrake/firedrake/bin/activate
-          python -m pip uninstall -y animate
+          python -m pip uninstall -y goalie
           python -m pip install -e .
 
-      - name: 'Check citation'
-        run: |
-          . /home/firedrake/firedrake/bin/activate
-          make check_citation
-
       - name: 'Lint'
-        if: ${{ always() }}
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
         run: |
           . /home/firedrake/firedrake/bin/activate
           make lint
 
       - name: 'Test Animate'
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (steps.changed-files.outcome == 'success' && steps.changed-files.outputs.any_changed == 'true') || github.event_name == 'schedule' }}
         run: |
           . /home/firedrake/firedrake/bin/activate
           export GITHUB_ACTIONS_TEST_RUN=1
