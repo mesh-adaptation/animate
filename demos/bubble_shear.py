@@ -209,7 +209,7 @@ print(f"Relative L2 error on the fine mesh: {fine_error:.2f}%.")
 # For the purposes of this demo, we are going to adapt the mesh 15 times throughout the
 # simulation, at equal time intervals (i.e., every 0.2s of simulation time). ::
 
-num_adaptations = 5
+num_adaptations = 15
 interval_length = simulation_end_time / num_adaptations
 
 # We will also define a function that will allow us to easily plot the adapted mesh, as
