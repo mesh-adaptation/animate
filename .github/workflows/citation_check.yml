@@ -1,0 +1,36 @@
+name: 'Citation Check'
+
+on:
+  # Run when a branch that modifies a .cff file is merged into main
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.cff'
+
+  # Run when commits are pushed to a branch or a PR that modifies a .cff file
+  pull_request:
+    paths:
+      - '**/*.cff'
+
+  # Allow manual triggerings
+  workflow_dispatch:
+
+jobs:
+  citation_check:
+    name: 'Check Citation'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Check out the repo'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Python'
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: 'Check citation'
+        run: |
+          pip install cffconvert
+          make check_citation
