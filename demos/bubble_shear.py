@@ -2,7 +2,7 @@
 # #########################################
 #
 # In this demo we consider the two-dimensional version of the mesh adaptation experiment
-# presented in :cite:`Barral:2016``. The problem comprises a bubble of tracer
+# presented in :cite:`Barral:2016`. The problem comprises a bubble of tracer
 # concentration field advected by a time-varying flow.
 # We will consider two different mesh adaptation strategies: the classical mesh
 # adaptation algorithm, which adapts the mesh several times throughout the simulation
@@ -330,7 +330,7 @@ print(
 # prescribe fine resolution in regions where it is not needed.
 #
 # For advection-dominated problems, as is the case here, a *metric advection* algorithm
-# has been proposed in :cite:`Wilson:2010``. The idea is to still compute the metric
+# has been proposed in :cite:`Wilson:2010`. The idea is to still compute the metric
 # based on the solution at the current time, but then to advect the metric along the
 # flow in order to predict where to prescribe fine resolution in the future. By
 # combining the advected metrics in time, we obtain a final metric that is
