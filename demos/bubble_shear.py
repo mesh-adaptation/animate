@@ -178,8 +178,7 @@ fig.savefig("bubble_shear-uniform.jpg", dpi=300, bbox_inches="tight")
 # diffusion. Numerical diffusion is necessary for numerical stability and for preventing
 # oscillations, but it also makes the solution irreversible. The amount of difussion
 # added is related to the grid Péclet number :math:`Pe = U\,h/2D`: the coarser the mesh
-# is, the more diffusion is added. We encourage the reader to verify this by running the
-# simulation on a sequence of finer uniform meshes.
+# is, the more diffusion is added.
 #
 # In order to quantify the above observation, we will compute the relative :math:`L^2`
 # error between the initial condition and the final concentration field on the final
@@ -474,9 +473,12 @@ print(
 #    :align: center
 #
 # In conclusion, the choice of mesh adaptation algorithm depends on the specific problem
-# at hand, as well as the computational resources available. We encourage the reader to
-# experiment with different metric parameters, different adaptation frequencies, and
-# even different velocity fields to further explore the capabilities and limitations of
-# the above-presented mesh adaptation algorithms.
+# at hand, as well as the computational resources available.
+#
+# .. rubric:: Exercise
+#
+# We encourage the reader to experiment with different metric parameters, different
+# adaptation frequencies, and even different velocity fields to further explore the
+# capabilities and limitations of the above-presented mesh adaptation algorithms.
 #
 # This demo can also be accessed as a `Python script <bubble_shear.py>`__.
