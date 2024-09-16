@@ -11,7 +11,11 @@
 # prescribe fine resolution in the future. Both algorithms are an example of
 # *on-the-fly* time-dependent mesh adaptation algorithms, where the mesh is adapted
 # before each subinterval of the simulation, as opposed to fixed-point iteration
-# algorithms, where the mesh is iteratively adapted at the end of the simulation.
+# algorithms.
+# Fixed-point iteration algorithms solve the equation of interest at each iteration,
+# before adapting the mesh based on computed solutions at the end of each iteration.
+# This clearly makes them effective at predicting where to prescribe fine resolution
+# throughout the simulation, but imply substantial computational cost.
 #
 # We begin by defining the advection problem. We consider the advection equation
 #
