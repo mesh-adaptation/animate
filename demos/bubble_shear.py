@@ -150,20 +150,24 @@ mesh_fine = UnitSquareMesh(128, 128)
 c0_fine = get_initial_condition(mesh_fine)
 c_fine_final = run_simulation(mesh_fine, 0.0, simulation_end_time, c0_fine)
 
-# We can now visualise the final concentration fields on the two meshes. ::
+# We can now compare computed final concentration fields on the two meshes to the
+# initial condition. ::
 
 import matplotlib.pyplot as plt
 from firedrake.pyplot import *
 
-fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=True)
-for ax, c, mesh in zip(axes, [c_coarse_final, c_fine_final], [mesh_coarse, mesh_fine]):
-    tripcolor(c, axes=ax)
-    ax.set_title(f"{mesh.num_vertices()} mesh vertices")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.set_aspect("equal")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
+fig, axes = plt.subplots(2, 2, figsize=(8, 8), sharex=True, sharey=True)
+time_labels = [r"$t=0$", r"$t=T/2$"]
+c_values = [[c0_coarse, c0_fine], [c_coarse_final, c_fine_final]]
+meshes = [mesh_coarse, mesh_fine]
+for i in range(2):
+    for ax, c, mesh in zip(axes[i], c_values[i], meshes):
+        im = tripcolor(c, axes=ax)
+        ax.set_title(f"{mesh.num_vertices()} mesh vertices")
+        ax.text(0.05, 0.05, time_labels[i], fontsize=12, color="white", ha="left")
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.set_aspect("equal")
 fig.tight_layout()
 fig.savefig("bubble_shear-uniform.jpg", dpi=300, bbox_inches="tight")
 
