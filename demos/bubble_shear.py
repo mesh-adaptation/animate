@@ -461,12 +461,30 @@ print(
 # This is where the advantage of the metric advection algorithm lies: it predicts where
 # to prescribe fine resolution in the future, and thus avoids the need for frequent
 # solution transfers. We can assure ourselves of that by repeating the above simulations
-# with ``num_adaptations = 5``, which yields relative the errors of 61.06% and 36.86%
-# for the classical and metric advection algorithms, respectively. Furthermore, the
+# with ``num_adaptations = 5``, which yields relative errors of 61.06% and 36.86%
+# for the classical and metric advection algorithms, respectively. Conversely,
+# increasing the adaptation frequency to ``num_adaptations = 50`` yields again relative
+# errors closer to one another. Note that the algorithms are identical if we adapt at
+# every timestep. We summarise these results in the table below, noting also the average
+# number of vertices, :math:`N_v`.
+#
+# .. table::
+#
+#    ======================= ============================== =====================================
+#     Number of adaptations   Classical (avg. :math:`N_v`)   Metric advection (avg. :math:`N_v`)
+#    ======================= ============================== =====================================
+#     5                       61.06% (2200.2)                36.86% (1922.2)
+#     15                      31.76% (2302.3)                31.30% (2032.7)
+#     50                      26.80% (2522.1)                27.99% (2166.3)
+#    ======================= ============================== =====================================
+#
+# Furthermore, the
 # problem considered in this example is relatively well-suited for classical mesh
 # adaptation, as the bubble concentration field reverses and therefore often indeed
 # remains in the finely-resolved region. We can observe that in the below figure, at the
-# subinterval :math:`(1.4 s, 1.6 s]`.
+# subinterval :math:`(1.4 s, 1.6 s]`. This also means that the meshes adapted using
+# classical and metric advection algorithms are qualitatively similar at this
+# subinterval.
 #
 # .. figure:: bubble_shear-classical_7.jpg
 #    :figwidth: 80%
@@ -477,8 +495,11 @@ print(
 #
 # .. rubric:: Exercise
 #
-# We encourage the reader to experiment with different metric parameters, different
+# We encourage the reader to repeat above experiments and investigate each of the
+# adapted meshes. At what subintervals do the two algorithms produce most similar and
+# most different meshes?
+# We further encourage experimentation with different metric parameters, different
 # adaptation frequencies, and even different velocity fields to further explore the
-# capabilities and limitations of the above-presented mesh adaptation algorithms.
+# capabilities and limitations of the above-presented algorithms.
 #
 # This demo can also be accessed as a `Python script <bubble_shear.py>`__.
