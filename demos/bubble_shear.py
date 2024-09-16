@@ -1,8 +1,8 @@
 # On-the-fly time-dependent mesh adaptation
 # #########################################
 #
-# In this demo we consider the 2-dimensional version of the mesh adaptation experiment
-# presented in :cite:<Barral:2016>. The problem comprises a bubble of tracer
+# In this demo we consider the two-dimensional version of the mesh adaptation experiment
+# presented in :cite:`Barral:2016``. The problem comprises a bubble of tracer
 # concentration field advected by a time-varying flow.
 # We will consider two different mesh adaptation strategies: the classical mesh
 # adaptation algorithm, which adapts the mesh several times throughout the simulation
@@ -33,9 +33,8 @@
 # .. math::
 #   \mathbf{u}(x, y, t) := \left(2\sin^2(\pi x)\sin(2\pi y), -\sin(2\pi x)\sin^2(\pi y) \right) \cos(2\pi t/T),
 #
-# where :math:`T` is the period. Note that the velocity field is solenoidal. At each
-# timestep of the simulation we will update this field so we define a function that will
-# return its vector expression. ::
+# where :math:`T` is the period. At each timestep of the simulation we will update this
+# field so we define a function that will return its vector expression. ::
 
 from firedrake import *
 
@@ -66,7 +65,6 @@ def get_initial_condition(mesh):
     r = sqrt(pow(x - ball_x0, 2) + pow(y - ball_y0, 2))
     c0 = Function(FunctionSpace(mesh, "CG", 1))
     c0.interpolate(conditional(r < ball_r, 1.0, 0.0))
-    # return conditional(r < ball_r0, 1.0, 0.0)
     return c0
 
 
@@ -77,12 +75,8 @@ def get_initial_condition(mesh):
 # the initial condition :math:`c_0 = c(x, y, t_{\text{start}})`. The function returns
 # the solution :math:`c(x, y, t_{\text{end}})`.
 #
-# Note that we must include streamline upwind Petrov Galerkin (SUPG) stabilisation in
+# Note that we include streamline upwind Petrov Galerkin (SUPG) stabilisation in
 # the test function in order to ensure numerical stability. ::
-
-# Time-stepping parameters
-# dt = 0.01  # timestep size
-# theta = 0.5  # Crank-Nicolson implicitness
 
 
 def run_simulation(mesh, t_start, t_end, c0):
@@ -183,8 +177,9 @@ fig.savefig("bubble_shear-uniform.jpg", dpi=300, bbox_inches="tight")
 # is, the more diffusion is added. We encourage the reader to verify this by running the
 # simulation on a sequence of finer uniform meshes.
 #
-# In order to quantify the above observation, we will compute the relative L2 error
-# between the initial condition and the final concentration field on the final mesh. ::
+# In order to quantify the above observation, we will compute the relative :math:`L^2`
+# error between the initial condition and the final concentration field on the final
+# mesh. ::
 
 
 def compute_rel_error(c_init, c_final):
@@ -235,7 +230,7 @@ def plot_mesh(mesh, c0, c1, i, method):
 # As mentioned in the introduction, we shall demonstrate two different mesh adaptation
 # strategies. Let us begin with the classical mesh adaptation algorithm, which adapts
 # each mesh before solving the advection equation over the corresponding subinterval.
-# Here we will use the :class:`RiemannianMetric` class to define the metric, which we
+# Here we will use the :class:`~.RiemannianMetric` class to define the metric, which we
 # will compute based on the Hessian of the concentration field. Let us therefore define
 # a function which takes the original mesh and the concentration field as arguments, and
 # returns the adapted mesh. We will also define parameters for computing the metric. ::
@@ -287,7 +282,7 @@ for i in range(num_adaptations):
     plot_mesh(mesh, c0, c, i, "classical")
 
 # Now let us examine the final adapted mesh and final concentration field computed on it.
-# We will also compute the relative L2 error. ::
+# We will also compute the relative :math:`L^2` error. ::
 
 # Redefine the initial condition on the final adapted mesh
 c0 = get_initial_condition(mesh)
@@ -310,11 +305,11 @@ print(
 #    :figwidth: 80%
 #    :align: center
 #
-# As we can see, the relative L2 error is lower than the one obtained with the uniform
-# fine mesh, even though the average number of vertices is more than 8 times smaller.
-# This demonstrates the effectiveness of mesh adaptation, which we can also observe in
-# the figure above. We see that final mesh has clearly been refined around the bubble
-# at the beginning of the final subinterval and coarsened elsewhere.
+# As we can see, the relative :math:`L^2` error is lower than the one obtained with the
+# uniform fine mesh, even though the average number of vertices is more than 8 times
+# smaller. This demonstrates the effectiveness of mesh adaptation, which we can also
+# observe in the figure above. We see that final mesh has clearly been refined around
+# the bubble at the beginning of the final subinterval and coarsened elsewhere.
 #
 # However, we also observe that the bubble has advected out of the fine resolution
 # region by the end of the subinterval. This is a common occurence in time-dependent
@@ -328,7 +323,7 @@ print(
 # prescribe fine resolution in regions where it is not needed.
 #
 # For advection-dominated problems, as is the case here, a *metric advection* algorithm
-# has been proposed in :cite:<Wilson:2010>. The idea is to still compute the metric
+# has been proposed in :cite:`Wilson:2010``. The idea is to still compute the metric
 # based on the solution at the current time, but then to advect the metric along the
 # flow in order to predict where to prescribe fine resolution in the future. By
 # combining the advected metrics in time, we obtain a final metric that is
@@ -443,9 +438,9 @@ print(
 #    :figwidth: 80%
 #    :align: center
 #
-# The relative L2 error of 31.00% is slightly lower than the one obtained with the
-# classical mesh adaptation algorithm, but note that the average number of vertices is
-# about 15% smaller. Looking into the final adapted mesh and concentration fields in
+# The relative :math:`L^2` error of 31.30% is slightly lower than the one obtained with
+# the classical mesh adaptation algorithm, but note that the average number of vertices
+# is about 15% smaller. Looking into the final adapted mesh and concentration fields in
 # the above figure, we now observe that the mesh is indeed refined in a much wider
 # region - ensuring that the bubble remains well-resolved throughout the subinterval.
 # However, this also means that the available resolution is more widely distributed,
@@ -463,12 +458,12 @@ print(
 # This is where the advantage of the metric advection algorithm lies: it predicts where
 # to prescribe fine resolution in the future, and thus avoids the need for frequent
 # solution transfers. We can assure ourselves of that by repeating the above simulations
-# with `num_adaptations = 5`, which yields relative L2 errors of 61.06% and 36.86% for
-# the classical and metric advection algorithms, respectively. Furthermore, the problem
-# considered in this example is relatively well-suited for classical mesh adaptation,
-# as the bubble concentration field reverses and therefore often indeed remains in the
-# finely-resolved region. We can observe that in the below figure, at the subinterval
-# :math:`(1.4 s, 1.6 s]`.
+# with ``num_adaptations = 5``, which yields relative the errors of 61.06% and 36.86%
+# for the classical and metric advection algorithms, respectively. Furthermore, the
+# problem considered in this example is relatively well-suited for classical mesh
+# adaptation, as the bubble concentration field reverses and therefore often indeed
+# remains in the finely-resolved region. We can observe that in the below figure, at the
+# subinterval :math:`(1.4 s, 1.6 s]`.
 #
 # .. figure:: bubble_shear-classical_7.jpg
 #    :figwidth: 80%
