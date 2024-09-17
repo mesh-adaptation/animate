@@ -11,11 +11,10 @@
 # prescribe fine resolution in the future. Both algorithms are an example of
 # *on-the-fly* time-dependent mesh adaptation algorithms, where the mesh is adapted
 # before each subinterval of the simulation, as opposed to fixed-point iteration
-# algorithms.
-# Fixed-point iteration algorithms solve the equation of interest at each iteration,
-# before adapting the mesh based on computed solutions at the end of each iteration.
-# This clearly makes them effective at predicting where to prescribe fine resolution
-# throughout the simulation, but imply substantial computational cost.
+# algorithms. Fixed-point iteration algorithms solve the equation of interest at each
+# iteration, before adapting the mesh based on computed solutions at the end of each
+# iteration. This clearly makes them effective at predicting where to prescribe fine
+# resolution throughout the simulation, but implies substantial computational cost.
 #
 # We begin by defining the advection problem. We consider the advection equation
 #
@@ -482,13 +481,12 @@ print(
 #     50                      26.80% (2522.1)                27.99% (2166.3)
 #    ======================= ============================== =====================================
 #
-# Furthermore, the
-# problem considered in this example is relatively well-suited for classical mesh
-# adaptation, as the bubble concentration field reverses and therefore often indeed
-# remains in the finely-resolved region. We can observe that in the below figure, at the
-# subinterval :math:`(1.4 s, 1.6 s]`. This also means that the meshes adapted using
-# classical and metric advection algorithms are qualitatively similar at this
-# subinterval.
+# Furthermore, the problem considered in this example is relatively well-suited for
+# classical mesh adaptation, as the bubble concentration field reverses and therefore
+# often indeed remains in the finely-resolved region. We can observe that in the below
+# figure, at the subinterval :math:`(1.4 s, 1.6 s]`. This also means that the meshes
+# adapted using classical and metric advection algorithms are qualitatively similar at
+# this subinterval.
 #
 # .. figure:: bubble_shear-classical_7.jpg
 #    :figwidth: 80%
@@ -499,11 +497,10 @@ print(
 #
 # .. rubric:: Exercise
 #
-# We encourage the reader to repeat above experiments and investigate each of the
-# adapted meshes. At what subintervals do the two algorithms produce most similar and
-# most different meshes?
-# We further encourage experimentation with different metric parameters, different
-# adaptation frequencies, and even different velocity fields to further explore the
-# capabilities and limitations of the above-presented algorithms.
+# Repeat above experiments and investigate each of the adapted meshes. At what
+# subintervals do the two algorithms produce most similar and most different meshes?
+# Experiment with different metric parameters, different adaptation frequencies, and
+# even different velocity fields to further explore the capabilities and limitations of
+# the algorithms presented above.
 #
 # This demo can also be accessed as a `Python script <bubble_shear.py>`__.
