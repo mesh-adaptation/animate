@@ -334,8 +334,8 @@ print(
 # flow in order to predict where to prescribe fine resolution in the future. By
 # combining the advected metrics in time, we obtain a final metric that is
 # representative of the evolving solution throughout the subinterval. We achieve this in
-# the following function, where we solve the before-seen advection equation for each
-# component of the metric tensor. ::
+# the following function, where we solve the before-seen advection equation, but now for
+# the metric tensor. ::
 
 
 def adapt_metric_advection(mesh, t_start, t_end, c):
