@@ -304,8 +304,8 @@ print(
 # .. code-block:: console
 #
 #    Classical mesh adaptation.
-#       Avg. number of vertices: 2302.3
-#       Relative L2 error: 31.76%
+#       Avg. number of vertices: 2314.3
+#       Relative L2 error: 30.73%
 #
 # .. figure:: bubble_shear-classical_14.jpg
 #    :figwidth: 80%
@@ -437,14 +437,14 @@ print(
 # .. code-block:: console
 #
 #    Metric advection mesh adaptation.
-#       Avg. number of vertices: 2032.7
-#       Relative L2 error: 31.30%
+#       Avg. number of vertices: 2010.3
+#       Relative L2 error: 31.22%
 #
 # .. figure:: bubble_shear-metric_advection_14.jpg
 #    :figwidth: 80%
 #    :align: center
 #
-# The relative :math:`L^2` error of 31.30% is slightly lower than the one obtained with
+# The relative :math:`L^2` error of 31.22% is similar to the one obtained with
 # the classical mesh adaptation algorithm, but note that the average number of vertices
 # is about 15% smaller. Looking into the final adapted mesh and concentration fields in
 # the above figure, we now observe that the mesh is indeed refined in a much wider
@@ -464,7 +464,7 @@ print(
 # This is where the advantage of the metric advection algorithm lies: it predicts where
 # to prescribe fine resolution in the future, and thus avoids the need for frequent
 # solution transfers. We can assure ourselves of that by repeating the above simulations
-# with ``num_adaptations = 5``, which yields relative errors of 61.06% and 36.86%
+# with ``num_adaptations = 5``, which yields relative errors of 61.58% and 37.16%
 # for the classical and metric advection algorithms, respectively. Conversely,
 # increasing the adaptation frequency to ``num_adaptations = 50`` yields again relative
 # errors closer to one another. Note that the algorithms are identical if we adapt at
@@ -476,9 +476,9 @@ print(
 #    ======================= ============================== =====================================
 #     Number of adaptations   Classical (avg. :math:`N_v`)   Metric advection (avg. :math:`N_v`)
 #    ======================= ============================== =====================================
-#     5                       61.06% (2200.2)                36.86% (1922.2)
-#     15                      31.76% (2302.3)                31.30% (2032.7)
-#     50                      26.80% (2522.1)                27.99% (2166.3)
+#     5                       61.58% (2200.8)                37.16% (1930.6)
+#     15                      30.73% (2314.3)                31.22% (2010.2)
+#     50                      26.71% (2516.2)                28.14% (2135.7)
 #    ======================= ============================== =====================================
 #
 # Furthermore, the problem considered in this example is relatively well-suited for
