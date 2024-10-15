@@ -348,7 +348,7 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     for mtrc in [m, m_, metric_intersect]:
         mtrc.set_parameters(metric_params)
     m_.compute_hessian(c)
-    m_.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
+    m_.normalise()
 
     # Set the boundary condition for the metric tensor
     h_bc = Function(P1_ten)
