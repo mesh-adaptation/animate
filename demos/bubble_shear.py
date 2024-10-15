@@ -413,7 +413,7 @@ for i in range(num_adaptations):
     t0 = i * interval_length  # subinterval start time
     t1 = (i + 1) * interval_length  # subinterval end time
 
-    # Adapt the mesh based on the concentration field at t0
+    # Advect the metric from t0 to t1 and adapt the mesh based on the intersected metric
     mesh = adapt_metric_advection(mesh, t0, t1, c)
     mesh_numVertices.append(mesh.num_vertices())
 
