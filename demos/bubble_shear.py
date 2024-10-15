@@ -501,6 +501,8 @@ print(
 # subintervals do the two algorithms produce most similar and most different meshes?
 # Experiment with different metric parameters, different adaptation frequencies, and
 # even different velocity fields to further explore the capabilities and limitations of
-# the algorithms presented above.
+# the algorithms presented above. Another interesting experiment would be to compare
+# the impact of switching to an explicit time integration and using a smaller timestep
+# to maintain numerical stability (look at CFL condition).
 #
 # This demo can also be accessed as a `Python script <bubble_shear.py>`__.
