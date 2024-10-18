@@ -90,7 +90,9 @@ def run_simulation(mesh, t_start, t_end, c0):
     c_ = Function(Q).project(c0)  # project initial condition onto the current mesh
     c = Function(Q)  # solution at current timestep
 
-    u_ = Function(V).interpolate(velocity_expression(mesh, t_start))  # vel. at t_start
+    t = Function(R).assign(t_start)
+    u_expression = velocity_expression(mesh, t)  # velocity at t_start
+    u_ = Function(V).interpolate(u_expression)
     u = Function(V)  # velocity field at current timestep
 
     # SUPG stabilisation
@@ -118,10 +120,10 @@ def run_simulation(mesh, t_start, t_end, c0):
     lvs = LinearVariationalSolver(lvp)
 
     # Integrate from t_start to t_end
-    t = t_start + float(dt)
-    while t < t_end + 0.5 * float(dt):
+    t.assign(t + dt)
+    while float(t) < t_end + 0.5 * float(dt):
         # Update the background velocity field at the current timestep
-        u.interpolate(velocity_expression(mesh, t))
+        u.interpolate(u_expression)
 
         # Solve the advection equation
         lvs.solve()
@@ -129,7 +131,7 @@ def run_simulation(mesh, t_start, t_end, c0):
         # Update the solution at the previous timestep
         c_.assign(c)
         u_.assign(u)
-        t += float(dt)
+        t.assign(t + dt)
 
     return c
 
@@ -304,8 +306,8 @@ print(
 # .. code-block:: console
 #
 #    Classical mesh adaptation.
-#       Avg. number of vertices: 2302.3
-#       Relative L2 error: 31.76%
+#       Avg. number of vertices: 2308.1
+#       Relative L2 error: 30.32%
 #
 # .. figure:: bubble_shear-classical_14.jpg
 #    :figwidth: 80%
@@ -334,12 +336,15 @@ print(
 # flow in order to predict where to prescribe fine resolution in the future. By
 # combining the advected metrics in time, we obtain a final metric that is
 # representative of the evolving solution throughout the subinterval. We achieve this in
-# the following function, where we solve the before-seen advection equation for each
-# component of the metric tensor. ::
+# the following function, where we solve the before-seen advection equation, but now for
+# the metric tensor. ::
 
 
 def adapt_metric_advection(mesh, t_start, t_end, c):
     P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+    V = VectorFunctionSpace(mesh, "CG", 1)
+    R = FunctionSpace(mesh, "R", 0)
+
     m = RiemannianMetric(P1_ten)  # metric at current timestep
     m_ = RiemannianMetric(P1_ten)  # metric at previous timestep
     metric_intersect = RiemannianMetric(P1_ten)
@@ -348,18 +353,18 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     for mtrc in [m, m_, metric_intersect]:
         mtrc.set_parameters(metric_params)
     m_.compute_hessian(c)
-    m_.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
+    m_.normalise()
 
     # Set the boundary condition for the metric tensor
     h_bc = Function(P1_ten)
     h_max = metric_params["dm_plex_metric"]["h_max"]
     h_bc.interpolate(Constant([[1.0 / h_max**2, 0.0], [0.0, 1.0 / h_max**2]]))
 
-    V = VectorFunctionSpace(mesh, "CG", 1)
+    t = Function(R).assign(t_start)
+    u_expression = velocity_expression(mesh, t)
+    u_ = Function(V).interpolate(u_expression)
     u = Function(V)
-    u_ = Function(V).interpolate(velocity_expression(mesh, t_start))
 
-    R = FunctionSpace(mesh, "R", 0)
     dt = Function(R).assign(0.01)  # timestep size
     theta = Function(R).assign(0.5)  # Crank-Nicolson implicitness
 
@@ -383,9 +388,9 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     lvs = LinearVariationalSolver(lvp)
 
     # Integrate from t_start to t_end
-    t = t_start + float(dt)
-    while t < t_end + 0.5 * float(dt):
-        u.interpolate(velocity_expression(mesh, t))
+    t.assign(t + dt)
+    while float(t) < t_end + 0.5 * float(dt):
+        u.interpolate(u_expression)
 
         lvs.solve()
 
@@ -396,7 +401,7 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
         # Update fields at the previous timestep
         m_.assign(m)
         u_.assign(u)
-        t += float(dt)
+        t.assign(t + dt)
 
     metric_intersect.normalise()
     amesh = adapt(mesh, metric_intersect)
@@ -413,7 +418,7 @@ for i in range(num_adaptations):
     t0 = i * interval_length  # subinterval start time
     t1 = (i + 1) * interval_length  # subinterval end time
 
-    # Adapt the mesh based on the concentration field at t0
+    # Advect the metric from t0 to t1 and adapt the mesh based on the intersected metric
     mesh = adapt_metric_advection(mesh, t0, t1, c)
     mesh_numVertices.append(mesh.num_vertices())
 
@@ -437,14 +442,14 @@ print(
 # .. code-block:: console
 #
 #    Metric advection mesh adaptation.
-#       Avg. number of vertices: 2032.7
-#       Relative L2 error: 31.30%
+#       Avg. number of vertices: 2014.3
+#       Relative L2 error: 30.79%
 #
 # .. figure:: bubble_shear-metric_advection_14.jpg
 #    :figwidth: 80%
 #    :align: center
 #
-# The relative :math:`L^2` error of 31.30% is slightly lower than the one obtained with
+# The relative :math:`L^2` error of 30.79% is similar to the one obtained with
 # the classical mesh adaptation algorithm, but note that the average number of vertices
 # is about 15% smaller. Looking into the final adapted mesh and concentration fields in
 # the above figure, we now observe that the mesh is indeed refined in a much wider
@@ -464,7 +469,7 @@ print(
 # This is where the advantage of the metric advection algorithm lies: it predicts where
 # to prescribe fine resolution in the future, and thus avoids the need for frequent
 # solution transfers. We can assure ourselves of that by repeating the above simulations
-# with ``num_adaptations = 5``, which yields relative errors of 61.06% and 36.86%
+# with ``num_adaptations = 5``, which yields relative errors of 61.58% and 37.97%
 # for the classical and metric advection algorithms, respectively. Conversely,
 # increasing the adaptation frequency to ``num_adaptations = 50`` yields again relative
 # errors closer to one another. Note that the algorithms are identical if we adapt at
@@ -476,9 +481,9 @@ print(
 #    ======================= ============================== =====================================
 #     Number of adaptations   Classical (avg. :math:`N_v`)   Metric advection (avg. :math:`N_v`)
 #    ======================= ============================== =====================================
-#     5                       61.06% (2200.2)                36.86% (1922.2)
-#     15                      31.76% (2302.3)                31.30% (2032.7)
-#     50                      26.80% (2522.1)                27.99% (2166.3)
+#     5                       61.58% (2200.8)                37.97% (1931.2)
+#     15                      30.32% (2308.1)                30.79% (2014.3)
+#     50                      26.99% (2507.2)                28.36% (2135.1)
 #    ======================= ============================== =====================================
 #
 # Furthermore, the problem considered in this example is relatively well-suited for
@@ -501,6 +506,8 @@ print(
 # subintervals do the two algorithms produce most similar and most different meshes?
 # Experiment with different metric parameters, different adaptation frequencies, and
 # even different velocity fields to further explore the capabilities and limitations of
-# the algorithms presented above.
+# the algorithms presented above. Another interesting experiment would be to compare
+# the impact of switching to an explicit time integration and using a smaller timestep
+# to maintain numerical stability (look at CFL condition).
 #
 # This demo can also be accessed as a `Python script <bubble_shear.py>`__.
