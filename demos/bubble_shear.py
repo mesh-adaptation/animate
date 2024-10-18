@@ -90,7 +90,9 @@ def run_simulation(mesh, t_start, t_end, c0):
     c_ = Function(Q).project(c0)  # project initial condition onto the current mesh
     c = Function(Q)  # solution at current timestep
 
-    u_ = Function(V).interpolate(velocity_expression(mesh, t_start))  # vel. at t_start
+    t = Function(R).assign(t_start)
+    u_expression = velocity_expression(mesh, t)  # velocity at t_start
+    u_ = Function(V).interpolate(u_expression)
     u = Function(V)  # velocity field at current timestep
 
     # SUPG stabilisation
@@ -118,10 +120,10 @@ def run_simulation(mesh, t_start, t_end, c0):
     lvs = LinearVariationalSolver(lvp)
 
     # Integrate from t_start to t_end
-    t = t_start + float(dt)
-    while t < t_end + 0.5 * float(dt):
+    t.assign(t + dt)
+    while float(t) < t_end + 0.5 * float(dt):
         # Update the background velocity field at the current timestep
-        u.interpolate(velocity_expression(mesh, t))
+        u.interpolate(u_expression)
 
         # Solve the advection equation
         lvs.solve()
@@ -129,7 +131,7 @@ def run_simulation(mesh, t_start, t_end, c0):
         # Update the solution at the previous timestep
         c_.assign(c)
         u_.assign(u)
-        t += float(dt)
+        t.assign(t + dt)
 
     return c
 
@@ -340,6 +342,9 @@ print(
 
 def adapt_metric_advection(mesh, t_start, t_end, c):
     P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+    V = VectorFunctionSpace(mesh, "CG", 1)
+    R = FunctionSpace(mesh, "R", 0)
+
     m = RiemannianMetric(P1_ten)  # metric at current timestep
     m_ = RiemannianMetric(P1_ten)  # metric at previous timestep
     metric_intersect = RiemannianMetric(P1_ten)
@@ -355,11 +360,11 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     h_max = metric_params["dm_plex_metric"]["h_max"]
     h_bc.interpolate(Constant([[1.0 / h_max**2, 0.0], [0.0, 1.0 / h_max**2]]))
 
-    V = VectorFunctionSpace(mesh, "CG", 1)
+    t = Function(R).assign(t_start)
+    u_expression = velocity_expression(mesh, t)
+    u_ = Function(V).interpolate(u_expression)
     u = Function(V)
-    u_ = Function(V).interpolate(velocity_expression(mesh, t_start))
 
-    R = FunctionSpace(mesh, "R", 0)
     dt = Function(R).assign(0.01)  # timestep size
     theta = Function(R).assign(0.5)  # Crank-Nicolson implicitness
 
@@ -383,9 +388,9 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
     lvs = LinearVariationalSolver(lvp)
 
     # Integrate from t_start to t_end
-    t = t_start + float(dt)
-    while t < t_end + 0.5 * float(dt):
-        u.interpolate(velocity_expression(mesh, t))
+    t.assign(t + dt)
+    while float(t) < t_end + 0.5 * float(dt):
+        u.interpolate(u_expression)
 
         lvs.solve()
 
@@ -396,7 +401,7 @@ def adapt_metric_advection(mesh, t_start, t_end, c):
         # Update fields at the previous timestep
         m_.assign(m)
         u_.assign(u)
-        t += float(dt)
+        t.assign(t + dt)
 
     metric_intersect.normalise()
     amesh = adapt(mesh, metric_intersect)
