@@ -799,9 +799,9 @@ class RiemannianMetric(ffunc.Function):
         Compute an isotropic metric from some error indicator using an element-based
         formulation.
 
-        The formulation is based on that presented in :cite:`CPB:13`. Note that
+        The formulation is based on that presented in :cite:`Caprio:2013`. Note that
         normalisation is implicit in the metric construction and involves the
-        `convergence_rate` parameter, named :math:`alpha` in :cite:`CPB:13`.
+        `convergence_rate` parameter, named :math:`alpha` in :cite:`Caprio:2013`.
 
         Whilst an element-based formulation is used to derive the metric, the result is
         projected into :math:`\mathbb P1` space, by default.
@@ -834,9 +834,9 @@ class RiemannianMetric(ffunc.Function):
         r"""
         Compute an anisotropic metric from some error indicator, given a Hessian field.
 
-        The formulation used is based on that presented in :cite:`CPB:13`. Note that
+        The formulation used is based on that presented in :cite:`Caprio:2013`. Note that
         normalisation is implicit in the metric construction and involves the
-        `convergence_rate` parameter, named :math:`alpha` in :cite:`CPB:13`.
+        `convergence_rate` parameter, named :math:`alpha` in :cite:`Caprio:2013`.
 
         If a Hessian is not provided then an isotropic formulation is used.
 
@@ -936,7 +936,7 @@ class RiemannianMetric(ffunc.Function):
         Compute a vertex-wise anisotropic metric from a list of error indicators, given
         a list of corresponding Hessian fields.
 
-        The formulation used is based on that presented in :cite:`PPP+:06`. It is
+        The formulation used is based on that presented in :cite:`Power:2006`. It is
         assumed that the error indicators have been constructed in the appropriate way.
 
         :arg error_indicators: list of error indicators
@@ -987,7 +987,7 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
     Solve an algebraic problem to obtain coefficients for the interior and boundary
     metrics to obtain a given metric complexity.
 
-    See :cite:`LDA:10` for details. Note that we use a slightly different formulation
+    See :cite:Loseille:2010` for details. Note that we use a slightly different formulation
     here.
 
     :arg H_interior: Hessian component from domain interior

@@ -105,7 +105,7 @@ def project(source, target_space, **kwargs):
     projection operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
 
     For details on the approach for achieving boundedness through mass lumping and
-    post-processing, see :cite:`FPP+:2009`.
+    post-processing, see :cite:`Farrell:2009`.
 
     :arg source: the function to be transferred
     :type source: :class:`firedrake.function.Function` or
@@ -296,7 +296,7 @@ def _validate_matching_spaces(Vs, Vt):
 def clement_interpolant(source, target_space=None, boundary=False):
     r"""
     Compute the Clement interpolant of a :math:`\mathbb P0` source field, i.e. take the
-    volume average over neighbouring cells at each vertex. See :cite:`Cle:75`.
+    volume average over neighbouring cells at each vertex. See :cite:`Clement:1975`.
 
     :arg source: the :math:`\mathbb P0` source field
     :kwarg target_space: the :math:`\mathbb P1` space to interpolate into
