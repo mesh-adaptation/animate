@@ -799,9 +799,9 @@ class RiemannianMetric(ffunc.Function):
         Compute an isotropic metric from some error indicator using an element-based
         formulation.
 
-        The formulation is based on that presented in :cite:`Caprio:2013`. Note that
+        The formulation is based on that presented in :cite:`Carpio:2013`. Note that
         normalisation is implicit in the metric construction and involves the
-        `convergence_rate` parameter, named :math:`alpha` in :cite:`Caprio:2013`.
+        `convergence_rate` parameter, named :math:`alpha` in :cite:`Carpio:2013`.
 
         Whilst an element-based formulation is used to derive the metric, the result is
         projected into :math:`\mathbb P1` space, by default.
