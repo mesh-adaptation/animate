@@ -834,9 +834,9 @@ class RiemannianMetric(ffunc.Function):
         r"""
         Compute an anisotropic metric from some error indicator, given a Hessian field.
 
-        The formulation used is based on that presented in :cite:`Caprio:2013`. Note that
+        The formulation used is based on that presented in :cite:`Carpio:2013`. Note that
         normalisation is implicit in the metric construction and involves the
-        `convergence_rate` parameter, named :math:`alpha` in :cite:`Caprio:2013`.
+        `convergence_rate` parameter, named :math:`alpha` in :cite:`Carpio:2013`.
 
         If a Hessian is not provided then an isotropic formulation is used.
 
