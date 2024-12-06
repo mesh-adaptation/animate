@@ -511,3 +511,9 @@ print(
 # to maintain numerical stability (look at CFL condition).
 #
 # This demo can also be accessed as a `Python script <bubble_shear.py>`__.
+#
+#
+# .. rubric:: References
+#
+# .. bibliography::
+#    :filter: docname in docnames

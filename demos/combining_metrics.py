@@ -23,9 +23,8 @@
 # intersection of two metrics produces a metric whose associated ellipsoid is
 # the largest ellipsoid that can fit within the ellipsoids of the two metrics:
 #
-# .. figure:: combining_ellipse_intersection.jpg
-#    :figwidth: 70%
-#    :align: center
+# .. raw:: html
+#   :file: combining_ellipse_intersection.svg
 #
 # Below we first set up two metrics: Metric 1 asks for a medium resolution of
 # :math:`hm=0.025` in the left, and a coarse resolution of :math:`hc=0.1` in
