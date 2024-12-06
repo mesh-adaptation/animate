@@ -21,7 +21,7 @@ def load_mesh(fname):
     :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
     venv = os.environ.get("VIRTUAL_ENV")
-    mesh_dir = os.path.join(venv, "src", "firedrake", "tests", "meshes")
+    mesh_dir = os.path.join(venv, "src", "firedrake", "tests", "firedrake", "meshes")
     return Mesh(os.path.join(mesh_dir, fname + ".msh"))
 
 
