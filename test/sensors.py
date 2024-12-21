@@ -31,4 +31,4 @@ def interweaved(x, y):
 
 
 def mesh_for_sensors(dim, n):
-    return uniform_mesh(dim, n, l=2, recentre=True)
+    return uniform_mesh(dim, n, 2, recentre=True)
