@@ -368,8 +368,8 @@ def clement_interpolant(source, target_space=None, boundary=False):
             0: "t[i] = t[i] + v[0] * s[0]",
             1: "t[i, j] = t[i, j] + v[0] * s[0, j]",
             2: (
-                f"t[i, {dim} * j + k] = "
-                f"t[i, {dim} * j + k] + v[0] * s[0, {dim} * j + k]"
+                f"t[i, {dim} * j + k] ="
+                f" t[i, {dim} * j + k] + v[0] * s[0, {dim} * j + k]"
             ),
         }[rank]
         keys = {
