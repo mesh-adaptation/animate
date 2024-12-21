@@ -6,9 +6,15 @@ import os
 
 import numpy as np
 import pytest
-from firedrake import COMM_WORLD
+import ufl
+from firedrake.assemble import assemble
+from firedrake.constant import Constant
+from firedrake.mesh import Mesh
 from petsc4py import PETSc
-from test_setup import *
+from pyop2.mpi import COMM_WORLD
+from test_setup import uniform_mesh, uniform_metric
+
+from animate.adapt import adapt
 
 
 def load_mesh(fname):
@@ -112,8 +118,8 @@ def test_preserve_cell_tags_2d(meshname):
 
     one = Constant(1.0)
     for tag in tags:
-        bnd = assemble(one * dx(tag, domain=mesh))
-        newbnd = assemble(one * dx(tag, domain=newmesh))
+        bnd = assemble(one * ufl.dx(tag, domain=mesh))
+        newbnd = assemble(one * ufl.dx(tag, domain=newmesh))
         assert np.isclose(bnd, newbnd), f"Area of region {tag} not preserved"
 
 
@@ -136,8 +142,8 @@ def test_preserve_facet_tags_2d(meshname):
 
     one = Constant(1.0)
     for tag in tags:
-        bnd = assemble(one * ds(tag, domain=mesh))
-        newbnd = assemble(one * ds(tag, domain=newmesh))
+        bnd = assemble(one * ufl.ds(tag, domain=mesh))
+        newbnd = assemble(one * ufl.ds(tag, domain=newmesh))
         assert np.isclose(bnd, newbnd), f"Length of arc {tag} not preserved"
 
 

@@ -4,9 +4,14 @@ from shutil import rmtree
 
 import h5py
 import numpy as np
-from test_setup import *
+import ufl
+from firedrake.function import Function
+from firedrake.functionspace import FunctionSpace, TensorFunctionSpace
+from firedrake.mesh import _generate_default_mesh_topology_name
+from test_setup import uniform_mesh
 
-from animate.checkpointing import get_checkpoint_dir
+from animate.checkpointing import get_checkpoint_dir, load_checkpoint, save_checkpoint
+from animate.metric import RiemannianMetric
 
 
 class TestCheckpointing(unittest.TestCase):
@@ -53,7 +58,7 @@ class TestCheckpointing(unittest.TestCase):
         save_checkpoint(fpath, metric)
         self.assertTrue(os.path.exists(fpath))
         mesh_name = metric._mesh.name
-        topology_name = firedrake.mesh._generate_default_mesh_topology_name(mesh_name)
+        topology_name = _generate_default_mesh_topology_name(mesh_name)
         with h5py.File(fpath, "r") as h5:
             self.assertTrue("topologies" in h5)
             self.assertTrue(topology_name in h5["topologies"].keys())
@@ -106,7 +111,7 @@ class TestCheckpointing(unittest.TestCase):
 
     def test_load_function_parameters(self):
         P1 = FunctionSpace(self.mesh, "CG", 1)
-        x, y = SpatialCoordinate(self.mesh)
+        x, y = ufl.SpatialCoordinate(self.mesh)
         a_max = Function(P1).interpolate(1 + x * y)
         self.metric.set_parameters({"dm_plex_metric_a_max": a_max})
         self.test_load(filename="test_load_function_parameters")

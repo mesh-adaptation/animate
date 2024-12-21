@@ -1,13 +1,18 @@
 import os
 import unittest
 
+import numpy as np
+import ufl
+from firedrake.function import Function
+from firedrake.functionspace import FunctionSpace, VectorFunctionSpace
 from firedrake.norms import errornorm as ferrnorm
 from firedrake.norms import norm as fnorm
+from firedrake.output import VTKFile
+from firedrake.utility_meshes import UnitSquareMesh, UnitTriangleMesh
 from parameterized import parameterized
-from test_setup import *
 from test_setup import uniform_mesh
 
-from animate.utility import assemble_mass_matrix
+from animate.utility import assemble_mass_matrix, errornorm, norm
 
 pointwise_norm_types = [["l1"], ["l2"], ["linf"]]
 integral_scalar_norm_types = [["L1"], ["L2"], ["L4"], ["H1"], ["HCurl"]]
@@ -97,7 +102,7 @@ class TestNorm(unittest.TestCase):
 
     def setUp(self):
         self.mesh = uniform_mesh(2, 4)
-        self.x, self.y = SpatialCoordinate(self.mesh)
+        self.x, self.y = ufl.SpatialCoordinate(self.mesh)
         V = FunctionSpace(self.mesh, "CG", 1)
         self.f = Function(V).interpolate(self.x**2 + self.y)
 
@@ -153,8 +158,8 @@ class TestNorm(unittest.TestCase):
 
     def test_consistency_hdiv(self):
         V = VectorFunctionSpace(self.mesh, "CG", 1)
-        x, y = SpatialCoordinate(self.mesh)
-        f = Function(V).interpolate(as_vector([y * y, -x * x]))
+        x, y = ufl.SpatialCoordinate(self.mesh)
+        f = Function(V).interpolate(ufl.as_vector([y * y, -x * x]))
         expected = fnorm(f, norm_type="HDiv")
         got = norm(f, norm_type="HDiv")
         self.assertAlmostEqual(expected, got)
@@ -168,7 +173,7 @@ class TestNorm(unittest.TestCase):
     @parameterized.expand([("L1", 0.25), ("L2", 0.5)])
     def test_condition_integral(self, norm_type, expected):
         self.f.assign(1.0)
-        condition = conditional(And(self.x < 0.5, self.y < 0.5), 1.0, 0.0)
+        condition = ufl.conditional(ufl.And(self.x < 0.5, self.y < 0.5), 1.0, 0.0)
         val = norm(self.f, norm_type=norm_type, condition=condition)
         self.assertAlmostEqual(val, expected)
 
@@ -180,7 +185,7 @@ class TestErrorNorm(unittest.TestCase):
 
     def setUp(self):
         self.mesh = uniform_mesh(2, 4)
-        self.x, self.y = SpatialCoordinate(self.mesh)
+        self.x, self.y = ufl.SpatialCoordinate(self.mesh)
         V = FunctionSpace(self.mesh, "CG", 1)
         self.f = Function(V).interpolate(self.x**2 + self.y)
         self.g = Function(V).interpolate(self.x + self.y**2)
@@ -217,8 +222,8 @@ class TestErrorNorm(unittest.TestCase):
 
     def test_zero_hdiv(self):
         V = VectorFunctionSpace(self.mesh, "CG", 1)
-        x, y = SpatialCoordinate(self.mesh)
-        f = Function(V).interpolate(as_vector([y * y, -x * x]))
+        x, y = ufl.SpatialCoordinate(self.mesh)
+        f = Function(V).interpolate(ufl.as_vector([y * y, -x * x]))
         err = errornorm(f, f, norm_type="HDiv")
         self.assertAlmostEqual(err, 0.0)
 
@@ -230,9 +235,9 @@ class TestErrorNorm(unittest.TestCase):
 
     def test_consistency_hdiv(self):
         V = VectorFunctionSpace(self.mesh, "CG", 1)
-        x, y = SpatialCoordinate(self.mesh)
-        f = Function(V).interpolate(as_vector([y * y, -x * x]))
-        g = Function(V).interpolate(as_vector([x * y, 1.0]))
+        x, y = ufl.SpatialCoordinate(self.mesh)
+        f = Function(V).interpolate(ufl.as_vector([y * y, -x * x]))
+        g = Function(V).interpolate(ufl.as_vector([x * y, 1.0]))
         expected = ferrnorm(f, g, norm_type="HDiv")
         got = errornorm(f, g, norm_type="HDiv")
         self.assertAlmostEqual(expected, got)
@@ -241,7 +246,7 @@ class TestErrorNorm(unittest.TestCase):
     def test_condition_integral(self, norm_type, expected):
         self.f.assign(1.0)
         self.g.assign(0.0)
-        condition = conditional(And(self.x < 0.5, self.y < 0.5), 1.0, 0.0)
+        condition = ufl.conditional(ufl.And(self.x < 0.5, self.y < 0.5), 1.0, 0.0)
         val = errornorm(self.f, self.g, norm_type=norm_type, condition=condition)
         self.assertAlmostEqual(val, expected)
 
