@@ -114,7 +114,7 @@ class TestRecoveryBowl(unittest.TestCase):
         mesh = approx.function_space().mesh()
         dim = mesh.topological_dimension()
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-        I = Function(P1_ten).interpolate(Identity(dim))
+        identity = Function(P1_ten).interpolate(Identity(dim))
 
         # Check that they agree
         cond = Constant(1.0)
@@ -124,8 +124,8 @@ class TestRecoveryBowl(unittest.TestCase):
             for i in range(1, dim):
                 cond = And(cond, And(x[i] > -0.8, x[i] < 0.8))
             cond = conditional(cond, 1, 0)
-        err = errornorm(approx, I, norm_type="L2", condition=cond)
-        err /= norm(I, norm_type="L2", condition=cond)
+        err = errornorm(approx, identity, norm_type="L2", condition=cond)
+        err /= norm(identity, norm_type="L2", condition=cond)
         return err
 
     @parameterized.expand(

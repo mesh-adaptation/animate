@@ -3,7 +3,7 @@ from firedrake import *
 from animate import *
 
 
-def uniform_mesh(dim, n=5, l=1, recentre=False, **kwargs):
+def uniform_mesh(dim, n=5, length=1, recentre=False, **kwargs):
     """
     Create a uniform mesh of a specified dimension and size.
 
@@ -16,16 +16,16 @@ def uniform_mesh(dim, n=5, l=1, recentre=False, **kwargs):
     constructor.
     """
     if dim == 1:
-        mesh = IntervalMesh(n, l, **kwargs)
+        mesh = IntervalMesh(n, length, **kwargs)
     elif dim == 2:
-        mesh = SquareMesh(n, n, l, **kwargs)
+        mesh = SquareMesh(n, n, length, **kwargs)
     elif dim == 3:
-        mesh = CubeMesh(n, n, n, l, **kwargs)
+        mesh = CubeMesh(n, n, n, length, **kwargs)
     else:
         raise ValueError(f"Can only adapt in 2D or 3D, not {dim}D")
     if recentre:
         coords = Function(mesh.coordinates)
-        coords.interpolate(2 * (coords - as_vector([0.5 * l] * dim)))
+        coords.interpolate(2 * (coords - as_vector([0.5 * length] * dim)))
         return Mesh(coords)
     return mesh
 
