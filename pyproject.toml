@@ -4,15 +4,6 @@ requires = ["setuptools"]
 [project]
 name = "animate"
 version = "0.2"
-dependencies = [
-  "cffconvert",
-  "parameterized",
-  "pre-commit",
-  "pytest",
-  "pytest-xdist",
-  "ruff",
-  "sympy",
-]
 authors = [
   {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
   {name = "Davor Dundovic"},
@@ -31,6 +22,19 @@ license = {file = "LICENSE"}
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
+]
+dependencies = [
+  "sympy"
+]
+
+[project.optional-dependencies]
+dev = [
+  "cffconvert",
+  "parameterized",
+  "pre-commit",
+  "pytest",
+  "pytest-xdist",
+  "ruff",
 ]
 
 [project.urls]
