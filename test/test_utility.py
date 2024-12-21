@@ -7,12 +7,11 @@ from firedrake.function import Function
 from firedrake.functionspace import FunctionSpace, VectorFunctionSpace
 from firedrake.norms import errornorm as ferrnorm
 from firedrake.norms import norm as fnorm
-from firedrake.output import VTKFile
 from firedrake.utility_meshes import UnitSquareMesh, UnitTriangleMesh
 from parameterized import parameterized
 from test_setup import uniform_mesh
 
-from animate.utility import assemble_mass_matrix, errornorm, norm
+from animate.utility import VTKFile, assemble_mass_matrix, errornorm, norm
 
 pointwise_norm_types = [["l1"], ["l2"], ["linf"]]
 integral_scalar_norm_types = [["L1"], ["L2"], ["L4"], ["H1"], ["HCurl"]]
@@ -29,10 +28,8 @@ class TestVTK(unittest.TestCase):
     """
 
     def setUp(self):
-        mesh = UnitSquareMesh(1, 1)
-        self.fs = FunctionSpace(mesh, "CG", 1)
-        pwd = os.path.dirname(__file__)
-        self.fname = os.path.join(pwd, "tmp.pvd")
+        self.fs = FunctionSpace(UnitSquareMesh(1, 1), "CG", 1)
+        self.fname = os.path.join(os.path.dirname(__file__), "tmp.pvd")
 
     def tearDown(self):
         fname = os.path.splitext(self.fname)[0]
