@@ -16,7 +16,7 @@ def bowl(*coords):
     """
     Quadratic bowl sensor function in arbitrary dimensions.
     """
-    return 0.5 * ufl.sum([xi**2 for xi in coords])
+    return 0.5 * sum([xi**2 for xi in coords])
 
 
 def hyperbolic(x, y):
@@ -24,7 +24,7 @@ def hyperbolic(x, y):
     Hyperbolic sensor function in 2D.
     """
     sn = ufl.sin(50 * x * y)
-    return ufl.conditional(ufl.abs(x * y) < 2 * ufl.pi / 50, 0.01 * sn, sn)
+    return ufl.conditional(abs(x * y) < 2 * ufl.pi / 50, 0.01 * sn, sn)
 
 
 def multiscale(x, y):

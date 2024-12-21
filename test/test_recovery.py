@@ -180,7 +180,7 @@ class TestRecoveryBowl(unittest.TestCase):
 
         # Check its directional derivatives in boundaries are zero
         for s in construct_basis(ufl.FacetNormal(mesh))[1:]:
-            dHds = ufl.abs(assemble(ufl.dot(ufl.div(metric), s) * ufl.ds))
+            dHds = abs(assemble(ufl.dot(ufl.div(metric), s) * ufl.ds))
             self.assertLess(dHds, 5.0e-08)
 
     @parameterized.expand([[2]])
@@ -193,5 +193,5 @@ class TestRecoveryBowl(unittest.TestCase):
 
         # Check its directional derivatives in boundaries are zero
         for s in construct_basis(ufl.FacetNormal(mesh))[1:]:
-            dHds = ufl.abs(assemble(ufl.dot(ufl.div(metric), s) * ufl.ds))
+            dHds = abs(assemble(ufl.dot(ufl.div(metric), s) * ufl.ds))
             self.assertLess(dHds, 2.0e-08)
