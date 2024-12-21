@@ -4,9 +4,17 @@ Test derivative recovery techniques.
 
 import unittest
 
+import ufl
+from firedrake.assemble import assemble
+from firedrake.constant import Constant
+from firedrake.function import Function
+from firedrake.functionspace import FunctionSpace, TensorFunctionSpace
 from parameterized import parameterized
 from sensors import bowl, mesh_for_sensors
-from test_setup import *
+
+from animate.math import construct_basis
+from animate.metric import RiemannianMetric
+from animate.utility import errornorm, norm
 
 # ---------------------------
 # standard tests for pytest
@@ -29,7 +37,7 @@ class TestRecoverySetup(unittest.TestCase):
         return Function(V).assign(1.0)
 
     def test_clement_function_error(self):
-        f = bowl(*SpatialCoordinate(self.mesh))
+        f = bowl(*ufl.SpatialCoordinate(self.mesh))
         with self.assertRaises(ValueError) as cm:
             self.metric.compute_hessian(f, method="Clement")
         msg = (
@@ -59,7 +67,7 @@ class TestRecoverySetup(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
     def test_l2_projection_function_error(self):
-        f = bowl(*SpatialCoordinate(self.mesh))
+        f = bowl(*ufl.SpatialCoordinate(self.mesh))
         with self.assertRaises(ValueError) as cm:
             self.metric.compute_hessian(f, method="L2")
         msg = "If a target space is not provided then the input must be a Function."
@@ -114,18 +122,18 @@ class TestRecoveryBowl(unittest.TestCase):
         mesh = approx.function_space().mesh()
         dim = mesh.topological_dimension()
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-        I = Function(P1_ten).interpolate(Identity(dim))
+        identity = Function(P1_ten).interpolate(ufl.Identity(dim))
 
         # Check that they agree
         cond = Constant(1.0)
         if ignore_boundary:
-            x = SpatialCoordinate(mesh)
-            cond = And(x[0] > -0.8, x[0] < 0.8)
+            x = ufl.SpatialCoordinate(mesh)
+            cond = ufl.And(x[0] > -0.8, x[0] < 0.8)
             for i in range(1, dim):
-                cond = And(cond, And(x[i] > -0.8, x[i] < 0.8))
-            cond = conditional(cond, 1, 0)
-        err = errornorm(approx, I, norm_type="L2", condition=cond)
-        err /= norm(I, norm_type="L2", condition=cond)
+                cond = ufl.And(cond, ufl.And(x[i] > -0.8, x[i] < 0.8))
+            cond = ufl.conditional(cond, 1, 0)
+        err = errornorm(approx, identity, norm_type="L2", condition=cond)
+        err /= norm(identity, norm_type="L2", condition=cond)
         return err
 
     @parameterized.expand(
@@ -171,8 +179,8 @@ class TestRecoveryBowl(unittest.TestCase):
         metric.compute_boundary_hessian(f, method="mixed_L2")
 
         # Check its directional derivatives in boundaries are zero
-        for s in construct_basis(FacetNormal(mesh))[1:]:
-            dHds = abs(assemble(dot(div(metric), s) * ds))
+        for s in construct_basis(ufl.FacetNormal(mesh))[1:]:
+            dHds = abs(assemble(ufl.dot(ufl.div(metric), s) * ufl.ds))
             self.assertLess(dHds, 5.0e-08)
 
     @parameterized.expand([[2]])
@@ -184,6 +192,6 @@ class TestRecoveryBowl(unittest.TestCase):
         metric.compute_boundary_hessian(f, method="Clement")
 
         # Check its directional derivatives in boundaries are zero
-        for s in construct_basis(FacetNormal(mesh))[1:]:
-            dHds = abs(assemble(dot(div(metric), s) * ds))
+        for s in construct_basis(ufl.FacetNormal(mesh))[1:]:
+            dHds = abs(assemble(ufl.dot(ufl.div(metric), s) * ufl.ds))
             self.assertLess(dHds, 2.0e-08)

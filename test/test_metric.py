@@ -1,10 +1,21 @@
 import unittest
 
 import numpy as np
+import ufl
+from firedrake.bcs import DirichletBC
+from firedrake.constant import Constant
+from firedrake.function import Function
+from firedrake.functionspace import (
+    FunctionSpace,
+    TensorFunctionSpace,
+    VectorFunctionSpace,
+)
+from firedrake.norms import errornorm, norm
 from parameterized import parameterized
-from test_setup import *
+from sensors import bowl, hyperbolic, interweaved, multiscale
+from test_setup import uniform_mesh, uniform_metric
 
-from animate.metric import P0Metric
+from animate.metric import P0Metric, RiemannianMetric
 
 
 class MetricTestCase(unittest.TestCase):
@@ -251,7 +262,7 @@ class TestCombination(MetricTestCase):
 
     def test_variable_average(self, dim=2):
         mesh = uniform_mesh(dim, 1)
-        x = SpatialCoordinate(mesh)
+        x = ufl.SpatialCoordinate(mesh)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric1 = RiemannianMetric(P1_ten)
         metric2 = RiemannianMetric(P1_ten)
@@ -261,8 +272,8 @@ class TestCombination(MetricTestCase):
         else:
             mat1 = [[2 + x[0], 0, 0], [0, 2 + x[1], 0], [0, 0, 2 + x[2]]]
             mat2 = [[2 - x[0], 0, 0], [0, 2 - x[1], 0], [0, 0, 2 - x[2]]]
-        metric1.interpolate(as_matrix(mat1))
-        metric2.interpolate(as_matrix(mat2))
+        metric1.interpolate(ufl.as_matrix(mat1))
+        metric2.interpolate(ufl.as_matrix(mat2))
 
         metric_avg = metric1.copy(deepcopy=True)
         metric_avg.average(metric1, metric1)
@@ -503,7 +514,7 @@ class TestMetricDrivers(MetricTestCase):
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten)
         indicator = self.uniform_indicator(mesh)
-        hessian = Function(P1_ten).interpolate(Identity(2))
+        hessian = Function(P1_ten).interpolate(ufl.Identity(2))
         with self.assertRaises(TypeError) as cm:
             metric.compute_weighted_hessian_metric(indicator, hessian)
         msg = (
@@ -648,14 +659,14 @@ class TestMetricDecompositions(MetricTestCase):
         # Create a simple metric
         metric = RiemannianMetric(P1_ten)
         mat = [[1, 0], [0, 2]] if dim == 2 else [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
-        metric.interpolate(as_matrix(mat))
+        metric.interpolate(ufl.as_matrix(mat))
 
         # Extract the eigendecomposition
         evectors, evalues = metric.compute_eigendecomposition(reorder=reorder)
 
         # Check eigenvectors are orthonormal
         err = Function(P1_ten)
-        err.interpolate(dot(evectors, transpose(evectors)) - Identity(dim))
+        err.interpolate(ufl.dot(evectors, ufl.transpose(evectors)) - ufl.Identity(dim))
         if not np.isclose(norm(err), 0.0):
             raise ValueError(f"Eigenvectors are not orthonormal: {evectors.dat.data}")
 
@@ -675,7 +686,7 @@ class TestMetricDecompositions(MetricTestCase):
 
         # Check against the expected result
         expected = RiemannianMetric(P1_ten)
-        expected.interpolate(as_matrix(mat))
+        expected.interpolate(ufl.as_matrix(mat))
         if not np.isclose(errornorm(metric, expected), 0.0):
             raise ValueError("Reassembled metric does not match.")
 
@@ -693,14 +704,14 @@ class TestMetricDecompositions(MetricTestCase):
         # Create a simple metric
         metric = RiemannianMetric(P1_ten)
         mat = [[1, 0], [0, 2]] if dim == 2 else [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
-        metric.interpolate(as_matrix(mat))
+        metric.interpolate(ufl.as_matrix(mat))
 
         # Extract the eigendecomposition
         density, quotients, evectors = metric.density_and_quotients(reorder=reorder)
 
         # Check eigenvectors are orthonormal
         err = Function(P1_ten)
-        err.interpolate(dot(evectors, transpose(evectors)) - Identity(dim))
+        err.interpolate(ufl.dot(evectors, ufl.transpose(evectors)) - ufl.Identity(dim))
         if not np.isclose(norm(err), 0.0):
             raise ValueError(f"Eigenvectors are not orthonormal: {evectors.dat.data}")
 
@@ -708,14 +719,14 @@ class TestMetricDecompositions(MetricTestCase):
         rho = pow(density, 2 / dim)
         Qd = [pow(quotients[i], -2 / dim) for i in range(dim)]
         if dim == 2:
-            Q = as_matrix([[Qd[0], 0], [0, Qd[1]]])
+            Q = ufl.as_matrix([[Qd[0], 0], [0, Qd[1]]])
         else:
-            Q = as_matrix([[Qd[0], 0, 0], [0, Qd[1], 0], [0, 0, Qd[2]]])
-        metric.interpolate(rho * dot(evectors, dot(Q, transpose(evectors))))
+            Q = ufl.as_matrix([[Qd[0], 0, 0], [0, Qd[1], 0], [0, 0, Qd[2]]])
+        metric.interpolate(rho * ufl.dot(evectors, ufl.dot(Q, ufl.transpose(evectors))))
 
         # Check against the expected result
         expected = RiemannianMetric(P1_ten)
-        expected.interpolate(as_matrix(mat))
+        expected.interpolate(ufl.as_matrix(mat))
         if not np.isclose(errornorm(metric, expected), 0.0):
             raise ValueError("Reassembled metric does not match.")
 
@@ -735,11 +746,11 @@ class TestEnforceSPD(MetricTestCase):
 
     def test_symmetric(self):
         mesh = uniform_mesh(2, 4, recentre=True)
-        f = hyperbolic(*SpatialCoordinate(mesh))
+        f = hyperbolic(*ufl.SpatialCoordinate(mesh))
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten).compute_hessian(f)
         metric.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
-        expected = RiemannianMetric(P1_ten).interpolate(transpose(metric))
+        expected = RiemannianMetric(P1_ten).interpolate(ufl.transpose(metric))
         self.assertAlmostMatching(metric, expected)
 
     @parameterized.expand(
@@ -838,7 +849,7 @@ class TestEnforceSPD(MetricTestCase):
         metric = RiemannianMetric(P1_ten)
         M = np.eye(dim)
         M[0][0] = 10.0
-        metric.interpolate(as_matrix(M))
+        metric.interpolate(ufl.as_matrix(M))
         a_max = 1.0
         if variable:
             metric.set_parameters(
@@ -854,7 +865,7 @@ class TestEnforceSPD(MetricTestCase):
         if boundary_tag is None:
             expected = uniform_metric(mesh, a=10.0)
         else:
-            expected = RiemannianMetric(P1_ten).interpolate(as_matrix(M))
+            expected = RiemannianMetric(P1_ten).interpolate(ufl.as_matrix(M))
             expected.dat.data[DirichletBC(P1_ten, 0, 1).nodes] = 10.0 * np.eye(dim)
         self.assertAlmostMatching(metric, expected)
 
@@ -890,7 +901,7 @@ class TestMetricUtils(MetricTestCase):
     @parameterized.expand([[2], [3]])
     def test_complexity(self, dim):
         mesh = uniform_mesh(dim, 1)
-        x = SpatialCoordinate(mesh)
+        x = ufl.SpatialCoordinate(mesh)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten)
         if dim == 2:
@@ -899,5 +910,5 @@ class TestMetricUtils(MetricTestCase):
         else:
             mat = [[1 + x[0], 0, 0], [0, 1 + x[1], 0], [0, 0, 1 + x[2]]]
             expected = 8 / 27 * (22 * np.sqrt(2) - 25)
-        metric.interpolate(as_matrix(mat))
+        metric.interpolate(ufl.as_matrix(mat))
         self.assertAlmostEqual(metric.complexity(), expected, places=5)

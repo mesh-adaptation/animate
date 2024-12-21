@@ -34,7 +34,8 @@
 # time, and is given by
 #
 # .. math::
-#   \mathbf{u}(x, y, t) := \left(2\sin^2(\pi x)\sin(2\pi y), -\sin(2\pi x)\sin^2(\pi y) \right) \cos(2\pi t/T),
+#   \mathbf{u}(x, y, t) := \left(2\sin^2(\pi x)\sin(2\pi y),
+#                                -\sin(2\pi x)\sin^2(\pi y) \right) \cos(2\pi t/T),
 #
 # where :math:`T` is the period. At each timestep of the simulation we will update this
 # field so we define a function that will return its vector expression. ::
@@ -289,8 +290,8 @@ for i in range(num_adaptations):
     # Plot the adapted mesh and the concentration field at t0 and t1
     plot_mesh(mesh, c0, c, i, "classical")
 
-# Now let us examine the final adapted mesh and final concentration field computed on it.
-# We will also compute the relative :math:`L^2` error. ::
+# Now let us examine the final adapted mesh and final concentration field computed on
+# it. We will also compute the relative :math:`L^2` error. ::
 
 # Redefine the initial condition on the final adapted mesh
 c0 = get_initial_condition(mesh)
@@ -478,13 +479,13 @@ print(
 #
 # .. table::
 #
-#    ======================= ============================== =====================================
-#     Number of adaptations   Classical (avg. :math:`N_v`)   Metric advection (avg. :math:`N_v`)
-#    ======================= ============================== =====================================
-#     5                       61.58% (2200.8)                37.97% (1931.2)
-#     15                      30.32% (2308.1)                30.79% (2014.3)
-#     50                      26.99% (2507.2)                28.36% (2135.1)
-#    ======================= ============================== =====================================
+#    ============= ============================== =====================================
+#     Num. adapts   Classical (avg. :math:`N_v`)   Metric advection (avg. :math:`N_v`)
+#    ============= ============================== =====================================
+#     5             61.58% (2200.8)                37.97% (1931.2)
+#     15            30.32% (2308.1)                30.79% (2014.3)
+#     50            26.99% (2507.2)                28.36% (2135.1)
+#    ============= ============================== =====================================
 #
 # Furthermore, the problem considered in this example is relatively well-suited for
 # classical mesh adaptation, as the bubble concentration field reverses and therefore

@@ -96,9 +96,9 @@ fig.savefig("combining_metrics-intersection.jpg")
 #
 # As we can observe, in every region the resolution respects the minimum
 # resolution in all directions asked for by both metrics. For example, in the
-# region :math:`x<0.5`, :math:`0.3<y<0.7` the resolution in the :math:`x`-direction is :math:`hf=0.01`, as
-# required by metric2, but in the :math:`y`-direction the resolution is :math:`hm=0.02` as
-# required by metric1.
+# region :math:`x<0.5`, :math:`0.3<y<0.7` the resolution in the :math:`x`-direction is
+# :math:`hf=0.01`, as required by metric2, but in the :math:`y`-direction the resolution
+# is :math:`hm=0.02` as required by metric1.
 #
 # If instead we average the metrics using the
 # :meth:`~.RiemannianMetric.average()` method,

@@ -184,8 +184,8 @@ class RiemannianMetric(ffunc.Function):
             and :class:`~.Function` input, as well as :class:`float`. Default: 1.0e+30.
         * `a_max`: Maximum tolerated metric anisotropy, which allows approximate control
             of maximum element anisotropy in the adapted mesh. Supports
-            :class:`~.Constant` and :class:`~.Function` input, as well as :class:`float`.
-            Default: 1.0e+05.
+            :class:`~.Constant` and :class:`~.Function` input, as well as
+            :class:`float`. Default: 1.0e+05.
         * `p`: :math:`L^p` normalisation order. Supports ``np.inf`` as well as
             :class:`float` values from :math:`[0,\infty)`. Default: 1.0.
         * `gradation_factor`: Maximum ratio by which adjacent edges in the adapted mesh
@@ -198,16 +198,16 @@ class RiemannianMetric(ffunc.Function):
             https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-hausd.
         * `boundary_tag`: Mesh boundary tag to restrict attention to during
             boundary-specific metric manipulations. Unset by default, which implies all
-            boundaries are considered. (Note that this parameter does not currently exist
-            in the underlying PETSc implementation.)
+            boundaries are considered. (Note that this parameter does not currently
+            exist in the underlying PETSc implementation.)
         * `no_insert`: Boolean flag for turning off node insertion and deletion during
             adaptation. Default: False.
         * `no_swap`: Boolean flag for turning off edge and face swapping during
             adaptation. Default: False.
         * `no_move`: Boolean flag for turning off node movement during adaptation.
             Default: False.
-        * `no_surf`: Boolean flag for turning off surface modification during adaptation.
-            Default: False.
+        * `no_surf`: Boolean flag for turning off surface modification during
+            adaptation. Default: False.
         * `num_iterations`: Number of adaptation-repartitioning iterations in the
             parallel case. Default: 3. For details on the parallel algorithm, see
             https://inria.hal.science/hal-02386837.
@@ -286,7 +286,8 @@ class RiemannianMetric(ffunc.Function):
         Copy the metric and any associated parameters.
 
         :kwarg deepcopy: If ``True``, the new metric will allocate new space and copy
-            values. If ``False`` (default) then the new metric will share the DoF values.
+            values. If ``False`` (default) then the new metric will share the DoF
+            values.
         :type deepcopy: :class:`bool`
         :return: a copy of the metric with the same parameters set
         :rtype: :class:`~.RiemannianMetric`
@@ -834,8 +835,8 @@ class RiemannianMetric(ffunc.Function):
         r"""
         Compute an anisotropic metric from some error indicator, given a Hessian field.
 
-        The formulation used is based on that presented in :cite:`Carpio:2013`. Note that
-        normalisation is implicit in the metric construction and involves the
+        The formulation used is based on that presented in :cite:`Carpio:2013`. Note
+        that normalisation is implicit in the metric construction and involves the
         `convergence_rate` parameter, named :math:`alpha` in :cite:`Carpio:2013`.
 
         If a Hessian is not provided then an isotropic formulation is used.
@@ -917,8 +918,8 @@ class RiemannianMetric(ffunc.Function):
             metric.project(P0_metric)
 
         # Rescale to enforce that the target complexity is met
-        #   Note that we use the L-infinity norm so that the metric is just scaled to the
-        #   target metric complexity, as opposed to being redistributed spatially.
+        #   NOTE: We use the L-infinity norm so that the metric is just scaled to the
+        #         target metric complexity, as opposed to being redistributed spatially.
         mp["dm_plex_metric_p"] = np.inf
         metric.set_parameters(mp)
         metric.normalise()
@@ -987,8 +988,8 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
     Solve an algebraic problem to obtain coefficients for the interior and boundary
     metrics to obtain a given metric complexity.
 
-    See :cite:Loseille:2010` for details. Note that we use a slightly different formulation
-    here.
+    See :cite:Loseille:2010` for details. Note that we use a slightly different
+    formulation here.
 
     :arg H_interior: Hessian component from domain interior
     :arg H_boundary: Hessian component from domain boundary

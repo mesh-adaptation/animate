@@ -175,7 +175,8 @@ plt.savefig("ping_pong-quantities_project.jpg", bbox_inches="tight")
 # :math:`\mathbb P1` fields specifically, it is possible to achieve this using 'mass
 # lumping'. Recall the linear system above. Lumping amounts to replacing the mass matrix
 # :math:`\underline{\mathbf{M}_B}` with a diagonal matrix, whose entries correspond to
-# the sums over the corresponding mass matrix rows. (See :cite:`Farrell:2009` for details.)
+# the sums over the corresponding mass matrix rows. (See :cite:`Farrell:2009` for
+# details.)
 #
 # The resulting bounded projection operator can be used in Animate by passing
 # ``bounded=True`` to the ``project`` function. ::

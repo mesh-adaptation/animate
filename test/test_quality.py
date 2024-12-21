@@ -2,8 +2,14 @@ import unittest
 
 import numpy as np
 import pytest
+import ufl
+from firedrake.function import Function
+from firedrake.functionspace import TensorFunctionSpace
+from firedrake.norms import errornorm
 from parameterized import parameterized
-from test_setup import *
+from test_setup import uniform_mesh
+
+from animate.quality import QualityMeasure
 
 
 @pytest.fixture(params=[2, 3])
@@ -33,7 +39,7 @@ class TestQuality(unittest.TestCase):
         dim = mesh.topological_dimension()
         if name == "metric":
             P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-            M = Function(P1_ten).interpolate(Identity(dim))
+            M = Function(P1_ten).interpolate(ufl.Identity(dim))
             kwargs["metric"] = M
         return QualityMeasure(mesh, **kwargs)(name)
 

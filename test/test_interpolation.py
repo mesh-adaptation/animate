@@ -6,13 +6,27 @@ import unittest
 
 import numpy as np
 import pytest
+import ufl
+from firedrake.assemble import assemble
+from firedrake.cofunction import Cofunction
+from firedrake.constant import Constant
+from firedrake.function import Function
+from firedrake.functionspace import (
+    FunctionSpace,
+    TensorFunctionSpace,
+    VectorFunctionSpace,
+)
+from firedrake.norms import errornorm
+from firedrake.utility_meshes import UnitSquareMesh
 from parameterized import parameterized
-from test_setup import *
 
 from animate.interpolation import (
     _supermesh_project,
     _transfer_adjoint,
     _transfer_forward,
+    clement_interpolant,
+    project,
+    transfer,
 )
 from animate.utility import function2cofunction
 
@@ -29,13 +43,21 @@ class TestClement(unittest.TestCase):
         self.P1 = FunctionSpace(self.mesh, "CG", 1)
 
         h = 1 / n
-        self.x, self.y = SpatialCoordinate(self.mesh)
-        self.interior = conditional(
-            And(And(self.x > h, self.x < 1 - h), And(self.y > h, self.y < 1 - h)), 1, 0
+        self.x, self.y = ufl.SpatialCoordinate(self.mesh)
+        self.interior = ufl.conditional(
+            ufl.And(
+                ufl.And(self.x > h, self.x < 1 - h), ufl.And(self.y > h, self.y < 1 - h)
+            ),
+            1,
+            0,
         )
         self.boundary = 1 - self.interior
-        self.corner = conditional(
-            And(Or(self.x < h, self.x > 1 - h), Or(self.y < h, self.y > 1 - h)), 1, 0
+        self.corner = ufl.conditional(
+            ufl.And(
+                ufl.Or(self.x < h, self.x > 1 - h), ufl.Or(self.y < h, self.y > 1 - h)
+            ),
+            1,
+            0,
         )
 
     def get_space(self, rank, family, degree):
@@ -51,9 +73,9 @@ class TestClement(unittest.TestCase):
         if rank == 0:
             return self.x
         elif rank == 1:
-            return as_vector((self.x, self.y))
+            return ufl.as_vector((self.x, self.y))
         else:
-            return as_matrix([[self.x, self.y], [-self.y, -self.x]])
+            return ufl.as_matrix([[self.x, self.y], [-self.y, -self.x]])
 
     def test_source_type_error(self):
         with self.assertRaises(TypeError) as cm:
@@ -108,7 +130,7 @@ class TestClement(unittest.TestCase):
         source = Function(P0).project(exact)
         target = clement_interpolant(source)
         expected = Function(P1).interpolate(exact)
-        err = assemble(self.interior * (target - expected) ** 2 * dx)
+        err = assemble(self.interior * (target - expected) ** 2 * ufl.dx)
         self.assertAlmostEqual(err, 0)
 
     @parameterized.expand([[0], [1], [2]])
@@ -122,7 +144,7 @@ class TestClement(unittest.TestCase):
 
         # Check approximate recovery
         for tag in [1, 2, 3, 4]:
-            self.assertLess(assemble(integrand * ds(tag)), 5e-3)
+            self.assertLess(assemble(integrand * ufl.ds(tag)), 5e-3)
 
 
 class TestTransfer(unittest.TestCase):
@@ -135,8 +157,8 @@ class TestTransfer(unittest.TestCase):
         self.target_mesh = UnitSquareMesh(4, 5, diagonal="right")
 
     def sinusoid(self, source=True):
-        x, y = SpatialCoordinate(self.source_mesh if source else self.target_mesh)
-        return sin(pi * x) * sin(pi * y)
+        x, y = ufl.SpatialCoordinate(self.source_mesh if source else self.target_mesh)
+        return ufl.sin(ufl.pi * x) * ufl.sin(ufl.pi * y)
 
     def test_method_typo_error(self):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
@@ -342,7 +364,9 @@ class TestTransfer(unittest.TestCase):
 
     @staticmethod
     def check_conservation(source, target, tol=1.0e-08):
-        return np.isclose(assemble(source * dx), assemble(target * dx), atol=tol)
+        return np.isclose(
+            assemble(source * ufl.dx), assemble(target * ufl.dx), atol=tol
+        )
 
     @staticmethod
     def check_no_new_extrema(source, target, tol=1.0e-08):
@@ -356,7 +380,7 @@ class TestTransfer(unittest.TestCase):
         target_mesh = self.source_mesh if same_mesh else self.target_mesh
         target_degree = 1 if same_degree else 0
         Vt = FunctionSpace(target_mesh, "DG", target_degree)
-        x, y = SpatialCoordinate(self.source_mesh)
+        x, y = ufl.SpatialCoordinate(self.source_mesh)
         source = Function(Vs).interpolate(self.sinusoid())
         target = Function(Vt)
         _supermesh_project(source, target, bounded=False)
@@ -371,7 +395,7 @@ class TestTransfer(unittest.TestCase):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
         target_mesh = self.source_mesh if same_mesh else self.target_mesh
         Vt = FunctionSpace(target_mesh, "CG", 1)
-        x, y = SpatialCoordinate(self.source_mesh)
+        x, y = ufl.SpatialCoordinate(self.source_mesh)
         source = Function(Vs).interpolate(self.sinusoid())
         target = project(source, Vt, bounded=True)
         self.assertTrue(self.check_conservation(source, target, tol=tol))

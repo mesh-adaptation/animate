@@ -52,11 +52,9 @@ select = [
   "F",  # Pyflakes
   "I",  # isort
 ]
-ignore = [
-  "E501",  # line too long
-  "E226",  # missing whitespace around arithmetic operator
+[tool.ruff.lint.per-file-ignores]
+"demos/*" = [
   "E402",  # module level import not at top of file
-  "E741",  # ambiguous variable name
   "F403",  # unable to detect undefined names
   "F405",  # name may be undefined, or defined from star imports
 ]

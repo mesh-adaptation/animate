@@ -2,8 +2,10 @@ import unittest
 
 import numpy as np
 import ufl
+from firedrake.utility_meshes import UnitTriangleMesh
 from parameterized import parameterized
-from test_setup import *
+
+from animate.math import construct_basis, gram_schmidt
 
 
 class TestOrthogonalisation(unittest.TestCase):
