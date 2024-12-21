@@ -53,7 +53,6 @@ select = [
   "I",  # isort
 ]
 ignore = [
-  "E226",  # missing whitespace around arithmetic operator
   "E402",  # module level import not at top of file
   "E741",  # ambiguous variable name
   "F403",  # unable to detect undefined names
