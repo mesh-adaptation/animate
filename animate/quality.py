@@ -146,5 +146,6 @@ class QualityMeasure:
             )
         else:
             raise NotImplementedError(
-                f"Quality measure '{name}' not implemented in the {self.dim}D case in Python."
+                f"Quality measure '{name}' not implemented in the {self.dim}D case in"
+                " Python."
             )

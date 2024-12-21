@@ -37,14 +37,16 @@ metric.interpolate(as_matrix([[alpha, 0], [0, alpha]]))
 # .. math::
 #
 #      \ell_{\mathcal M}(\vec{\mathbf{e}})
-#      :=\sqrt{\mathbf{e}^T \begin{pmatrix} \alpha & 0 \\ 0 & \alpha \end{pmatrix} \mathbf{e}}
+#      :=\sqrt{\mathbf{e}^T
+#        \begin{pmatrix} \alpha & 0 \\ 0 & \alpha \end{pmatrix} \mathbf{e}}
 #       =\sqrt{\alpha}~\sqrt{\mathbf{e}^T\mathbf{e}}.
 #
-# The metric is used by the mesh adaptivity library to determine the optimal length of edges,
-# where an edge is considered optimal if its length in metric space is 1. For our isotropic metric
-# this means that an edge of (Euclidean) length :math:`h=\sqrt{\mathbf{e}^T\mathbf{e}}` is considered optimal
-# if :math:`\sqrt{\alpha} h=1`, or :math:`h=1/\sqrt{\alpha}`. Thus using :math:`\alpha=100` we expect
-# a mesh with edges of length :math:`h=0.1`
+# The metric is used by the mesh adaptivity library to determine the optimal length of
+# edges, where an edge is considered optimal if its length in metric space is 1. For our
+# isotropic metric this means that an edge of (Euclidean) length
+# :math:`h=\sqrt{\mathbf{e}^T\mathbf{e}}` is considered optimal if
+# :math:`\sqrt{\alpha} h=1`, or :math:`h=1/\sqrt{\alpha}`. Thus using :math:`\alpha=100`
+# we expect a mesh with edges of length :math:`h=0.1`
 
 new_mesh = adapt(mesh, metric)
 import matplotlib.pyplot as plt
@@ -59,9 +61,9 @@ fig.savefig("simple_metric-mesh1.jpg")
 #    :figwidth: 90%
 #    :align: center
 #
-# To create a anisotropic mesh with edge lengths :math:`h_x=0.1` in the x-direction, and
-# :math:`h_y=0.25` we simply create a diagonal Riemannian metric with, respectively, the values
-# :math:`1/0.1^2` and :math:`1/0.25^2` along the diagonal:
+# To create a anisotropic mesh with edge lengths :math:`h_x=0.1` in the x-direction,
+# and :math:`h_y=0.25` we simply create a diagonal Riemannian metric with, respectively,
+# the values :math:`1/0.1^2` and :math:`1/0.25^2` along the diagonal:
 
 hx = 0.1
 hy = 0.25
@@ -77,8 +79,8 @@ fig.savefig("simple_metric-mesh2.jpg")
 #    :figwidth: 90%
 #    :align: center
 #
-# An example of a non-uniform mesh, in which we ask for higher resolution inside a circle of
-# radius :math:`r` is given below:
+# An example of a non-uniform mesh, in which we ask for higher resolution inside a
+# circle of radius :math:`r` is given below:
 
 x, y = SpatialCoordinate(mesh)
 r = 0.4

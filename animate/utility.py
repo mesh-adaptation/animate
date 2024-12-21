@@ -17,7 +17,8 @@ __all__ = ["Mesh", "VTKFile", "norm", "errornorm"]
 @PETSc.Log.EventDecorator()
 def Mesh(arg, **kwargs):
     """
-    Overload :func:`firedrake.mesh.Mesh` to endow the output mesh with useful quantities.
+    Overload :func:`firedrake.mesh.Mesh` to endow the output mesh with useful
+    quantities.
 
     The following quantities are computed by default:
         * cell size;
