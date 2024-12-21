@@ -10,6 +10,14 @@ install:
 	@pre-commit install
 	@echo "Done."
 
+install_dev:
+	@echo "Installing Animate for development..."
+	@python3 -m pip install -e .[dev]
+	@echo "Done."
+	@echo "Setting up pre-commit..."
+	@pre-commit install
+	@echo "Done."
+
 lint:
 	@echo "Checking lint..."
 	@ruff check
