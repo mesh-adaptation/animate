@@ -6,9 +6,6 @@ install:
 	@echo "Installing Animate..."
 	@python3 -m pip install -e .
 	@echo "Done."
-	@echo "Setting up pre-commit..."
-	@pre-commit install
-	@echo "Done."
 
 install_dev:
 	@echo "Installing Animate for development..."
