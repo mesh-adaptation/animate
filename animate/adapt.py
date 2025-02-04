@@ -64,7 +64,7 @@ class MetricBasedAdaptor(AdaptorBase):
     """
 
     @PETSc.Log.EventDecorator()
-    def __init__(self, mesh, metric, name=None, comm=None):
+    def __init__(self, mesh, metric, levelset=None, name=None, comm=None):
         """
         :arg mesh: mesh to be adapted
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
@@ -85,6 +85,7 @@ class MetricBasedAdaptor(AdaptorBase):
         assert isinstance(metric, RiemannianMetric)
         super().__init__(mesh, name=name, comm=comm)
         self.metric = metric
+        self.levelset = levelset
         self.projectors = []
 
     @futils.cached_property
@@ -104,9 +105,23 @@ class MetricBasedAdaptor(AdaptorBase):
         )
         reordered = to_petsc_local_numbering(v, self.metric.function_space())
         v.destroy()
-        newplex = self.metric._plex.adaptMetric(reordered, "Face Sets", "Cell Sets")
+        if self.levelset:
+            ls_size = self.levelset.dat.dataset.layout_vec.getSizes()
+            ls_data = self.levelset.dat._data[: ls_size[0]]
+            ls = PETSc.Vec().createWithArray(
+                ls_data, size=ls_size, bsize=self.levelset.dat.cdim, comm=self.mesh.comm
+            )
+            reordered_ls = to_petsc_local_numbering(ls, self.levelset.function_space())
+            ls.destroy()
+            newplex = self.metric._plex.adaptMetricLevelSet(reordered, reordered_ls, "Face Sets", "Cell Sets")
+        else:
+            newplex = self.metric._plex.adaptMetric(reordered, "Face Sets", "Cell Sets")
         newplex.setName(fmesh._generate_default_mesh_topology_name(self.name))
+
         reordered.destroy()
+        if self.levelset:
+            reordered_ls.destroy()
+
         return fmesh.Mesh(
             newplex,
             distribution_parameters={"partition": False},
@@ -152,7 +167,7 @@ class MetricBasedAdaptor(AdaptorBase):
         )  # TODO (#132)
 
 
-def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
+def adapt(mesh, *metrics, levelset=None, name=None, serialise=None, remove_checkpoints=True):
     r"""
     Adapt a mesh with respect to a metric and some adaptor parameters.
 
@@ -188,6 +203,8 @@ def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
         metric.intersect(*metrics[1:])
 
     if serialise:
+        if levelset:
+            raise NotImplementedError("TODO: serialisation of levelset adapt")
         # In parallel, save input mesh and metric to a temporary checkpoint directory
         chk_dir = get_checkpoint_dir()
         chk_fpath = os.path.join(chk_dir, "adapted_mesh_checkpoint.h5")
@@ -211,5 +228,5 @@ def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
         if remove_checkpoints and COMM_WORLD.rank == 0:
             rmtree(chk_dir)
     else:
-        newmesh = MetricBasedAdaptor(mesh, metric, name=name).adapted_mesh
+        newmesh = MetricBasedAdaptor(mesh, metric, levelset=levelset, name=name).adapted_mesh
     return newmesh

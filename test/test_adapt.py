@@ -10,6 +10,7 @@ import ufl
 from firedrake.assemble import assemble
 from firedrake.constant import Constant
 from firedrake.mesh import Mesh
+import firedrake as fd
 from petsc4py import PETSc
 from pyop2.mpi import COMM_WORLD
 from test_setup import uniform_mesh, uniform_metric
@@ -30,7 +31,7 @@ def load_mesh(fname):
     return Mesh(os.path.join(mesh_dir, fname + ".msh"))
 
 
-def try_adapt(mesh, metric, serialise=None):
+def try_adapt(mesh, metric, levelset=None, serialise=None):
     """
     Attempt to invoke PETSc's mesh adaptation functionality and xfail if it is not
     installed.
@@ -43,7 +44,7 @@ def try_adapt(mesh, metric, serialise=None):
     :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
     try:
-        return adapt(mesh, metric, serialise=serialise)
+        return adapt(mesh, metric, levelset=levelset, serialise=serialise)
     except PETSc.Error as exc:
         if exc.ierr == 63:
             pytest.xfail("No mesh adaptation tools are installed")
@@ -236,6 +237,29 @@ def test_enforce_spd_h_max(dim):
     newdofs = newmesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
     assert newdofs > dofs
 
+
+@pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])
+def test_levelset(dim, vtk_output=False):
+    mesh = uniform_mesh(dim)
+    h = 0.1
+    metric = uniform_metric(mesh, a=1 / h**2)
+    V = fd.FunctionSpace(mesh, "CG", 1)
+    levelset = fd.Function(V, name='levelset')
+    xyz = fd.SpatialCoordinate(mesh)
+    x1, x2 = .34567, .56789
+    levelset.interpolate(xyz[0] - x1 - xyz[1]*(x2-x1))
+    new_mesh = try_adapt(mesh, metric, levelset=levelset)
+    P0 = fd.FunctionSpace(new_mesh, "DG", 0)
+    rho = fd.Function(P0, name='density')
+    rho.interpolate(fd.conditional(levelset<0, 1, 0))
+    area = fd.assemble(rho*fd.dx)
+    np.testing.assert_almost_equal(area, (x1+x2)/2)
+
+    if vtk_output:
+        new_V = fd.FunctionSpace(new_mesh, "CG", 1)
+        new_ls = fd.Function(new_V, name='levelset')
+        new_ls.interpolate(levelset)
+        fd.VTKFile(f'tmp{dim}d.pvd').write(new_ls, rho)
 
 # Debugging
 if __name__ == "__main__":
