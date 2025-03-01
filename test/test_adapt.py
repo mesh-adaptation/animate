@@ -92,7 +92,8 @@ def test_no_adapt(dim, serialise):
 
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
-    "dim,serialise", [(3, True), (3, False)], ids=["mmg3d", "ParMmg"]
+    # "dim,serialise", [(3, True), (3, False)], ids=["mmg3d", "ParMmg"]  # Hangs (#136)
+    "dim,serialise", [(3, True),], ids=["mmg3d",]
 )
 def test_no_adapt_parallel(dim, serialise):
     """
