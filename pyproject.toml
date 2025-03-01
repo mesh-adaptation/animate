@@ -24,7 +24,9 @@ classifiers = [
   "Programming Language :: Python",
 ]
 dependencies = [
-  "sympy"
+  "sympy",
+  "matplotlib",
+  "vtk",
 ]
 
 [project.optional-dependencies]
