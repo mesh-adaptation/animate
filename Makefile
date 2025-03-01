@@ -22,13 +22,17 @@ lint:
 
 test: lint
 	@echo "Running all tests..."
-	@python3 -m pytest -v --durations=20 test
+	@python3 -m pytest -v --durations=20 -k "not parallel" test
+	@mpiexec -n 2 python3 -m pytest -v -m parallel[2] test
+	@mpiexec -n 3 python3 -m pytest -v -m parallel[3] test
 	@echo "Done."
 
 coverage:
 	@echo "Generating coverage report..."
 	@python3 -m coverage erase
-	@python3 -m coverage run --source=animate -m pytest -v test
+	@python3 -m coverage run --source=animate -m pytest -v -k "not parallel" test
+	@mpiexec -n 2 python3 -m coverage run --parallel-mode --source=animate -m pytest -v -m parallel[2] test
+	@mpiexec -n 3 python3 -m coverage run --parallel-mode --source=animate -m pytest -v -m parallel[3] test
 	@python3 -m coverage html
 	@echo "Done."
 
