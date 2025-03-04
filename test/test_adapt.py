@@ -3,7 +3,7 @@ Unit tests for invoking mesh adaptation tools Mmg2d, Mmg3d, and ParMmg.
 """
 
 import importlib.util
-from pathlib import Path
+import os
 
 import numpy as np
 import pytest
@@ -28,9 +28,9 @@ def load_mesh(fname):
     :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
     firedrake_spec = importlib.util.find_spec("firedrake")
-    firedrake_basedir = Path(firedrake_spec.origin).parent.parent
-    mesh_dir = firedrake_basedir / "tests" / "firedrake" / "meshes"
-    return Mesh(str(mesh_dir / f"{fname}.msh"))
+    firedrake_basedir = os.path.dirname(os.path.dirname(firedrake_spec.origin))
+    mesh_dir = os.path.join(firedrake_basedir, "tests", "firedrake", "meshes")
+    return Mesh(os.path.join(mesh_dir, fname + ".msh"))
 
 
 def try_adapt(mesh, metric, serialise=None):
