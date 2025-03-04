@@ -29,4 +29,3 @@ jobs:
     with:
       test-command: |
         export ANIMATE_CHECKPOINT_DIR=$(pwd)/.checkpoints
-        mpiexec -n 3 --use-hwthread-cpus python3 -m coverage run --parallel-mode --source=animate -m pytest -v -m parallel[3] test
