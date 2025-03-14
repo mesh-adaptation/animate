@@ -24,12 +24,14 @@ classifiers = [
   "Programming Language :: Python",
 ]
 dependencies = [
-  "sympy"
+  "sympy",
+  "vtk",
 ]
 
 [project.optional-dependencies]
 dev = [
   "cffconvert",
+  "coverage",
   "parameterized",
   "pre-commit",
   "pytest",
