@@ -642,7 +642,7 @@ class RiemannianMetric(ffunc.Function):
         return self
 
     def combine(self, *metrics, average=True, **kwargs):
-        """
+        r"""
         Combine metrics using either averaging or intersection.
 
         :arg metrics: the list of metrics to combine with
