@@ -299,8 +299,11 @@ def clement_interpolant(source, target_space=None, boundary=False):
     volume average over neighbouring cells at each vertex. See :cite:`Clement:1975`.
 
     :arg source: the :math:`\mathbb P0` source field
+    :type source: :class:`firedrake.function.Function`
     :kwarg target_space: the :math:`\mathbb P1` space to interpolate into
+    :type target_space: :class:`firedrake.functionspace.FunctionSpace`
     :kwarg boundary: interpolate over boundary facets or cells?
+    :type boundary: :class:`bool`
     """
     if not isinstance(source, (firedrake.Cofunction, firedrake.Function)):
         raise TypeError(f"Expected Cofunction or Function, got '{type(source)}'.")

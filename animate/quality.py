@@ -51,8 +51,11 @@ class QualityMeasure:
     def __init__(self, mesh, metric=None, python=False):
         """
         :arg mesh: the input mesh to do computations on
+        :type mesh: :class:`firedrake.mesh.MeshGeometry`
         :arg metric: the tensor field representing the metric space transformation
+        :type metric: :class:`~.RiemannianMetric`
         :kwarg python: compute the measure using Python?
+        :type python: :class:`bool`
         """
         self.mesh = mesh
         self.metric = metric
@@ -74,6 +77,12 @@ class QualityMeasure:
 
     @PETSc.Log.EventDecorator()
     def __call__(self, name):
+        """
+        :arg name: the quality measure name
+        :type name: :class:`str`
+        :returns: the quality measure applied to the provided mesh
+        :rtype: :class:`firedrake.function.Function`
+        """
         if name not in QualityMeasure._measures:
             raise ValueError(f"Quality measure '{name}' not recognised.")
         msg = (
