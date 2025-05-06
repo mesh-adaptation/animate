@@ -44,7 +44,7 @@ def recover_gradient_l2(f, target_space=None):
     :kwarg mesh: the underlying mesh
     :type mesh: :class:`firedrake.mesh.MeshGeometry`
     :kwarg target_space: the vector-valued function space to recover the gradient in
-    :type target_space: :class:`firedrake.functionspace.FunctionSpace`
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`
     :returns: recovered gradient
     :rtype: :class:`firedrake.function.Function`
     """
@@ -125,7 +125,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     :kwarg method: interpolation method, chosen from 'Clement' or 'L2'
     :type method: :class:`str`
     :kwarg target_space: the tensor-valued function space to recover the Hessian in
-    :type target_space: :class:`firedrake.functionspace.FunctionSpace`
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`
     :returns: recovered boundary Hessian
     :rtype: :class:`firedrake.function.Function`
     """

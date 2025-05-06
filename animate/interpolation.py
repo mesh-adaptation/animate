@@ -301,7 +301,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
     :arg source: the :math:`\mathbb P0` source field
     :type source: :class:`firedrake.function.Function`
     :kwarg target_space: the :math:`\mathbb P1` space to interpolate into
-    :type target_space: :class:`firedrake.functionspace.FunctionSpace`
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`
     :kwarg boundary: interpolate over boundary facets or cells?
     :type boundary: :class:`bool`
     """

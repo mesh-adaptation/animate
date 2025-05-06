@@ -66,7 +66,7 @@ class RiemannianMetric(ffunc.Function):
             space is used to build the metric and its values are copied. Yet another
             alternative is to pass a mesh, whereby a tensor :math:`\mathbb P1` space is
             built on top of it.
-        :type function_space: :class:`firedrake.functionspace.FunctionSpace`,
+        :type function_space: :class:`firedrake.functionspaceimpl.FunctionSpace`,
             :class:`firedrake.function.Function`, or
             :class:`firedrake.mesh.MeshGeometry`
         :kwarg metric_parameters: see :func:`set_parameters <set_parameters>`.
@@ -613,7 +613,7 @@ class RiemannianMetric(ffunc.Function):
         r"""
         Average the metric with other metrics.
 
-        :args metrics: the metrics to be averaged with
+        :arg metrics: the metrics to be averaged with
         :type metrics: :class:`tuple` of :class:`~.RiemannianMetric`\s
         :kwarg weights: list of weights to apply to each metric
         :type weights: :class:`tuple` of :class:`float`\s
@@ -711,7 +711,7 @@ class RiemannianMetric(ffunc.Function):
 
         :arg evectors: eigenvectors represented as a matrix-valued function
         :type evectors: :class:`firedrake.function.Function`
-        :arg evalues: eigenvalue represented as a vector-valued function
+        :arg evalues: eigenvalues represented as a vector-valued function
         :type evalues: :class:`firedrake.function.Function`
         """
         V_ten = evectors.function_space()
@@ -1010,7 +1010,7 @@ class RiemannianMetric(ffunc.Function):
         assumed that the error indicators have been constructed in the appropriate way.
 
         :arg error_indicators: list of error indicators
-        :type error_indicator: :class:`list` of :class:`firedrake.function.Function`\s
+        :type error_indicators: :class:`list` of :class:`firedrake.function.Function`\s
         :arg hessians: list of Hessians
         :type hessians: :class:`list` of :class:`~.RiemannianMetric`\s
         :kwarg average: should metric components be averaged or intersected?
