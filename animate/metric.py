@@ -519,7 +519,13 @@ class RiemannianMetric(ffunc.Function):
         return self
 
     @PETSc.Log.EventDecorator()
-    def normalise(self, global_factor=None, boundary=False, **kwargs):
+    def normalise(
+        self,
+        global_factor=None,
+        boundary=False,
+        restrict_sizes=True,
+        restrict_anisotropy=True,
+    ):
         """
         Apply :math:`L^p` normalisation to the metric.
 
@@ -534,8 +540,6 @@ class RiemannianMetric(ffunc.Function):
         :return: the normalised metric, modified in-place
         :rtype: :class:`~.RiemannianMetric`
         """
-        kwargs.setdefault("restrict_sizes", True)
-        kwargs.setdefault("restrict_anisotropy", True)
         d = self._tdim - 1 if boundary else self._tdim
         p = self.metric_parameters.get("dm_plex_metric_p", 1.0)
         target = self.metric_parameters.get("dm_plex_metric_target_complexity")
@@ -562,7 +566,9 @@ class RiemannianMetric(ffunc.Function):
         self.interpolate(global_factor * determinant * self)
 
         # Enforce element constraints
-        return self.enforce_spd(**kwargs)
+        return self.enforce_spd(
+            restrict_sizes=restrict_sizes, restrict_anisotropy=restrict_anisotropy
+        )
 
     # --- Methods for combining metrics
 
