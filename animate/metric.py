@@ -1069,7 +1069,7 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
     Solve an algebraic problem to obtain coefficients for the interior and boundary
     metrics to obtain a given metric complexity.
 
-    See :cite:Loseille:2010` for details. Note that we use a slightly different
+    See :cite:`Loseille:2010` for details. Note that we use a slightly different
     formulation here.
 
     :arg H_interior: Hessian component from domain interior
