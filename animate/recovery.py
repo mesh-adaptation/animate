@@ -17,13 +17,17 @@ from .quality import QualityMeasure, include_dir
 __all__ = ["recover_gradient_l2", "recover_hessian_clement", "recover_boundary_hessian"]
 
 
-def get_metric_kernel(func: str, dim: int) -> op2.Kernel:
+def get_metric_kernel(func, dim):
     """
-    Helper function to easily pass Eigen kernels
-    for metric utilities to Firedrake via PyOP2.
+    Helper function to easily pass Eigen kernels for metric utilities to Firedrake via
+    PyOP2.
 
     :arg func: function name
+    :type func: :class:`str`
     :arg dim: spatial dimension
+    :type dim: :class:`int`
+    :returns: kernel to execute
+    :rtype: :class:`op2.Kernel`
     """
     pwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
     with open(os.path.join(pwd, f"metric{dim}d.cxx"), "r") as code:
@@ -36,9 +40,13 @@ def recover_gradient_l2(f, target_space=None):
     Recover the gradient of a scalar or vector field using :math:`L^2` projection.
 
     :arg f: the scalar field whose derivatives we seek to recover
+    :type f: :class:`firedrake.function.Function`
     :kwarg mesh: the underlying mesh
-    :kwarg target_space: the :func:`firedrake.functionspace.FunctionSpace`
-        recovered gradient should live in
+    :type mesh: :class:`firedrake.mesh.MeshGeometry`
+    :kwarg target_space: the vector-valued function space to recover the gradient in
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`
+    :returns: recovered gradient
+    :rtype: :class:`firedrake.function.Function`
     """
     if target_space is None:
         if not isinstance(f, firedrake.Function):
@@ -71,6 +79,9 @@ def recover_hessian_clement(f):
     for the Hessian recovery, too.
 
     :arg f: the scalar field whose derivatives we seek to recover
+    :type f: :class:`firedrake.function.Function`
+    :returns: recovered Hessian
+    :rtype: :class:`firedrake.function.Function`
     """
     if not isinstance(f, firedrake.Function):
         raise ValueError(
@@ -110,9 +121,13 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     Recover the Hessian of a scalar field on the domain boundary.
 
     :arg f: field to recover over the domain boundary
-    :kwarg method: choose from 'mixed_L2' and 'Clement'
-    :kwarg target_space: the :func:`firedrake.functionspace.TensorFunctionSpace`
-        in which the metric will exist
+    :type f: :class:`firedrake.function.Function`
+    :kwarg method: interpolation method, chosen from 'Clement' or 'L2'
+    :type method: :class:`str`
+    :kwarg target_space: the tensor-valued function space to recover the Hessian in
+    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`
+    :returns: recovered boundary Hessian
+    :rtype: :class:`firedrake.function.Function`
     """
 
     mesh = ufl.domain.extract_unique_domain(f)

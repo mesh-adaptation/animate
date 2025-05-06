@@ -10,17 +10,23 @@ def gram_schmidt(*vectors, normalise=False):
     Given some vectors, construct an orthogonal basis
     using Gram-Schmidt orthogonalisation.
 
-    :args vectors: the vectors to orthogonalise
-    :kwargs normalise: do we want an orthonormal basis?
+    :arg vectors: the vectors to orthogonalise
+    :type vectors: :class:`numpy.ndarray` or :class:`ufl.core.expr.Expr`
+    :kwarg normalise: do we want an orthonormal basis?
+    :type normalise: :class:`bool`
     """
     if isinstance(vectors[0], np.ndarray):
         expected = np.ndarray
         dot = np.dot
         sqrt = np.sqrt
-    else:
+    elif isinstance(vectors[0], ufl.core.expr.Expr):
         expected = ufl.core.expr.Expr
         dot = ufl.dot
         sqrt = ufl.sqrt
+    else:
+        raise TypeError(
+            f"Cannot apply Gram-Schmidt to vectors of type '{type(vectors[0])}'."
+        )
 
     # Check that vector types match
     for vi in vectors[1:]:
@@ -51,7 +57,9 @@ def construct_basis(vector, normalise=True):
     Construct a basis from a given vector.
 
     :arg vector: the starting vector
-    :kwargs normalise: do we want an orthonormal basis?
+    :type vector: :class:`numpy.ndarray` or :class:`ufl.core.expr.Expr`
+    :kwarg normalise: do we want an orthonormal basis?
+    :type normalise: :class:`bool`
     """
     is_numpy = isinstance(vector, np.ndarray)
     if is_numpy:

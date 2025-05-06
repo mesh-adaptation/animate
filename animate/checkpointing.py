@@ -13,6 +13,9 @@ __all__ = ["get_checkpoint_dir", "load_checkpoint", "save_checkpoint"]
 def get_checkpoint_dir():
     """
     Make a temporary directory for checkpointing and return its path.
+
+    :returns: path to the temporary checkpoint directory
+    :rtype: :class:`str`
     """
     if os.environ.get("ANIMATE_CHECKPOINT_DIR"):
         checkpoint_dir = os.environ["ANIMATE_CHECKPOINT_DIR"]

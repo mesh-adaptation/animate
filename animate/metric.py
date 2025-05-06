@@ -61,13 +61,16 @@ class RiemannianMetric(ffunc.Function):
     @PETSc.Log.EventDecorator()
     def __init__(self, function_space, *args, **kwargs):
         r"""
-        :arg function_space: the tensor :class:`~.FunctionSpace`, on which to build
-            this :class:`~.RiemannianMetric`. Alternatively, another :class:`~.Function`
-            may be passed here and its function space will be used to build this
-            :class:`~.Function`. In this case, the function values are copied. If a
-            :class:`~firedrake.mesh.MeshGeometry` is passed here then a tensor
-            :math:`\mathbb P1` space is built on top of it.
-        :kwarg metric_parameters: same as for :func:`set_parameters <set_parameters>`.
+        :arg function_space: the tensor function space, on which to build the metric.
+            Alternatively, another Function may be passed, in which case its function
+            space is used to build the metric and its values are copied. Yet another
+            alternative is to pass a mesh, whereby a tensor :math:`\mathbb P1` space is
+            built on top of it.
+        :type function_space: :class:`firedrake.functionspaceimpl.FunctionSpace`,
+            :class:`firedrake.function.Function`, or
+            :class:`firedrake.mesh.MeshGeometry`
+        :kwarg metric_parameters: see :func:`set_parameters <set_parameters>`.
+        :type metric_parameters: :class:`dict`
         """
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
@@ -124,7 +127,14 @@ class RiemannianMetric(ffunc.Function):
     @staticmethod
     def _collapse_parameters(metric_parameters):
         """
-        Account for concise nested dictionary formatting
+        Account for concise nested dictionary formatting.
+
+        See :func:`set_parameters <set_parameters>`.
+
+        :kwarg metric_parameters: nested parameter dictionary
+        :type metric_parameters: :class:`dict`
+        :returns: collapsed parameter dictionary
+        :rtype: :class:`dict`
         """
         if "dm_plex_metric" in metric_parameters:
             for key, value in metric_parameters["dm_plex_metric"].items():
@@ -250,6 +260,14 @@ class RiemannianMetric(ffunc.Function):
 
     @property
     def metric_parameters(self):
+        """
+        Parameters for configuring the metric.
+
+        See :func:`set_parameters <set_parameters>`.
+
+        :returns: parameter dictionary
+        :rtype: :class:`dict`
+        """
         mp = self._metric_parameters.copy()
         if self._variable_parameters_set:
             mp.update(self._variable_parameters)
@@ -301,8 +319,12 @@ class RiemannianMetric(ffunc.Function):
         """
         Recover the Hessian of a scalar field.
 
-        :arg f: the scalar field whose Hessian we seek to recover
+        :arg field: the scalar field whose Hessian we seek to recover
+        :type field: :class:`firedrake.function.Function`
         :kwarg method: recovery method
+        :type method: :class:`str`
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
 
         All other keyword arguments are passed to the chosen recovery routine.
 
@@ -329,14 +351,18 @@ class RiemannianMetric(ffunc.Function):
             raise ValueError(f"Recovery method '{method}' not recognised.")
 
     @PETSc.Log.EventDecorator()
-    def compute_boundary_hessian(self, f, method="mixed_L2", **kwargs):
+    def compute_boundary_hessian(self, field, method="mixed_L2", **kwargs):
         """
         Recover the Hessian of a scalar field on the domain boundary.
 
-        :arg f: field to recover over the domain boundary
-        :kwarg method: choose from 'mixed_L2' and 'Clement'
+        :arg field: field to recover over the domain boundary
+        :type field: :class:`firedrake.function.Function`
+        :kwarg method: recovery method, chosen from 'mixed_L2' and 'Clement'
+        :type method: :class:`str`
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
-        return self.assign(recover_boundary_hessian(f, method=method, **kwargs))
+        return self.assign(recover_boundary_hessian(field, method=method, **kwargs))
 
     def _compute_gradient_and_hessian(self, field, solver_parameters=None):
         mesh = self.function_space().mesh()
@@ -395,8 +421,11 @@ class RiemannianMetric(ffunc.Function):
         Enforce that the metric is symmetric positive-definite.
 
         :kwarg restrict_sizes: should minimum and maximum metric magnitudes be enforced?
+        :type restrict_sizes: :class:`bool`
         :kwarg restrict_anisotropy: should maximum anisotropy be enforced?
-        :return: the :class:`~.RiemannianMetric`, modified in-place.
+        :type restrict_anisotropy: :class:`bool`
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         kw = {
             "restrictSizes": restrict_sizes,
@@ -427,6 +456,9 @@ class RiemannianMetric(ffunc.Function):
         """
         Post-process a metric to enforce minimum and maximum metric magnitudes
         and maximum anisotropy, any of which may vary spatially.
+
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         mesh = self.function_space().mesh()
         P1 = firedrake.FunctionSpace(mesh, "CG", 1)
@@ -487,18 +519,27 @@ class RiemannianMetric(ffunc.Function):
         return self
 
     @PETSc.Log.EventDecorator()
-    def normalise(self, global_factor=None, boundary=False, **kwargs):
+    def normalise(
+        self,
+        global_factor=None,
+        boundary=False,
+        restrict_sizes=True,
+        restrict_anisotropy=True,
+    ):
         """
         Apply :math:`L^p` normalisation to the metric.
 
         :kwarg global_factor: pre-computed global normalisation factor
+        :type global_factor: :class:`float`
         :kwarg boundary: is the normalisation to be done over the boundary?
+        :type boundary: :class:`bool`
         :kwarg restrict_sizes: should minimum and maximum metric magnitudes be enforced?
+        :type restrict_sizes: :class:`bool`
         :kwarg restrict_anisotropy: should maximum anisotropy be enforced?
-        :return: the normalised :class:`~.RiemannianMetric`, modified in-place
+        :type restrict_anisotropy: :class:`bool`
+        :return: the normalised metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
-        kwargs.setdefault("restrict_sizes", True)
-        kwargs.setdefault("restrict_anisotropy", True)
         d = self._tdim - 1 if boundary else self._tdim
         p = self.metric_parameters.get("dm_plex_metric_p", 1.0)
         target = self.metric_parameters.get("dm_plex_metric_target_complexity")
@@ -525,20 +566,24 @@ class RiemannianMetric(ffunc.Function):
         self.interpolate(global_factor * determinant * self)
 
         # Enforce element constraints
-        return self.enforce_spd(**kwargs)
+        return self.enforce_spd(
+            restrict_sizes=restrict_sizes, restrict_anisotropy=restrict_anisotropy
+        )
 
     # --- Methods for combining metrics
 
     @PETSc.Log.EventDecorator()
     def intersect(self, *metrics):
-        """
+        r"""
         Intersect the metric with other metrics.
 
         Metric intersection means taking the minimal ellipsoid in the direction of each
         eigenvector at each point in the domain.
 
         :arg metrics: the metrics to be intersected with
-        :return: the intersected :class:`~.RiemannianMetric`, modified in-place
+        :type metrics: :class:`tuple` of :class:`~.RiemannianMetric`\s
+        :return: the intersected metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         fs = self.function_space()
         for metric in metrics:
@@ -571,12 +616,15 @@ class RiemannianMetric(ffunc.Function):
 
     @PETSc.Log.EventDecorator()
     def average(self, *metrics, weights=None):
-        """
+        r"""
         Average the metric with other metrics.
 
-        :args metrics: the metrics to be averaged with
+        :arg metrics: the metrics to be averaged with
+        :type metrics: :class:`tuple` of :class:`~.RiemannianMetric`\s
         :kwarg weights: list of weights to apply to each metric
-        :return: the averaged :class:`~.RiemannianMetric`, modified in-place
+        :type weights: :class:`tuple` of :class:`float`\s
+        :return: the averaged metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         num_metrics = len(metrics) + 1
         if num_metrics == 1:
@@ -599,12 +647,14 @@ class RiemannianMetric(ffunc.Function):
             self += weights[i + 1] * metric
         return self
 
-    def combine(self, *metrics, average: bool = True, **kwargs):
-        """
+    def combine(self, *metrics, average=True, **kwargs):
+        r"""
         Combine metrics using either averaging or intersection.
 
         :arg metrics: the list of metrics to combine with
+        :type metrics: :class:`tuple` of :class:`~.RiemannianMetric`\s
         :kwarg average: toggle between averaging and intersection
+        :type average: :class:`bool`
 
         All other keyword arguments are passed to the relevant method.
         """
@@ -619,7 +669,9 @@ class RiemannianMetric(ffunc.Function):
         of the (inherently discrete) mesh vertex count.
 
         :kwarg boundary: should the complexity be computed over the domain boundary?
-        :return: the complexity of the :class:`~.RiemannianMetric`
+        :type boundary: :class:`bool`
+        :return: the complexity of the metric
+        :rtype: :class:`float`
         """
         dX = ufl.ds if boundary else ufl.dx
         return firedrake.assemble(ufl.sqrt(ufl.det(self)) * dX)
@@ -628,14 +680,15 @@ class RiemannianMetric(ffunc.Function):
 
     @PETSc.Log.EventDecorator()
     def compute_eigendecomposition(self, reorder=False):
-        """
+        r"""
         Compute the eigenvectors and eigenvalues of a matrix-valued function.
 
         :kwarg reorder: should the eigendecomposition be reordered in order of
             *descending* eigenvalue magnitude?
-        :return: eigenvector :class:`firedrake.function.Function` and eigenvalue
-            :class:`firedrake.function.Function` from the
-            :func:`firedrake.functionspace.TensorFunctionSpace` underpinning the metric
+        :type reorder: :class:`bool`
+        :return: eigenvectors and eigenvalues represented as matrix-valued and
+            vector-valued functions, respectively
+        :rtype: :class:`tuple` of :class:`firedrake.function.Function`\s
         """
         V_ten = self.function_space()
         mesh = V_ten.mesh()
@@ -662,8 +715,10 @@ class RiemannianMetric(ffunc.Function):
         """
         Assemble a matrix from its eigenvectors and eigenvalues.
 
-        :arg evectors: eigenvector :class:`firedrake.function.Function`
-        :arg evalues: eigenvalue :class:`firedrake.function.Function`
+        :arg evectors: eigenvectors represented as a matrix-valued function
+        :type evectors: :class:`firedrake.function.Function`
+        :arg evalues: eigenvalues represented as a vector-valued function
+        :type evalues: :class:`firedrake.function.Function`
         """
         V_ten = evectors.function_space()
         fe_ten = V_ten.ufl_element()
@@ -737,7 +792,10 @@ class RiemannianMetric(ffunc.Function):
         where :math:`h_i := \frac1{\sqrt{\lambda_i}}`.
 
         :kwarg reorder: should the eigendecomposition be reordered?
-        :return: metric density, anisotropy quotients and eigenvector matrix
+        :type reorder: :class:`bool`
+        :return: metric density, anisotropy quotients and eigenvector matrix represented
+            as scalar-valued, vector-valued, and matrix-valued functions, respectively
+        :rtype: :class:`tuple` of :class:`firedrake.function.Function`\s
         """
         fs_ten = self.function_space()
         mesh = fs_ten.mesh()
@@ -771,7 +829,11 @@ class RiemannianMetric(ffunc.Function):
         projections of the error indicator in modulus.
 
         :arg error_indicator: the error indicator
-        :kwarg interpolant: choose from 'Clement' or 'L2'
+        :type error_indicator: :class:`firedrake.function.Function`
+        :kwarg interpolant: interpolation method, chosen from 'Clement' or 'L2'
+        :type interpolant: :class:`str`
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         mesh = ufl.domain.extract_unique_domain(error_indicator)
         if mesh != self.function_space().mesh():
@@ -808,9 +870,15 @@ class RiemannianMetric(ffunc.Function):
         projected into :math:`\mathbb P1` space, by default.
 
         :arg error_indicator: the error indicator
+        :type error_indicator: :class:`firedrake.function.Function`
         :kwarg convergence_rate: normalisation parameter
+        :type convergence_rate: :class:`float`
         :kwarg min_eigenvalue: minimum tolerated eigenvalue
-        :kwarg interpolant: choose from 'Clement' or 'L2'
+        :type min_eigenvalue: :class:`float`
+        :kwarg interpolant: interpolation method, chosen from 'Clement' or 'L2'
+        :type interpolant: :class:`str`
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         return self.compute_anisotropic_dwr_metric(
             error_indicator=error_indicator,
@@ -845,10 +913,17 @@ class RiemannianMetric(ffunc.Function):
         projected into :math:`\mathbb P1` space, by default.
 
         :arg error_indicator: the error indicator
+        :type error_indicator: :class:`firedrake.function.Function`
         :kwarg hessian: the Hessian
+        :type hessian: :class:`~.RiemannianMetric`
         :kwarg convergence_rate: normalisation parameter
+        :type convergence_rate: :class:`float`
         :kwarg min_eigenvalue: minimum tolerated eigenvalue
-        :kwarg interpolant: choose from 'Clement' or 'L2'
+        :type min_eigenvalue: :class:`float`
+        :kwarg interpolant: interpolation method, chosen from 'Clement' or 'L2'
+        :type interpolant: :class:`str`
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         mp = self.metric_parameters.copy()
         target_complexity = mp.get("dm_plex_metric_target_complexity")
@@ -941,9 +1016,15 @@ class RiemannianMetric(ffunc.Function):
         assumed that the error indicators have been constructed in the appropriate way.
 
         :arg error_indicators: list of error indicators
+        :type error_indicators: :class:`list` of :class:`firedrake.function.Function`\s
         :arg hessians: list of Hessians
+        :type hessians: :class:`list` of :class:`~.RiemannianMetric`\s
         :kwarg average: should metric components be averaged or intersected?
-        :kwarg interpolant: choose from 'Clement' or 'L2'
+        :type average: :class:`bool`
+        :kwarg interpolant: interpolation method, chosen from 'Clement' or 'L2'
+        :type interpolant: :class:`str`
+        :return: the metric, modified in-place
+        :rtype: :class:`~.RiemannianMetric`
         """
         if isinstance(error_indicators, firedrake.Function):
             error_indicators = [error_indicators]
@@ -988,15 +1069,23 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
     Solve an algebraic problem to obtain coefficients for the interior and boundary
     metrics to obtain a given metric complexity.
 
-    See :cite:Loseille:2010` for details. Note that we use a slightly different
+    See :cite:`Loseille:2010` for details. Note that we use a slightly different
     formulation here.
 
     :arg H_interior: Hessian component from domain interior
+    :type H_interior: :class:`~.RiemannianMetric`
     :arg H_boundary: Hessian component from domain boundary
+    :type H_boundary: :class:`~.RiemannianMetric`
     :arg target: target metric complexity
+    :type target: :class:`float`
     :arg p: normalisation order
+    :type p: :class:`float`
     :kwarg H_interior_scaling: optional scaling for interior component
+    :type H_interior_scaling: :class:`float`
     :kwarg H_boundary_scaling: optional scaling for boundary component
+    :type H_boundary_scaling: :class:`float`
+    :returns: unique solution of algebraic problem
+    :rtype: :class:`float`
     """
     d = H_interior.function_space().mesh().topological_dimension()
     if d not in (2, 3):
@@ -1019,7 +1108,7 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
     # Solve algebraic problem
     c = sympy.Symbol("c")
     c = sympy.solve(a * pow(c, d / 2) + b * pow(c, (d - 1) / 2) - target, c)
-    eq = f"{a}*c^{d/2} + {b}*c^{(d-1)/2} = {target}"
+    eq = f"{a}*c^{d / 2} + {b}*c^{(d - 1) / 2} = {target}"
     if len(c) == 0:
         raise ValueError(f"Could not find any solutions for equation {eq}.")
     elif len(c) > 1:
@@ -1034,12 +1123,16 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
 #       See https://gitlab.com/petsc/petsc/-/issues/1452
 @PETSc.Log.EventDecorator()
 def intersect_on_boundary(*metrics, boundary_tag="on_boundary"):
-    """
+    r"""
     Combine a list of metrics by intersection.
 
     :arg metrics: the metrics to be combined
+    :type metrics: :class:`tuple` of :class:`~.RiemannianMetric`\s
     :kwarg boundary_tag: optional boundary segment physical ID for boundary
         intersection. Otherwise, the intersection is over the whole boundary.
+    :type boundary_tag: :class:`str` or :class:`int`
+    :returns: the intersected metric
+    :rtype: :class:`~.RiemannianMetric`
     """
     n = len(metrics)
     assert n > 0, "Nothing to combine"
@@ -1047,7 +1140,7 @@ def intersect_on_boundary(*metrics, boundary_tag="on_boundary"):
     dim = fs.mesh().topological_dimension()
     if dim not in (2, 3):
         raise ValueError(
-            f"Spatial dimension {dim} not supported." " Must be either 2 or 3."
+            f"Spatial dimension {dim} not supported. Must be either 2 or 3."
         )
     for i, metric in enumerate(metrics):
         if not isinstance(metric, RiemannianMetric):
