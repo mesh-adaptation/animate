@@ -11,8 +11,8 @@ from firedrake.petsc import PETSc
 from pyop2 import op2
 from pyop2.utils import get_petsc_dir
 
-PETSC_DIR, PETSC_ARCH = get_petsc_dir()
-include_dir = ["%s/include/eigen3" % PETSC_ARCH]
+petsc_dirs = get_petsc_dir()
+include_dir = ["%s/include/eigen3" % petsc_dirs[-1]]
 
 __all__ = ["QualityMeasure"]
 
