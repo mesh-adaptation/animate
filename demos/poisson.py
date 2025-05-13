@@ -10,20 +10,23 @@
 # is selected as the exact solution, with the corresponding Poisson equation given by
 #
 # .. math::
-#   \nabla^2 u = \left(\left(2/\epsilon - 1/\epsilon^2\right) e^{-x/\epsilon} - \pi^2 (x-1)\left(1 - e^{-x/\epsilon}\right)\right) \sin(\pi y).
+#   \nabla^2 u = \left(
+#       \left(2/\epsilon - 1/\epsilon^2\right) e^{-x/\epsilon}
+#       - \pi^2 (x-1)\left(1 - e^{-x/\epsilon}\right)
+#   \right) \sin(\pi y).
 #
 # Let us plot the exact solution. ::
 
+import matplotlib.pyplot as plt
 from firedrake import *
 from firedrake.pyplot import *
-import matplotlib.pyplot as plt
 
 epsilon = Constant(0.01)
 
 uniform_mesh = UnitSquareMesh(64, 64)
 x, y = SpatialCoordinate(uniform_mesh)
 V = FunctionSpace(uniform_mesh, "CG", 2)
-u_exact = Function(V).interpolate((1-exp(-x/epsilon))*(x-1)*sin(pi*y))
+u_exact = Function(V).interpolate((1 - exp(-x / epsilon)) * (x - 1) * sin(pi * y))
 
 fig, ax = plt.subplots()
 # tripcolor(u_exact, axes=ax, shading="flat")
@@ -46,6 +49,7 @@ fig.savefig("poisson_exact-solution.jpg", bbox_inches="tight")
 #
 # First, let us define a function that solves the Poisson equation on a given mesh. ::
 
+
 def solve_poisson(mesh):
     V = FunctionSpace(mesh, "CG", 2)
     x, y = SpatialCoordinate(mesh)
@@ -53,21 +57,24 @@ def solve_poisson(mesh):
 
     eps = 0.01
     f.interpolate(
-    - sin(pi * y) * ((2 / eps) * exp(-x / eps) - (1 / eps**2) * (x - 1) * exp(-x / eps)) 
-    + pi**2 * sin(pi * y) * ((x - 1) - (x - 1) * exp(-x / eps)))
+        -sin(pi * y)
+        * ((2 / eps) * exp(-x / eps) - (1 / eps**2) * (x - 1) * exp(-x / eps))
+        + pi**2 * sin(pi * y) * ((x - 1) - (x - 1) * exp(-x / eps))
+    )
 
     u = TrialFunction(V)
     v = TestFunction(V)
 
     a = inner(grad(u), grad(v)) * dx
-    L = f*v*dx
-    
+    L = f * v * dx
+
     bcs = [DirichletBC(V, Constant(0.0), "on_boundary")]
 
     u_numerical = Function(V)
     solve(a == L, u_numerical, bcs=bcs)
 
     return u_numerical
+
 
 # Now we can solve the Poisson equation on the above-defined uniform mesh. We will also
 # compute the error between the numerical solution and the exact solution.
@@ -118,8 +125,9 @@ isotropic_metric.normalise()
 # with non-overlapping equilateral triangles.
 #
 # To analyse the metric, it is useful to visualise its density and anisotropy quotient
-# components (see
-# `the documentation <https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#geometric-interpretation>`). ::
+# components (see `the documentation
+# <https://mesh-adaptation.github.io/docs/animate/1-metric-based.html>`). ::
+
 
 def plot_metric(metric, figname):
     density, quotients, _ = metric.density_and_quotients()
@@ -137,6 +145,7 @@ def plot_metric(metric, figname):
     fig.colorbar(im_quotients, ax=axes[1], orientation="horizontal")
     fig.savefig(figname, bbox_inches="tight")
 
+
 plot_metric(isotropic_metric, "poisson_isotropic-metric.jpg")
 
 # .. figure:: poisson_isotropic-metric.jpg
@@ -145,7 +154,7 @@ plot_metric(isotropic_metric, "poisson_isotropic-metric.jpg")
 #
 # We observe that the metric density is multiple orders of magnitude larger near the
 # :math:`x=0` boundary compared to the rest of the domain. In comparison, the anisotropy
-# quotient is equal to unity throughout the domain. 
+# quotient is equal to unity throughout the domain.
 #
 # Finally, let us adapt the original uniform mesh from the above-defined metric. Note
 # that the parameters we have set above are not guaranteed to be satisfied exactly. They
@@ -237,7 +246,8 @@ fig.tight_layout()
 fig.savefig("poisson_anisotropic-mesh.jpg", bbox_inches="tight")
 
 u_numerical_anisotropic = solve_poisson(anisotropic_mesh)
-u_exact_anisotropic = Function(FunctionSpace(anisotropic_mesh, "CG", 2)).interpolate(u_exact)
+u_exact_anisotropic = Function(FunctionSpace(anisotropic_mesh, "CG", 2))
+u_exact_anisotropic.interpolate(u_exact)
 error = errornorm(u_numerical_anisotropic, u_exact_anisotropic)
 print(f"Error on anisotropic mesh = {error:.2e}")
 print(f"Number of elements = {anisotropic_mesh.num_cells()}")
