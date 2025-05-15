@@ -25,4 +25,54 @@ on:
 
 jobs:
   test_suite:
-    uses: mesh-adaptation/docs/.github/workflows/reusable_test_suite.yml@main
+    name: 'Test suite'
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/stephankramer/firedrake-parmmg:scotch_v7.0.8
+      options: --user root
+    env:
+      # Name of the repository that triggered the workflow
+      REPO_NAME: ${{ github.event.repository.name }}
+      ANIMATE_CHECKPOINT_DIR: ${{ github.workspace }}/.checkpoints
+      # Since we are root we need to set PYTHONPATH to find the installed packages
+      PYTHONPATH: /home/firedrake/firedrake:/home/firedrake/animate:/home/firedrake/goalie:/home/firedrake/movement:/home/firedrake/UM2N:/home/firedrake/.local/lib/python3.12/site-packages
+
+    steps:
+      - name: 'Check out the repo'
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: 'Install package'
+        run: pip install -e .[dev]
+
+      - name: 'Lint'
+        run: make lint
+
+      - name: 'Run serial tests'
+        run: |
+          python3 $(which firedrake-clean)
+          python3 -m coverage erase
+          python3 -m coverage run --parallel-mode --source=${REPO_NAME} -m pytest -v -k "parallel[1] or not parallel" test
+
+      - name: 'Run parallel tests (nprocs = 2)'
+        run: |
+          if pytest --collect-only -m parallel[2] test | grep -q 'no tests collected'; then
+            echo "No parallel[2] tests found."
+          else
+            mpiexec -n 2 python3 -m coverage run --parallel-mode --source=${REPO_NAME} -m pytest -v -m parallel[2] test
+          fi
+
+      - name: 'Run parallel tests (nprocs = 3)'
+        run: |
+          if pytest --collect-only -m parallel[3] test | grep -q 'no tests collected'; then
+            echo "No parallel[3] tests found."
+          else
+            mpiexec -n 3 --use-hwthread-cpus python3 -m coverage run --parallel-mode --source=${REPO_NAME} -m pytest -v -m parallel[3] test
+          fi
+
+      - name: 'Generate coverage report'
+        run: |
+          python3 -m coverage combine
+          python3 -m coverage report -m
