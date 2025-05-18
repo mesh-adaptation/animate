@@ -6,7 +6,7 @@
 # We consider the steady-state Poisson equation described in :cite:`Dundovic:2024`.
 # The Poisson equation is solved on a unit square domain with homogeneous Dirichlet
 # boundary conditions. Using the method of manufactured solutions, the function
-# :math:`u(x,y) = (1-e^{-x/\epsilon})(x-1)\sin(\pi y)$, where :math:`\epsilon=0.01`,
+# :math:`u(x,y) = (1-e^{-x/\epsilon})(x-1)\sin(\pi y)`, where :math:`\epsilon=0.01`,
 # is selected as the exact solution, with the corresponding Poisson equation given by
 #
 # .. math::
@@ -45,9 +45,9 @@ fig.savefig("poisson_exact-solution.jpg", bbox_inches="tight")
 # the :math:`x=0` boundary since the term :math:`1-e^{-x/\epsilon}` decays rapidly.
 # Since the solution exhibits less rapid variation in the :math:`y`-direction compared
 # to the :math:`x`-direction, we expect anisotropic mesh adaptation to be beneficial.
-# Let us test this.
+# Let's test this.
 #
-# First, let us define a function that solves the Poisson equation on a given mesh. ::
+# First, define a function that solves the Poisson equation on a given mesh. ::
 
 
 def solve_poisson(mesh):
@@ -91,8 +91,8 @@ print(f"Number of elements = {uniform_mesh.num_cells()}")
 #
 # In previous demos we have seen how to adapt a mesh using a
 # :class:`~animate.metric.RiemannianMetric` object, where we defined the metric from
-# analytical expressions. Such approaches may be suitable for problems where we know
-# beforehand where we require fine and coarse resolution. A more general approach is to
+# analytical expressions. Such approaches may be suitable for problems in which we know
+# beforehand where fine resolution is required and where coarse resolution is acceptable. A more general approach is to
 # adapt the mesh based on the features of the solution field; i.e., based on its
 # Hessian. Animate provides several Hessian recovery methods through the
 # :meth:`animate.metric.RiemannianMetric.compute_hessian` method.
@@ -121,12 +121,12 @@ isotropic_metric.set_parameters(isotropic_metric_parameters)
 isotropic_metric.normalise()
 
 # Note that these parameters are not guaranteed to be satisfied exactly. They certainly
-# will not be in this case, since it is impossible to discretise a rectangular domain
+# will not be in this case, since it is impossible to tesselate a rectangular domain
 # with non-overlapping equilateral triangles.
 #
 # To analyse the metric, it is useful to visualise its density and anisotropy quotient
 # components (see `the documentation
-# <https://mesh-adaptation.github.io/docs/animate/1-metric-based.html>`). ::
+# <https://mesh-adaptation.github.io/docs/animate/1-metric-based.html>`__). ::
 
 
 def plot_metric(metric, figname):
@@ -156,11 +156,7 @@ plot_metric(isotropic_metric, "poisson_isotropic-metric.jpg")
 # :math:`x=0` boundary compared to the rest of the domain. In comparison, the anisotropy
 # quotient is equal to unity throughout the domain.
 #
-# Finally, let us adapt the original uniform mesh from the above-defined metric. Note
-# that the parameters we have set above are not guaranteed to be satisfied exactly. They
-# certainly will not be in this case, since it is impossible to discretise a rectangular
-# domain with perfectly isotropic elements (i.e., non-overlapping equilateral
-# triangles). ::
+# Finally, let us adapt the original uniform mesh from the above-defined metric. ::
 
 from animate.adapt import adapt
 
