@@ -255,7 +255,7 @@ class TestTransfer(unittest.TestCase):
         expected = source
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_adjoint(self, transfer_method):
         pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
@@ -279,7 +279,7 @@ class TestTransfer(unittest.TestCase):
         expected = source
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_mixed_adjoint(self, transfer_method):
         pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
@@ -307,7 +307,7 @@ class TestTransfer(unittest.TestCase):
             expected = Function(Vt).project(source)
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_mesh_adjoint(self, transfer_method):
         pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
@@ -343,7 +343,7 @@ class TestTransfer(unittest.TestCase):
             e2.project(s2)
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_mesh_mixed_adjoint(self, transfer_method):
         pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
