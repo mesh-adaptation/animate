@@ -803,6 +803,10 @@ class RiemannianMetric(ffunc.Function):
 
         where :math:`h_i := \frac1{\sqrt{\lambda_i}}`.
 
+        See
+        https://mesh-adaptation.github.io/animate/1-metric-based.html#geometric-interpretation
+        for more details.
+
         :kwarg reorder: should the eigendecomposition be reordered?
         :type reorder: :class:`bool`
         :return: metric density, anisotropy quotients and eigenvector matrix represented
