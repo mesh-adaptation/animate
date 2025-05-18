@@ -152,8 +152,8 @@ def test_preserve_facet_tags_2d(meshname):
 
 @pytest.mark.parametrize(
     "dim,serialise",
-    [(2, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
-    ids=["mmg2d"],  # ids=["mmg2d", "mmg3d, ParMmg"],
+    [(2, True), (3, True)],
+    ids=["mmg2d", "mmg3d"],
 )
 def test_adapt(dim, serialise):
     """
@@ -175,8 +175,8 @@ def test_adapt(dim, serialise):
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
     "dim,serialise",
-    [(2, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
-    ids=["mmg2d"],  # ["mmg2d", "mmg3d, ParMmg"],
+    [(2, True), (3, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
+    ids=["mmg2d", "mmg3d"],  # ["mmg2d", "mmg3d", "ParMmg"],
 )
 def test_adapt_parallel_np2(dim, serialise):
     """
@@ -190,8 +190,8 @@ def test_adapt_parallel_np2(dim, serialise):
 @pytest.mark.parallel(nprocs=3)
 @pytest.mark.parametrize(
     "dim,serialise",
-    [(2, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
-    ids=["mmg2d"],  # ["mmg2d", "mmg3d, ParMmg"],
+    [(2, True), (3, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
+    ids=["mmg2d", "mmg3d"], # ["mmg2d", "mmg3d", "ParMmg"],
 )
 def test_adapt_parallel_np3(dim, serialise):
     """
@@ -202,8 +202,7 @@ def test_adapt_parallel_np3(dim, serialise):
     test_adapt(dim, serialise=serialise)
 
 
-# @pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])  # FIXME: hang (#136)
-@pytest.mark.parametrize("dim", [2], ids=["mmg2d"])
+@pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])
 def test_enforce_spd_h_min(dim):
     """
     Tests that :meth:`animate.metric.RiemannianMetric.enforce_spd` applies minimum
@@ -220,8 +219,7 @@ def test_enforce_spd_h_min(dim):
     assert newmesh.coordinates.vector().gather().shape[0] < num_vertices
 
 
-# @pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])  # FIXME: hang (#136)
-@pytest.mark.parametrize("dim", [2], ids=["mmg2d"])
+@pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])
 def test_enforce_spd_h_max(dim):
     """
     Tests that :meth:`animate.metric.RiemannianMetric.enforce_spd` applies maximum
