@@ -16,7 +16,7 @@ from firedrake.functionspace import (
     TensorFunctionSpace,
     VectorFunctionSpace,
 )
-from firedrake.norms import errornorm
+from animate.utility import errornorm
 from firedrake.utility_meshes import UnitSquareMesh
 from parameterized import parameterized
 
@@ -257,7 +257,6 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_adjoint(self, transfer_method):
-        pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
         source = Function(Vs).interpolate(self.sinusoid())
         source = function2cofunction(source)
@@ -281,7 +280,6 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_mixed_adjoint(self, transfer_method):
-        pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
         Vs = P1 * P1
         source = Function(Vs)

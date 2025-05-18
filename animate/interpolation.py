@@ -232,27 +232,25 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     bounded = is_project and kwargs.pop("bounded", False)
 
     # Map to Functions to apply the adjoint transfer
-    if not isinstance(target_b, firedrake.Function):
-        target_b = cofunction2function(target_b)
-    if not isinstance(source_b, firedrake.Function):
-        source_b = cofunction2function(source_b)
+    target_b_func = cofunction2function(target_b)
+    source_b_func = cofunction2function(source_b)
 
-    Vt = target_b.function_space()
-    Vs = source_b.function_space()
+    Vt = target_b_func.function_space()
+    Vs = source_b_func.function_space()
     if Vs == Vt:
-        source_b.assign(target_b)
-        return function2cofunction(source_b)
+        source_b_func.assign(target_b_func)
+        return function2cofunction(source_b_func, source_b)
 
     _validate_matching_spaces(Vs, Vt)
     if hasattr(Vs, "num_sub_spaces"):
-        target_b_split = target_b.subfunctions
-        source_b_split = source_b.subfunctions
+        target_b_func_split = target_b_func.subfunctions
+        source_b_func_split = source_b_func.subfunctions
     else:
-        target_b_split = [target_b]
-        source_b_split = [source_b]
+        target_b_func_split = [target_b_func]
+        source_b_func_split = [source_b_func]
 
     # Apply adjoint transfer operator to each component
-    for i, (t_b, s_b) in enumerate(zip(target_b_split, source_b_split)):
+    for i, (t_b, s_b) in enumerate(zip(target_b_func_split, source_b_func_split)):
         if transfer_method == "interpolate":
             s_b.interpolate(t_b, adjoint=True, **kwargs)
         elif transfer_method == "project":
@@ -270,7 +268,7 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
             )
 
     # Map back to a Cofunction
-    return function2cofunction(source_b)
+    return function2cofunction(source_b_func, source_b)
 
 
 def _validate_matching_spaces(Vs, Vt):
