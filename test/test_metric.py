@@ -10,7 +10,6 @@ from firedrake.functionspace import (
     TensorFunctionSpace,
     VectorFunctionSpace,
 )
-from firedrake.mesh import Mesh
 from firedrake.norms import errornorm, norm
 from parameterized import parameterized
 from sensors import bowl, hyperbolic, interweaved, multiscale
