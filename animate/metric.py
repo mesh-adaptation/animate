@@ -75,6 +75,7 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
         self._metric_parameters = {}
+        self._restrict_anisotropy_first = False
         metric_parameters = kwargs.pop("metric_parameters", {})
         super().__init__(function_space, *args, **kwargs)
 
@@ -226,8 +227,8 @@ class RiemannianMetric(ffunc.Function):
             https://www.mmgtools.org/mmg-remesher-try-mmg/mmg-remesher-options/mmg-remesher-option-v.
         * `isotropic`: Optimisation for isotropic metrics. (Currently unsupported.)
         * `uniform`: Optimisation for uniform metrics. (Currently unsupported.)
-        * `restrict_anisotropy_first`: Specify that anisotropy should be restricted
-            before normalisation? (Currently unsupported.)
+        * `restrict_anisotropy_first`: Boolean flag specifying that anisotropy should be
+            restricted before normalisation when True. Default: False.
 
         :kwarg metric_parameters: parameters as above
         :type metric_parameters: :class:`dict` with :class:`str` keys and value which
@@ -235,9 +236,21 @@ class RiemannianMetric(ffunc.Function):
         """
         metric_parameters = metric_parameters or {}
         mp, vp = self._process_parameters(metric_parameters)
+
+        # Metric normalisation is implemented in the RiemannianMetric class so we
+        # handle the `dm_plex_metric_restrict_anisotropy_first` option here rather than
+        # delegating it to PETSc (which has its own normalisation implementation).
+        if "dm_plex_metric_restrict_anisotropy_first" in mp:
+            self._restrict_anisotropy_first = True
+            mp.pop("dm_plex_metric_restrict_anisotropy_first")
+        else:
+            self._restrict_anisotropy_first = False
+
+        # Stash the metric parameters on the RiemannianMetric
         self._metric_parameters.update(mp)
         self._variable_parameters.update(vp)
 
+        # Prepare a copy of the metric parameters to pass to PETSc
         mp = self._metric_parameters.copy()
         if mp.get("dm_plex_metric_p") == np.inf:
             mp["dm_plex_metric_p"] = 1.79769e308
@@ -247,15 +260,11 @@ class RiemannianMetric(ffunc.Function):
             self._plex.metricSetFromOptions()
         if self._plex.metricIsUniform():
             raise NotImplementedError(
-                "Uniform metric optimisations are not supported in Firedrake."
+                "Uniform metric optimisations are not supported in Animate."
             )
         if self._plex.metricIsIsotropic():
             raise NotImplementedError(
-                "Isotropic metric optimisations are not supported in Firedrake."
-            )
-        if self._plex.metricRestrictAnisotropyFirst():
-            raise NotImplementedError(
-                "Restricting metric anisotropy first is not supported in Firedrake."
+                "Isotropic metric optimisations are not supported in Animate."
             )
 
     @property
@@ -547,7 +556,9 @@ class RiemannianMetric(ffunc.Function):
             raise ValueError("dm_plex_metric_target_complexity must be set.")
 
         # Enforce that the metric is SPD
-        self.enforce_spd(restrict_sizes=False, restrict_anisotropy=False)
+        self.enforce_spd(
+            restrict_sizes=False, restrict_anisotropy=self._restrict_anisotropy_first
+        )
 
         # Compute global normalisation factor
         detM = ufl.det(self)
@@ -567,7 +578,8 @@ class RiemannianMetric(ffunc.Function):
 
         # Enforce element constraints
         return self.enforce_spd(
-            restrict_sizes=restrict_sizes, restrict_anisotropy=restrict_anisotropy
+            restrict_sizes=restrict_sizes,
+            restrict_anisotropy=not self._restrict_anisotropy_first,
         )
 
     # --- Methods for combining metrics

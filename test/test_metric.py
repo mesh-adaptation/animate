@@ -10,6 +10,7 @@ from firedrake.functionspace import (
     TensorFunctionSpace,
     VectorFunctionSpace,
 )
+from firedrake.mesh import Mesh
 from firedrake.norms import errornorm, norm
 from parameterized import parameterized
 from sensors import bowl, hyperbolic, interweaved, multiscale
@@ -153,21 +154,14 @@ class TestSetParameters(MetricTestCase):
         metric = uniform_metric(uniform_mesh(2))
         with self.assertRaises(NotImplementedError) as cm:
             metric.set_parameters({"dm_plex_metric_uniform": None})
-        msg = "Uniform metric optimisations are not supported in Firedrake."
+        msg = "Uniform metric optimisations are not supported in Animate."
         self.assertEqual(str(cm.exception), msg)
 
     def test_isotropic_notimplemented_error(self):
         metric = uniform_metric(uniform_mesh(2))
         with self.assertRaises(NotImplementedError) as cm:
             metric.set_parameters({"dm_plex_metric_isotropic": None})
-        msg = "Isotropic metric optimisations are not supported in Firedrake."
-        self.assertEqual(str(cm.exception), msg)
-
-    def test_restrict_anisotropy_first_notimplemented_error(self):
-        metric = uniform_metric(uniform_mesh(2))
-        with self.assertRaises(NotImplementedError) as cm:
-            metric.set_parameters({"dm_plex_metric_restrict_anisotropy_first": None})
-        msg = "Restricting metric anisotropy first is not supported in Firedrake."
+        msg = "Isotropic metric optimisations are not supported in Animate."
         self.assertEqual(str(cm.exception), msg)
 
     def test_p_valueerror(self):
