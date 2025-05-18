@@ -529,6 +529,10 @@ class RiemannianMetric(ffunc.Function):
         """
         Apply :math:`L^p` normalisation to the metric.
 
+        See
+        https://mesh-adaptation.github.io/animate/1-metric-based.html#metric-normalisation
+        for more details.
+
         :kwarg global_factor: pre-computed global normalisation factor
         :type global_factor: :class:`float`
         :kwarg boundary: is the normalisation to be done over the boundary?
