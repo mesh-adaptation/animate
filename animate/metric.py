@@ -699,6 +699,10 @@ class RiemannianMetric(ffunc.Function):
         r"""
         Compute the eigenvectors and eigenvalues of a matrix-valued function.
 
+        See
+        https://mesh-adaptation.github.io/animate/1-metric-based.html#geometric-interpretation
+        for more information.
+
         :kwarg reorder: should the eigendecomposition be reordered in order of
             *descending* eigenvalue magnitude?
         :type reorder: :class:`bool`
@@ -730,6 +734,10 @@ class RiemannianMetric(ffunc.Function):
     def assemble_eigendecomposition(self, evectors, evalues):
         """
         Assemble a matrix from its eigenvectors and eigenvalues.
+
+        See
+        https://mesh-adaptation.github.io/animate/1-metric-based.html#geometric-interpretation
+        for more information.
 
         :arg evectors: eigenvectors represented as a matrix-valued function
         :type evectors: :class:`firedrake.function.Function`
