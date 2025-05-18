@@ -16,7 +16,6 @@ from firedrake.functionspace import (
     TensorFunctionSpace,
     VectorFunctionSpace,
 )
-from animate.utility import errornorm
 from firedrake.utility_meshes import UnitSquareMesh
 from parameterized import parameterized
 
@@ -28,7 +27,7 @@ from animate.interpolation import (
     project,
     transfer,
 )
-from animate.utility import function2cofunction
+from animate.utility import errornorm, function2cofunction
 
 
 class TestClement(unittest.TestCase):
