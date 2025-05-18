@@ -580,6 +580,10 @@ class RiemannianMetric(ffunc.Function):
         Metric intersection means taking the minimal ellipsoid in the direction of each
         eigenvector at each point in the domain.
 
+        See
+        https://mesh-adaptation.github.io/animate/1-metric-based.html#combining-metrics
+        for more details.
+
         :arg metrics: the metrics to be intersected with
         :type metrics: :class:`tuple` of :class:`~.RiemannianMetric`\s
         :return: the intersected metric, modified in-place
@@ -650,6 +654,10 @@ class RiemannianMetric(ffunc.Function):
     def combine(self, *metrics, average=True, **kwargs):
         r"""
         Combine metrics using either averaging or intersection.
+
+        See
+        https://mesh-adaptation.github.io/animate/1-metric-based.html#combining-metrics
+        for more details.
 
         :arg metrics: the list of metrics to combine with
         :type metrics: :class:`tuple` of :class:`~.RiemannianMetric`\s
