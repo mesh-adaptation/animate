@@ -680,6 +680,10 @@ class RiemannianMetric(ffunc.Function):
         Compute the metric complexity - the continuous analogue
         of the (inherently discrete) mesh vertex count.
 
+        See
+        https://mesh-adaptation.github.io/animate/1-metric-based.html#continuous-mesh-analogy
+        for more details.
+
         :kwarg boundary: should the complexity be computed over the domain boundary?
         :type boundary: :class:`bool`
         :return: the complexity of the metric
