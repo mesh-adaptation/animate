@@ -530,7 +530,7 @@ class RiemannianMetric(ffunc.Function):
         Apply :math:`L^p` normalisation to the metric.
 
         See
-        https://mesh-adaptation.github.io/animate/1-metric-based.html#metric-normalisation
+        https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#metric-normalisation
         for more details.
 
         :kwarg global_factor: pre-computed global normalisation factor
@@ -585,7 +585,7 @@ class RiemannianMetric(ffunc.Function):
         eigenvector at each point in the domain.
 
         See
-        https://mesh-adaptation.github.io/animate/1-metric-based.html#combining-metrics
+        https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#combining-metrics
         for more details.
 
         :arg metrics: the metrics to be intersected with
@@ -660,7 +660,7 @@ class RiemannianMetric(ffunc.Function):
         Combine metrics using either averaging or intersection.
 
         See
-        https://mesh-adaptation.github.io/animate/1-metric-based.html#combining-metrics
+        https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#combining-metrics
         for more details.
 
         :arg metrics: the list of metrics to combine with
@@ -681,7 +681,7 @@ class RiemannianMetric(ffunc.Function):
         of the (inherently discrete) mesh vertex count.
 
         See
-        https://mesh-adaptation.github.io/animate/1-metric-based.html#continuous-mesh-analogy
+        https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#continuous-mesh-analogy
         for more details.
 
         :kwarg boundary: should the complexity be computed over the domain boundary?
@@ -700,7 +700,7 @@ class RiemannianMetric(ffunc.Function):
         Compute the eigenvectors and eigenvalues of a matrix-valued function.
 
         See
-        https://mesh-adaptation.github.io/animate/1-metric-based.html#geometric-interpretation
+        https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#geometric-interpretation
         for more information.
 
         :kwarg reorder: should the eigendecomposition be reordered in order of
@@ -736,7 +736,7 @@ class RiemannianMetric(ffunc.Function):
         Assemble a matrix from its eigenvectors and eigenvalues.
 
         See
-        https://mesh-adaptation.github.io/animate/1-metric-based.html#geometric-interpretation
+        https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#geometric-interpretation
         for more information.
 
         :arg evectors: eigenvectors represented as a matrix-valued function
@@ -816,7 +816,7 @@ class RiemannianMetric(ffunc.Function):
         where :math:`h_i := \frac1{\sqrt{\lambda_i}}`.
 
         See
-        https://mesh-adaptation.github.io/animate/1-metric-based.html#geometric-interpretation
+        https://mesh-adaptation.github.io/docs/animate/1-metric-based.html#geometric-interpretation
         for more details.
 
         :kwarg reorder: should the eigendecomposition be reordered?
