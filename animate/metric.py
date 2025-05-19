@@ -75,7 +75,6 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(function_space, fmesh.MeshGeometry):
             function_space = ffs.TensorFunctionSpace(function_space, "CG", 1)
         self._metric_parameters = {}
-        self._restrict_anisotropy_first = False
         metric_parameters = kwargs.pop("metric_parameters", {})
         super().__init__(function_space, *args, **kwargs)
 
@@ -228,7 +227,7 @@ class RiemannianMetric(ffunc.Function):
         * `isotropic`: Optimisation for isotropic metrics. (Currently unsupported.)
         * `uniform`: Optimisation for uniform metrics. (Currently unsupported.)
         * `restrict_anisotropy_first`: Boolean flag specifying that anisotropy should be
-            restricted before normalisation when True. Default: False.
+            restricted before normalisation when True. Default: True.
 
         :kwarg metric_parameters: parameters as above
         :type metric_parameters: :class:`dict` with :class:`str` keys and value which
@@ -241,10 +240,11 @@ class RiemannianMetric(ffunc.Function):
         # handle the `dm_plex_metric_restrict_anisotropy_first` option here rather than
         # delegating it to PETSc (which has its own normalisation implementation).
         if "dm_plex_metric_restrict_anisotropy_first" in mp:
-            self._restrict_anisotropy_first = True
-            mp.pop("dm_plex_metric_restrict_anisotropy_first")
+            self._restrict_anisotropy_first = mp.pop(
+                "dm_plex_metric_restrict_anisotropy_first"
+            )
         else:
-            self._restrict_anisotropy_first = False
+            self._restrict_anisotropy_first = True
 
         # Stash the metric parameters on the RiemannianMetric
         self._metric_parameters.update(mp)

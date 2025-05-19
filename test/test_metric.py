@@ -378,6 +378,7 @@ class TestNormalisation(MetricTestCase):
             "dm_plex_metric_h_max": 0.2,
             "dm_plex_metric_a_max": 10,
             "dm_plex_metric_target_complexity": 1000,
+            "dm_plex_metric_restrict_anisotropy_first": False,
         }
         indefinite_matrix = ufl.as_matrix([[100, 0], [0, 0]])
 
@@ -392,7 +393,7 @@ class TestNormalisation(MetricTestCase):
         # Verify that switching the order fixes things
         metric2 = RiemannianMetric(P1_ten)
         metric2.interpolate(indefinite_matrix)
-        mp["dm_plex_metric_restrict_anisotropy_first"] = None
+        mp["dm_plex_metric_restrict_anisotropy_first"] = True
         metric2.set_parameters(mp)
         metric2.normalise()
         self.assertAlmostEqual(metric2.complexity(), 1000)
