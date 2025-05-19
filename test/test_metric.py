@@ -370,6 +370,33 @@ class TestNormalisation(MetricTestCase):
         msg = "Normalisation on the boundary not yet implemented."
         self.assertEqual(str(cm.exception), msg)
 
+    def test_restrict_anisotropy_first(self):
+        mesh = uniform_mesh(2, n=10)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        mp = {
+            "dm_plex_metric_h_min": 1e-5,
+            "dm_plex_metric_h_max": 0.2,
+            "dm_plex_metric_a_max": 10,
+            "dm_plex_metric_target_complexity": 1000,
+        }
+        indefinite_matrix = ufl.as_matrix([[100, 0], [0, 0]])
+
+        # Verify that normalising before restricting anisotropy is problematic for an
+        # indefinite matrix
+        metric1 = RiemannianMetric(P1_ten)
+        metric1.interpolate(indefinite_matrix)
+        metric1.set_parameters(mp)
+        metric1.normalise()
+        self.assertAlmostEqual(metric1.complexity(), 1e9, places=5)
+
+        # Verify that switching the order fixes things
+        metric2 = RiemannianMetric(P1_ten)
+        metric2.interpolate(indefinite_matrix)
+        mp["dm_plex_metric_restrict_anisotropy_first"] = None
+        metric2.set_parameters(mp)
+        metric2.normalise()
+        self.assertAlmostEqual(metric2.complexity(), 1000)
+
 
 class TestMetricDrivers(MetricTestCase):
     """
