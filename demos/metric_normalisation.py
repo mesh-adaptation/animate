@@ -38,6 +38,8 @@
 # :cite:`Olivier:2011` and is interesting because it contains background oscillations,
 # in addition to larger-scale features. ::
 
+# TODO: Add Olivier citation
+
 from firedrake import *
 from firedrake.pyplot import *
 from animate import *
@@ -53,7 +55,7 @@ def hyperbolic(x, y):
 # Define a square mesh on :math:`[0,2]^2` and subtract 1 from each coordinate to get a
 # mesh of the desired domain. ::
 
-n = 100
+n = 50
 mesh = SquareMesh(n, n, 2, 2)
 coords = Function(mesh.coordinates.function_space())
 coords.interpolate(mesh.coordinates - as_vector([1, 1]))
@@ -102,5 +104,60 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 #    :align: center
 
 # TODO: Describe L^p normalisation
-# TODO: Adapt with L^p normalisation for p=1,2,4
-# TODO: Add Olivier citation
+
+# We've tried :math:`L^\infty` normalisation, now let's try the other end of the scale:
+# :math:`L^1` normalisation. ::
+
+l1_metric = RiemannianMetric(P1_ten)
+l1_metric.set_parameters(
+    {
+        "dm_plex_metric_p": 1.0,
+        "dm_plex_metric_target_complexity": 1000.0,
+    }
+)
+l1_metric.compute_hessian(sensor)
+l1_metric.normalise()
+
+fig, axes = plt.subplots()
+triplot(adapt(mesh, l1_metric), axes=axes)
+axes.set_aspect("equal")
+axes.axis(False)
+plt.savefig("metric_normalisation-l1_mesh.jpg", bbox_inches="tight")
+
+# .. figure:: metric_normalisation-l1_mesh.jpg
+#    :figwidth: 90%
+#    :align: center
+#
+# TODO: Observations
+#
+# Another common normalisation order is :math:`p=2`.
+
+l2_metric = RiemannianMetric(P1_ten)
+l2_metric.set_parameters(
+    {
+        "dm_plex_metric_p": 2.0,
+        "dm_plex_metric_target_complexity": 1000.0,
+    }
+)
+l2_metric.compute_hessian(sensor)
+l2_metric.normalise()
+
+fig, axes = plt.subplots()
+triplot(adapt(mesh, l2_metric), axes=axes)
+axes.set_aspect("equal")
+axes.axis(False)
+plt.savefig("metric_normalisation-l2_mesh.jpg", bbox_inches="tight")
+
+# .. figure:: metric_normalisation-l2_mesh.jpg
+#    :figwidth: 90%
+#    :align: center
+#
+# TODO: Observations
+#
+# ..rubric:: Exercise
+#
+#    Experiment with other intermediate normalisation orders such as :math:`p=4` or
+#    :math:`p=10` and consider the different ways in which the sensor's features
+#    manifest in the adapted meshes.
+#
+# This demo can also be accessed as a `Python script <metric_normalisation.py>`__.
