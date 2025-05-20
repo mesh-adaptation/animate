@@ -39,7 +39,9 @@
 # in addition to larger-scale features. ::
 
 from firedrake import *
+from firedrake.pyplot import *
 from animate import *
+import matplotlib.pyplot as plt
 
 
 def hyperbolic(x, y):
@@ -50,11 +52,23 @@ def hyperbolic(x, y):
 # Define a square mesh on :math:`[0,2]^2` and subtract 1 from each coordinate to get a
 # mesh of the desired domain. ::
 
-mesh = SquareMesh(20, 20, 2, 2)
-mesh.coordinates[:] -= 1
-mesh = Mesh(mesh.coordinates)
+n = 100
+mesh = SquareMesh(n, n, 2, 2)
+coords = Function(mesh.coordinates.function_space())
+coords.interpolate(mesh.coordinates - as_vector([1, 1]))
+mesh = Mesh(coords)
 
-# TODO: Plot sensor function
+# Interpolate the hyberbolic sensor function in a :math:`\mathbb{P}1` space defined on
+# the initial mesh and plot it. ::
+
+x, y = SpatialCoordinate(mesh)
+P1 = FunctionSpace(mesh, "CG", 1)
+sensor = Function(P1).interpolate(hyperbolic(x, y))
+
+fig, axes = plt.subplots()
+fig.colorbar(tricontourf(sensor, axes=axes, cmap="coolwarm"))
+plt.show()
+
 # TODO: Adapt with L^infty normalisation
 # TODO: Describe L^p normalisation
 # TODO: Adapt with L^p normalisation for p=1,2,4
