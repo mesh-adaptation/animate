@@ -101,7 +101,6 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 #    :figwidth: 90%
 #    :align: center
 
-# TODO: Adapt with L^infty normalisation
 # TODO: Describe L^p normalisation
 # TODO: Adapt with L^p normalisation for p=1,2,4
 # TODO: Add Olivier citation
