@@ -42,6 +42,7 @@ from firedrake import *
 from firedrake.pyplot import *
 from animate import *
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def hyperbolic(x, y):
@@ -67,7 +68,38 @@ sensor = Function(P1).interpolate(hyperbolic(x, y))
 
 fig, axes = plt.subplots()
 fig.colorbar(tricontourf(sensor, axes=axes, cmap="coolwarm"))
-plt.show()
+plt.savefig("metric_normalisation-sensor.jpg", bbox_inches="tight")
+
+# .. figure:: metric_normalisation-sensor.jpg
+#    :figwidth: 90%
+#    :align: center
+#
+# Now construct a metric based off the Hessian of the sensor function, setting the
+# normalisation order :math:`p` to infinity. ::
+
+P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+linf_metric = RiemannianMetric(P1_ten)
+linf_metric.set_parameters(
+    {
+        "dm_plex_metric_p": np.inf,
+        "dm_plex_metric_target_complexity": 1000.0,
+    }
+)
+linf_metric.compute_hessian(sensor)
+linf_metric.normalise()
+
+# Adapt the mesh with respect to the :math:`L^\infty` normalised metric and visualise
+# it. ::
+
+fig, axes = plt.subplots()
+triplot(adapt(mesh, linf_metric), axes=axes)
+axes.set_aspect("equal")
+axes.axis(False)
+plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
+
+# .. figure:: metric_normalisation-linf_mesh.jpg
+#    :figwidth: 90%
+#    :align: center
 
 # TODO: Adapt with L^infty normalisation
 # TODO: Describe L^p normalisation
