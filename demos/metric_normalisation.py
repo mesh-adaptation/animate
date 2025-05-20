@@ -18,7 +18,7 @@
 # ..math::
 #     :label:`l_infty`
 #
-#     \widetilde{\mathcal{M}}=
+#     \mathcal{M}_{L^\infty}=
 #     \frac{\mathcal{C}_T}{\mathcal{C}(\mathcal{M})}\:\mathcal{M},
 #
 # where
@@ -102,10 +102,27 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # .. figure:: metric_normalisation-linf_mesh.jpg
 #    :figwidth: 90%
 #    :align: center
-
-# TODO: Describe L^p normalisation
-
-# We've tried :math:`L^\infty` normalisation, now let's try the other end of the scale:
+#
+# The general formula for :math:`L^p` normalisation is given by
+#
+# .. math::
+#     :label: lp_metric
+#
+#     \mathcal M_{L^p}:=
+#     \mathcal C_T^{\frac2n}
+#     \:\left(\int_{\Omega}\mathrm{det}(\underline{\mathbf M})^{\frac p{2p+n}}\;\mathrm dx\right)^{-\frac2n}
+#     \:\mathrm{det}(\mathcal M)^{-\frac1{2p+n}}
+#     \:\mathcal M,
+#
+# where :math:`p\in[1,\infty)`.
+#
+# ..rubric:: Exercise
+#
+#     Convince yourself that
+#     :math:`\lim_{p\rightarrow\infty}\mathcal{M}_{L^p}=\mathcal{M}_{L^\infty}`.
+#
+# We've tried :math:`L^\infty` normalisation - the upper limit of the range of
+# acceptable values for :math:`p`. Now let's try the other end of the scale:
 # :math:`L^1` normalisation. ::
 
 l1_metric = RiemannianMetric(P1_ten)
