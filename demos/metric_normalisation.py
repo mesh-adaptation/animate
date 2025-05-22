@@ -50,6 +50,12 @@ def sensor_fn(x, y):
     return 0.1 * ufl.sin(50 * x) + ufl.atan(0.1 / (ufl.sin(5 * y) - 2 * x))
 
 
+# To quote :cite:`Wallwork:2021` p.116, the sensor function contains a 'long wavelength,
+# low frequency oscillation in the :math:`y`-direction, as well as a short wavelength,
+# high frequency oscillation in the :math:`x`-direction. The long wavelength profile is
+# more prominent, as it is bounded by :math:`\pm\frac{\pi}{2}\approx\pm1.5708`, whereas
+# the short wavelength profile is bounded by :math:`\pm0.1`.'
+#
 # Define a square mesh on :math:`[0,2]^2` and subtract 1 from each coordinate to get a
 # mesh of the desired domain. ::
 
