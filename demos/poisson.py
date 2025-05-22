@@ -268,6 +268,9 @@ print(f"Number of elements = {anisotropic_mesh.num_cells()}")
 #
 # .. rubric:: Exercise
 #
-# Experiment with different metric parameters and their values.
+# Experiment with different metric parameters and their values. For example, try
+# changing the metric gradation factor mentioned above, or the minimum and maximum
+# tolerated metric magnitude (``dm_plex_metric_h_min`` and ``dm_plex_metric_h_max``,
+# respectively).
 #
 # This demo can also be accessed as a `Python script <poisson.py>`__.
