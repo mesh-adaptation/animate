@@ -38,8 +38,6 @@
 # :cite:`Olivier:2011` and is interesting because it contains background oscillations,
 # in addition to larger-scale features. ::
 
-# TODO: Add Olivier citation
-
 from firedrake import *
 from firedrake.pyplot import *
 from animate import *
