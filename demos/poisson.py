@@ -252,6 +252,10 @@ error = errornorm(u_numerical_anisotropic, u_exact_anisotropic)
 print(f"Error on anisotropic mesh = {error:.2e}")
 print(f"Number of elements = {anisotropic_mesh.num_cells()}")
 
+# .. figure:: poisson_anisotropic-mesh.jpg
+#    :figwidth: 80%
+#    :align: center
+#
 # .. code-block:: console
 #
 #    Error on anisotropic mesh = 9.61e-04
