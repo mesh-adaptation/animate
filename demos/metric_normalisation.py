@@ -110,11 +110,11 @@ linf_mesh = base_mesh
 for _ in range(num_adapt):
     linf_mesh = adapt(linf_mesh, lp_metric(linf_mesh, np.inf))
 
-fig, axes = plt.subplots()
 kwargs = {
     "interior_kw": {"linewidth": 0.2},
     "boundary_kw": {"linewidth": 0.2, "color": "k"},
 }
+fig, axes = plt.subplots()
 triplot(linf_mesh, axes=axes, **kwargs)
 axes.set_aspect("equal")
 axes.axis(False)
@@ -123,6 +123,9 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # .. figure:: metric_normalisation-linf_mesh.jpg
 #    :figwidth: 90%
 #    :align: center
+#
+# Note that the adapted mesh only really captures the more prominent, low frequency
+# oscillation and doesn't capture the background, high frequency oscillation at all.
 #
 # The general formula for :math:`L^p` normalisation is given by
 #
@@ -160,9 +163,12 @@ plt.savefig("metric_normalisation-l1_mesh.jpg", bbox_inches="tight")
 #    :figwidth: 90%
 #    :align: center
 #
-# TODO: Observations
+# In this adapted mesh, the low frequency oscillation is still well captured, but the
+# background, high frequency oscillation is also very clear, with strong anisotropic
+# mesh features in the vertical direction to align with it. This is a simple example of
+# a multi-scale, anisotropic mesh.
 #
-# Another common normalisation order is :math:`p=2`.
+# Another common normalisation order is :math:`p=2`. ::
 
 l2_mesh = base_mesh
 for _ in range(num_adapt):
@@ -177,8 +183,6 @@ plt.savefig("metric_normalisation-l2_mesh.jpg", bbox_inches="tight")
 # .. figure:: metric_normalisation-l2_mesh.jpg
 #    :figwidth: 90%
 #    :align: center
-#
-# TODO: Observations
 #
 # ..rubric:: Exercise
 #
