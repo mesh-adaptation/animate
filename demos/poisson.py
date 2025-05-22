@@ -134,7 +134,7 @@ def plot_metric(metric, figname):
 
     fig, axes = plt.subplots(1, 2, sharex=True, sharey=True)
     im_density = tripcolor(density, axes=axes[0], norm="log", cmap="coolwarm")
-    im_quotients = tripcolor(quotients, axes=axes[1], cmap="coolwarm")
+    im_quotients = tripcolor(quotients, axes=axes[1], norm="log", cmap="coolwarm")
     axes[0].set_title("Metric density")
     axes[1].set_title("Metric anisotropy quotient")
     for ax in axes:
@@ -202,13 +202,12 @@ print(f"Number of elements = {isotropic_mesh.num_cells()}")
 # We have achieved similar accuracy compared to the uniform mesh, but with almost three
 # times fewer elements.
 #
-# Let us repeat the above process, but this time we will use an anisotropic metric.
-# That is to say, we will set the maximum tolerated anisotropy to 16. ::
+# Let us repeat the above process, but this time using an anisotropic metric; i.e., we
+# use the default maximum tolerated anisotropy value of :math:`10^5`.
 
 anisotropic_metric = RiemannianMetric(P1_ten)
 anisotropic_metric_parameters = {
     "dm_plex_metric_target_complexity": 200,
-    "dm_plex_metric_a_max": 16,
 }
 anisotropic_metric.set_parameters(anisotropic_metric_parameters)
 anisotropic_metric.compute_hessian(u_numerical)
@@ -223,8 +222,11 @@ plot_metric(anisotropic_metric, "poisson_anisotropic-metric.jpg")
 # While the metric density field is similar to that of the isotropic metric, we now
 # observe a variation in the anisotropy quotient throughout the domain. The region near
 # the :math:`x=0` boundary and a region around :math:`y=0.5` have a high anisotropy
-# quotient, close to the maximum value of 16, while the rest of the domain remains
-# isotropic. This is directly reflected in the adapted mesh. ::
+# quotient of more than 30 (in some parts over 100), while the rest of the domain
+# remains isotropic. Recall that the metric will again be smoothened through the metric
+# gradation process.
+#
+# Let's adapt the mesh again and compare it to the isotropic one. ::
 
 anisotropic_mesh = adapt(uniform_mesh, anisotropic_metric)
 
@@ -254,8 +256,8 @@ print(f"Number of elements = {anisotropic_mesh.num_cells()}")
 #
 # .. code-block:: console
 #
-#    Error on anisotropic mesh = 9.61e-04
-#    Number of elements = 973
+#    Error on anisotropic mesh = 9.53e-04
+#    Number of elements = 964
 #
 # We have again achieved similar accuracy compared to the uniform and isotropic meshes,
 # but with eight and three times fewer elements, respectively. The largest difference
