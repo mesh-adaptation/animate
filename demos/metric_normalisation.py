@@ -33,10 +33,11 @@
 # further into :math:`L^p` normalisation, let's test out the so-called :math:`L^\infty`
 # approach described above.
 #
-# For testing purposes, consider a hyperbolic sensor function defined on the square
-# domain :math:`[-1,1]^2`. The sensor functions used was defined in
-# :cite:`Olivier:2011` and is interesting because it contains background oscillations,
-# in addition to larger-scale features. ::
+# For testing purposes, consider a multi-scale sensor function defined on the square
+# domain :math:`[-1,1]^2`. This sensor function was defined in :cite:`Olivier:2011` and
+# is interesting because it contains background oscillations, in addition to
+# larger-scale features. The idea of multi-scale mesh adaptation is to vary the spatial
+# resolution such that we are able to capture multiple such scales at the same time.::
 
 from firedrake import *
 from firedrake.pyplot import *
@@ -45,9 +46,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def hyperbolic(x, y):
-    sn = sin(50 * x * y)
-    return conditional(abs(x * y) < 2 * pi / 50, 0.01 * sn, sn)
+def sensor_fn(x, y):
+    return 0.1 * ufl.sin(50 * x) + ufl.atan(0.1 / (ufl.sin(5 * y) - 2 * x))
 
 
 # Define a square mesh on :math:`[0,2]^2` and subtract 1 from each coordinate to get a
@@ -59,12 +59,12 @@ coords = Function(mesh.coordinates.function_space())
 coords.interpolate(mesh.coordinates - as_vector([1, 1]))
 mesh = Mesh(coords)
 
-# Interpolate the hyberbolic sensor function in a :math:`\mathbb{P}1` space defined on
-# the initial mesh and plot it. ::
+# Interpolate the sensor function in a :math:`\mathbb{P}1` space defined on the initial
+# mesh and plot it. ::
 
 x, y = SpatialCoordinate(mesh)
 P1 = FunctionSpace(mesh, "CG", 1)
-sensor = Function(P1).interpolate(hyperbolic(x, y))
+sensor = Function(P1).interpolate(sensor_fn(x, y))
 
 fig, axes = plt.subplots()
 fig.colorbar(tricontourf(sensor, axes=axes, cmap="coolwarm"))
