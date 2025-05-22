@@ -60,16 +60,16 @@ def sensor_fn(x, y):
 # mesh of the desired domain. ::
 
 n = 50
-mesh = SquareMesh(n, n, 2, 2)
-coords = Function(mesh.coordinates.function_space())
-coords.interpolate(mesh.coordinates - as_vector([1, 1]))
-mesh = Mesh(coords)
+base_mesh = SquareMesh(n, n, 2, 2)
+coords = Function(base_mesh.coordinates.function_space())
+coords.interpolate(base_mesh.coordinates - as_vector([1, 1]))
+base_mesh = Mesh(coords)
 
 # Interpolate the sensor function in a :math:`\mathbb{P}1` space defined on the initial
 # mesh and plot it. ::
 
-x, y = SpatialCoordinate(mesh)
-P1 = FunctionSpace(mesh, "CG", 1)
+x, y = SpatialCoordinate(base_mesh)
+P1 = FunctionSpace(base_mesh, "CG", 1)
 sensor = Function(P1).interpolate(sensor_fn(x, y))
 
 fig, axes = plt.subplots()
@@ -83,22 +83,30 @@ plt.savefig("metric_normalisation-sensor.jpg", bbox_inches="tight")
 # Now construct a metric based off the Hessian of the sensor function, setting the
 # normalisation order :math:`p` to infinity. ::
 
-P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-linf_metric = RiemannianMetric(P1_ten)
-linf_metric.set_parameters(
-    {
-        "dm_plex_metric_p": np.inf,
-        "dm_plex_metric_target_complexity": 1000.0,
-    }
-)
-linf_metric.compute_hessian(sensor)
-linf_metric.normalise()
+
+def lp_metric(mesh, p):
+    P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+    metric = RiemannianMetric(P1_ten)
+    metric.set_parameters(
+        {
+            "dm_plex_metric_p": p,
+            "dm_plex_metric_target_complexity": 1000.0,
+        }
+    )
+    x, y = SpatialCoordinate(mesh)
+    P1 = FunctionSpace(mesh, "CG", 1)
+    metric.compute_hessian(Function(P1).interpolate(sensor_fn(x, y)))
+    metric.normalise()
+    return metric
+
+
+linf_metric = lp_metric(base_mesh, np.inf)
 
 # Adapt the mesh with respect to the :math:`L^\infty` normalised metric and visualise
 # it. ::
 
 fig, axes = plt.subplots()
-triplot(adapt(mesh, linf_metric), axes=axes)
+triplot(adapt(base_mesh, linf_metric), axes=axes)
 axes.set_aspect("equal")
 axes.axis(False)
 plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
@@ -129,18 +137,10 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # acceptable values for :math:`p`. Now let's try the other end of the scale:
 # :math:`L^1` normalisation. ::
 
-l1_metric = RiemannianMetric(P1_ten)
-l1_metric.set_parameters(
-    {
-        "dm_plex_metric_p": 1.0,
-        "dm_plex_metric_target_complexity": 1000.0,
-    }
-)
-l1_metric.compute_hessian(sensor)
-l1_metric.normalise()
+l1_metric = lp_metric(base_mesh, 1.0)
 
 fig, axes = plt.subplots()
-triplot(adapt(mesh, l1_metric), axes=axes)
+triplot(adapt(base_mesh, l1_metric), axes=axes)
 axes.set_aspect("equal")
 axes.axis(False)
 plt.savefig("metric_normalisation-l1_mesh.jpg", bbox_inches="tight")
@@ -153,18 +153,10 @@ plt.savefig("metric_normalisation-l1_mesh.jpg", bbox_inches="tight")
 #
 # Another common normalisation order is :math:`p=2`.
 
-l2_metric = RiemannianMetric(P1_ten)
-l2_metric.set_parameters(
-    {
-        "dm_plex_metric_p": 2.0,
-        "dm_plex_metric_target_complexity": 1000.0,
-    }
-)
-l2_metric.compute_hessian(sensor)
-l2_metric.normalise()
+l2_metric = lp_metric(base_mesh, 2.0)
 
 fig, axes = plt.subplots()
-triplot(adapt(mesh, l2_metric), axes=axes)
+triplot(adapt(base_mesh, l2_metric), axes=axes)
 axes.set_aspect("equal")
 axes.axis(False)
 plt.savefig("metric_normalisation-l2_mesh.jpg", bbox_inches="tight")
