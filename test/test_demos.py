@@ -52,9 +52,9 @@ def test_modifications_original_exists():
         with open(demo_path, "r") as file:
             demo_content = file.read()
             for original in changes.keys():
-                assert re.search(
-                    original, demo_content, re.DOTALL
-                ), f"Error: '{original}' not found in '{demo_name}'."
+                assert re.search(original, demo_content, re.DOTALL), (
+                    f"Error: '{original}' not found in '{demo_name}'."
+                )
 
 
 def test_demos(demo_file, tmpdir, monkeypatch):

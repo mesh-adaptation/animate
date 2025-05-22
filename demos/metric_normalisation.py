@@ -80,8 +80,10 @@ plt.savefig("metric_normalisation-sensor.jpg", bbox_inches="tight")
 #    :figwidth: 90%
 #    :align: center
 #
-# Now construct a metric based off the Hessian of the sensor function, setting the
-# normalisation order :math:`p` to infinity. ::
+# Define a function for constructing a metric based off the Hessian of the sensor
+# function, given some normalisation order value :math:`p`. ::
+
+target_complexity = 10000.0
 
 
 def lp_metric(mesh, p):
@@ -90,7 +92,7 @@ def lp_metric(mesh, p):
     metric.set_parameters(
         {
             "dm_plex_metric_p": p,
-            "dm_plex_metric_target_complexity": 1000.0,
+            "dm_plex_metric_target_complexity": target_complexity,
         }
     )
     x, y = SpatialCoordinate(mesh)
@@ -100,13 +102,20 @@ def lp_metric(mesh, p):
     return metric
 
 
-linf_metric = lp_metric(base_mesh, np.inf)
+# Adapt the mesh several times with respect to the :math:`L^\infty` normalised metric
+# and visualise it. ::
 
-# Adapt the mesh with respect to the :math:`L^\infty` normalised metric and visualise
-# it. ::
+num_adapt = 4
+linf_mesh = base_mesh
+for _ in range(num_adapt):
+    linf_mesh = adapt(linf_mesh, lp_metric(linf_mesh, np.inf))
 
 fig, axes = plt.subplots()
-triplot(adapt(base_mesh, linf_metric), axes=axes)
+kwargs = {
+    "interior_kw": {"linewidth": 0.2},
+    "boundary_kw": {"linewidth": 0.2, "color": "k"},
+}
+triplot(linf_mesh, axes=axes, **kwargs)
 axes.set_aspect("equal")
 axes.axis(False)
 plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
@@ -137,10 +146,12 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # acceptable values for :math:`p`. Now let's try the other end of the scale:
 # :math:`L^1` normalisation. ::
 
-l1_metric = lp_metric(base_mesh, 1.0)
+l1_mesh = base_mesh
+for _ in range(num_adapt):
+    l1_mesh = adapt(l1_mesh, lp_metric(l1_mesh, 1.0))
 
 fig, axes = plt.subplots()
-triplot(adapt(base_mesh, l1_metric), axes=axes)
+triplot(l1_mesh, axes=axes, **kwargs)
 axes.set_aspect("equal")
 axes.axis(False)
 plt.savefig("metric_normalisation-l1_mesh.jpg", bbox_inches="tight")
@@ -153,10 +164,12 @@ plt.savefig("metric_normalisation-l1_mesh.jpg", bbox_inches="tight")
 #
 # Another common normalisation order is :math:`p=2`.
 
-l2_metric = lp_metric(base_mesh, 2.0)
+l2_mesh = base_mesh
+for _ in range(num_adapt):
+    l2_mesh = adapt(l2_mesh, lp_metric(l2_mesh, 2.0))
 
 fig, axes = plt.subplots()
-triplot(adapt(base_mesh, l2_metric), axes=axes)
+triplot(l2_mesh, axes=axes, **kwargs)
 axes.set_aspect("equal")
 axes.axis(False)
 plt.savefig("metric_normalisation-l2_mesh.jpg", bbox_inches="tight")
