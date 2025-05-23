@@ -153,21 +153,14 @@ class TestSetParameters(MetricTestCase):
         metric = uniform_metric(uniform_mesh(2))
         with self.assertRaises(NotImplementedError) as cm:
             metric.set_parameters({"dm_plex_metric_uniform": None})
-        msg = "Uniform metric optimisations are not supported in Firedrake."
+        msg = "Uniform metric optimisations are not supported in Animate."
         self.assertEqual(str(cm.exception), msg)
 
     def test_isotropic_notimplemented_error(self):
         metric = uniform_metric(uniform_mesh(2))
         with self.assertRaises(NotImplementedError) as cm:
             metric.set_parameters({"dm_plex_metric_isotropic": None})
-        msg = "Isotropic metric optimisations are not supported in Firedrake."
-        self.assertEqual(str(cm.exception), msg)
-
-    def test_restrict_anisotropy_first_notimplemented_error(self):
-        metric = uniform_metric(uniform_mesh(2))
-        with self.assertRaises(NotImplementedError) as cm:
-            metric.set_parameters({"dm_plex_metric_restrict_anisotropy_first": None})
-        msg = "Restricting metric anisotropy first is not supported in Firedrake."
+        msg = "Isotropic metric optimisations are not supported in Animate."
         self.assertEqual(str(cm.exception), msg)
 
     def test_p_valueerror(self):
@@ -376,6 +369,44 @@ class TestNormalisation(MetricTestCase):
             metric.normalise(boundary=True)
         msg = "Normalisation on the boundary not yet implemented."
         self.assertEqual(str(cm.exception), msg)
+
+    def test_restrict_anisotropy_first_false(self):
+        """
+        Verify that normalising before restricting anisotropy is problematic for an
+        indefinite matrix.
+        """
+        mesh = uniform_mesh(2, n=10)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        mp = {
+            "dm_plex_metric_h_min": 1e-5,
+            "dm_plex_metric_h_max": 0.2,
+            "dm_plex_metric_a_max": 10,
+            "dm_plex_metric_target_complexity": 1000,
+            "dm_plex_metric_restrict_anisotropy_first": False,
+        }
+        metric = RiemannianMetric(P1_ten, metric_parameters=mp)
+        metric.interpolate(ufl.as_matrix([[100, 0], [0, 0]]))
+        metric.normalise()
+        self.assertGreater(metric.complexity(), 1e8)
+
+    def test_restrict_anisotropy_first_true(self):
+        """
+        Verify that restricting aniosotropy first allows us to attain the target metric
+        complexity in the case of an indefinite matrix.
+        """
+        mesh = uniform_mesh(2, n=10)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        mp = {
+            "dm_plex_metric_h_min": 1e-5,
+            "dm_plex_metric_h_max": 0.2,
+            "dm_plex_metric_a_max": 10,
+            "dm_plex_metric_target_complexity": 1000,
+            "dm_plex_metric_restrict_anisotropy_first": True,
+        }
+        metric = RiemannianMetric(P1_ten, metric_parameters=mp)
+        metric.interpolate(ufl.as_matrix([[100, 0], [0, 0]]))
+        metric.normalise()
+        self.assertAlmostEqual(metric.complexity(), 1000)
 
 
 class TestMetricDrivers(MetricTestCase):
