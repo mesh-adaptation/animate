@@ -36,11 +36,12 @@
 # larger-scale features. The idea of multi-scale mesh adaptation is to vary the spatial
 # resolution such that we are able to capture multiple such scales at the same time.::
 
-from firedrake import *
-from firedrake.pyplot import *
-from animate import *
 import matplotlib.pyplot as plt
 import numpy as np
+from firedrake import *
+from firedrake.pyplot import *
+
+from animate import *
 
 
 def sensor_fn(x, y):
@@ -129,7 +130,8 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # .. math::
 #     \mathcal M_{L^p}:=
 #     \mathcal C_T^{\frac2n}
-#     \:\left(\int_{\Omega}\mathrm{det}(\underline{\mathbf M})^{\frac p{2p+n}}\;\mathrm dx\right)^{-\frac2n}
+#     \:\left(\int_{\Omega}\mathrm{det}(\underline{\mathbf M})^{\frac p{2p+n}}
+#     \;\mathrm dx\right)^{-\frac2n}
 #     \:\mathrm{det}(\mathcal M)^{-\frac1{2p+n}}
 #     \:\mathcal M,
 #
