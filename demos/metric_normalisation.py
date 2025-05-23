@@ -15,7 +15,7 @@
 #
 # A naive approach is to rescale as
 #
-# ..math::
+# .. math::
 #     :label:`l_infty`
 #
 #     \mathcal{M}_{L^\infty}=
@@ -23,7 +23,7 @@
 #
 # where
 #
-# ..math::
+# .. math::
 #
 #     \mathcal{C}(\mathcal{M})=\int_\Omega\det(M(x))\,\mathrm{d}x
 #
@@ -140,7 +140,7 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 #
 # where :math:`p\in[1,\infty)`.
 #
-# ..rubric:: Exercise
+# .. rubric:: Exercise
 #
 #     Convince yourself that
 #     :math:`\lim_{p\rightarrow\infty}\mathcal{M}_{L^p}=\mathcal{M}_{L^\infty}`.
@@ -184,7 +184,7 @@ plt.savefig("metric_normalisation-l2_mesh.jpg", bbox_inches="tight")
 #    :figwidth: 90%
 #    :align: center
 #
-# ..rubric:: Exercise
+# .. rubric:: Exercise
 #
 #    Experiment with other intermediate normalisation orders such as :math:`p=4` or
 #    :math:`p=10` and consider the different ways in which the sensor's features
