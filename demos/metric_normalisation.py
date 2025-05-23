@@ -16,15 +16,12 @@
 # A naive approach is to rescale as
 #
 # .. math::
-#     :label:`l_infty`
-#
 #     \mathcal{M}_{L^\infty}=
 #     \frac{\mathcal{C}_T}{\mathcal{C}(\mathcal{M})}\:\mathcal{M},
 #
 # where
 #
 # .. math::
-#
 #     \mathcal{C}(\mathcal{M})=\int_\Omega\det(M(x))\,\mathrm{d}x
 #
 # is the complexity of :math:`\mathcal{M}` and :math:`\mathcal{C}_T` is the target
@@ -130,8 +127,6 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # The general formula for :math:`L^p` normalisation is given by
 #
 # .. math::
-#     :label: lp_metric
-#
 #     \mathcal M_{L^p}:=
 #     \mathcal C_T^{\frac2n}
 #     \:\left(\int_{\Omega}\mathrm{det}(\underline{\mathbf M})^{\frac p{2p+n}}\;\mathrm dx\right)^{-\frac2n}
