@@ -134,7 +134,10 @@ def plot_metric(metric, figname):
 
     fig, axes = plt.subplots(1, 2, sharex=True, sharey=True)
     im_density = tripcolor(density, axes=axes[0], norm="log", cmap="coolwarm")
-    im_quotients = tripcolor(quotients, axes=axes[1], norm="log", cmap="coolwarm")
+    # Plot the first anisotropy quotient, which is the reciprocal of the second quotient
+    im_quotients = tripcolor(
+        quotients.sub(0), axes=axes[1], norm="log", cmap="coolwarm"
+    )
     axes[0].set_title("Metric density")
     axes[1].set_title("Metric anisotropy quotient")
     for ax in axes:
@@ -142,7 +145,8 @@ def plot_metric(metric, figname):
         ax.set_ylim(0, 1)
         ax.set_aspect("equal")
     fig.colorbar(im_density, ax=axes[0], orientation="horizontal")
-    fig.colorbar(im_quotients, ax=axes[1], orientation="horizontal")
+    cbar_q = fig.colorbar(im_quotients, ax=axes[1], orientation="horizontal")
+    cbar_q.ax.tick_params(which="minor", labelbottom=False)
     fig.savefig(figname, bbox_inches="tight")
 
 
