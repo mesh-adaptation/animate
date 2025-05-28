@@ -26,7 +26,7 @@
 #
 # is the complexity of :math:`\mathcal{M}` and :math:`\mathcal{C}_T` is the target
 # complexity. This is actually a special case of the more general :math:`L^p`
-# normalisation approach (the infinite limit :math:`p\rightarrow\infty`. Before digging
+# normalisation approach (the infinite limit :math:`p\rightarrow\infty`). Before digging
 # further into :math:`L^p` normalisation, let's test out the so-called :math:`L^\infty`
 # approach described above.
 #
@@ -125,7 +125,7 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # Note that the adapted mesh only really captures the more prominent, low frequency
 # oscillation and doesn't capture the background, high frequency oscillation at all.
 #
-# The general formula for :math:`L^p` normalisation is given by
+# The general formula for :math:`L^p` normalisation is given by :cite:`Loseille:2011`
 #
 # .. math::
 #     \mathcal M_{L^p}:=
