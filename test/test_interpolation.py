@@ -26,7 +26,7 @@ from animate.interpolation import (
     project,
     transfer,
 )
-from animate.utility import function2cofunction
+from animate.utility import cofunction2function, function2cofunction
 
 
 class TestClement(unittest.TestCase):
@@ -261,14 +261,12 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_adjoint(self, transfer_method):
-        pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
-        source = Function(Vs).interpolate(self.sinusoid())
-        source = function2cofunction(source)
+        expected = Function(Vs).interpolate(self.sinusoid())
+        source = function2cofunction(expected)
         target = Cofunction(Vs.dual())
         transfer(source, target, transfer_method)
-        expected = source
-        self.assertAlmostEqual(errornorm(expected, target), 0)
+        self.assertAlmostEqual(errornorm(expected, cofunction2function(target)), 0)
 
     @parameterized.expand(["project", "interpolate"])
     def test_transfer_same_space_mixed(self, transfer_method):
@@ -285,18 +283,16 @@ class TestTransfer(unittest.TestCase):
 
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_mixed_adjoint(self, transfer_method):
-        pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
         Vs = P1 * P1
-        source = Function(Vs)
-        s1, s2 = source.subfunctions
-        s1.interpolate(self.sinusoid())
-        s2.interpolate(-self.sinusoid())
-        source = function2cofunction(source)
+        expected = Function(Vs)
+        e1, e2 = expected.subfunctions
+        e1.interpolate(self.sinusoid())
+        e2.interpolate(-self.sinusoid())
+        source = function2cofunction(expected)
         target = Cofunction(Vs.dual())
         transfer(source, target, transfer_method)
-        expected = source
-        self.assertAlmostEqual(errornorm(expected, target), 0)
+        self.assertAlmostEqual(errornorm(expected, cofunction2function(target)), 0)
 
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_mesh(self, transfer_method):
