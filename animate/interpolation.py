@@ -162,36 +162,19 @@ def project(source, target, **kwargs):
     """
     _validate_consistent_spaces(source.function_space(), target.function_space())
     if not source.function_space()._dual:
-        if hasattr(target.function_space(), "num_sub_spaces"):
-            for s, t in zip(source.subfunctions, target.subfunctions):
-                if bounded:
-                    _supermesh_project(s, t, bounded=True)
-                else:
-                    t.project(s, **kwargs)
-        else:
+        for s, t in zip(source.subfunctions, target.subfunctions):
             if bounded:
-                _supermesh_project(source, target, bounded=True)
+                _supermesh_project(s, t, bounded=True)
             else:
-                target.project(source, **kwargs)
+                t.project(s, **kwargs)
     else:
-        if hasattr(Vt, "num_sub_spaces"):
-            for s, t in zip(source.subfunctions, target.subfunctions):
-                Vs = s.function_space()
-                Vt = t.function_space()
-                ksp = petsc4py.KSP().create()
-                ksp.setOperators(assemble_mass_matrix(Vs, lumped=bounded))
-                mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
-                with s.dat.vec_ro as vs, t.dat.vec_wo as vt:
-                    residual = vs.copy()
-                    ksp.solveTranspose(vs, residual)
-                    mixed_mass.mult(residual, vt)  # NOTE: already transposed above
-        else:
-            Vs = source.function_space()
-            Vt = target.function_space()
+        for s, t in zip(source.subfunctions, target.subfunctions):
+            Vs = s.function_space()
+            Vt = t.function_space()
             ksp = petsc4py.KSP().create()
             ksp.setOperators(assemble_mass_matrix(Vs, lumped=bounded))
             mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
-            with source.dat.vec_ro as vs, target.dat.vec_wo as vt:
+            with s.dat.vec_ro as vs, t.dat.vec_wo as vt:
                 residual = vs.copy()
                 ksp.solveTranspose(vs, residual)
                 mixed_mass.mult(residual, vt)  # NOTE: already transposed above
