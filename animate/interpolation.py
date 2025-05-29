@@ -73,6 +73,8 @@ def transfer(source, target_space, transfer_method="project", **kwargs):
 
 
 def _validate_consistent_spaces(Vs, Vt):
+    if Vs._dual != Vt._dual:
+        raise ValueError("Spaces must be both primal or both dual.")
     if hasattr(Vs, "num_sub_spaces"):
         if not hasattr(Vt, "num_sub_spaces"):
             raise ValueError(
@@ -87,10 +89,6 @@ def _validate_consistent_spaces(Vs, Vt):
         raise ValueError(
             "Target space has multiple components but source space does not."
         )
-    if Vs._dual and not Vt._dual:
-        raise ValueError("Source space is a dual space but target space is not.")
-    if not Vs._dual and Vt._dual:
-        raise ValueError("Target space is a dual space but source space is not.")
 
 
 @PETSc.Log.EventDecorator()

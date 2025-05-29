@@ -186,6 +186,13 @@ class TestTransfer(unittest.TestCase):
         msg = f"Can only currently {transfer_method} Functions and Cofunctions."
         self.assertEqual(str(cm.exception), msg)
 
+    def test_primal_dual_inconsistency_error(self):
+        Vs = FunctionSpace(self.source_mesh, "CG", 1)
+        Vt = FunctionSpace(self.target_mesh, "CG", 1).dual()
+        with self.assertRaises(ValueError) as cm:
+            transfer(Function(Vs), Function(Vt))
+        self.assertEqual(str(cm.exception), "Spaces must be both primal or both dual.")
+
     @parameterized.expand(["interpolate", "project"])
     def test_no_sub_source_space(self, transfer_method):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
