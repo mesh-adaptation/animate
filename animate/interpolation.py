@@ -138,7 +138,7 @@ def _supermesh_project(source, target, bounded=False):
 
 
 @PETSc.Log.EventDecorator()
-def project(source, target, **kwargs):
+def project(source, target, bounded=False, **kwargs):
     r"""
     Overload :func:`firedrake.projection.project` to account for the case of mixed
     function spaces.
