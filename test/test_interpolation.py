@@ -166,14 +166,6 @@ class TestTransfer(unittest.TestCase):
         msg = "Invalid transfer method: proj. Options are 'interpolate' and 'project'."
         self.assertEqual(str(cm.exception), msg)
 
-    def test_method_typo_error(self):
-        Vs = FunctionSpace(self.source_mesh, "CG", 1)
-        Vt = FunctionSpace(self.target_mesh, "CG", 1)
-        with self.assertRaises(ValueError) as cm:
-            transfer(Function(Vs), Function(Vt), transfer_method="proj")
-        msg = "Invalid transfer method: proj. Options are 'interpolate' and 'project'."
-        self.assertEqual(str(cm.exception), msg)
-
     @parameterized.expand(["interpolate", "project"])
     def test_notimplemented_error(self, transfer_method):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
