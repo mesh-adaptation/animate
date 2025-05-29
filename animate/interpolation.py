@@ -167,15 +167,17 @@ def project(source, target, bounded=False, **kwargs):
                 t.project(s, **kwargs)
     else:
         for s, t in zip(source.subfunctions, target.subfunctions):
-            Vs = s.function_space()
-            Vt = t.function_space()
+            sf = cofunction2function(s)
+            tf = cofunction2function(t)
+            Vs = sf.function_space()
             ksp = petsc4py.KSP().create()
             ksp.setOperators(assemble_mass_matrix(Vs, lumped=bounded))
-            mixed_mass = assemble_mixed_mass_matrix(Vs, Vt)
-            with s.dat.vec_ro as vs, t.dat.vec_wo as vt:
+            mixed_mass = assemble_mixed_mass_matrix(Vs, tf.function_space())
+            with sf.dat.vec_ro as vs, tf.dat.vec_wo as vt:
                 residual = vs.copy()
                 ksp.solveTranspose(vs, residual)
                 mixed_mass.mult(residual, vt)  # NOTE: already transposed above
+            function2cofunction(tf, cofunc=t)
 
 
 @PETSc.Log.EventDecorator()
