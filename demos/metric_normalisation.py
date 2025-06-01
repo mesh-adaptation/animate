@@ -124,7 +124,7 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # oscillation and doesn't capture the background, high frequency oscillation at all.
 #
 # The formula for :math:`L^p` normalisation in the 2D case is given by
-# :cite:`Loseille:2011`
+# :cite:`Loseille:2011b`
 #
 # .. math::
 #     \mathcal M_{L^p}:=
