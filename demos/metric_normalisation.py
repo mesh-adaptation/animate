@@ -34,7 +34,7 @@
 # domain :math:`[-1,1]^2`. This sensor function was defined in :cite:`Olivier:2011` and
 # is interesting because it contains background oscillations, in addition to
 # larger-scale features. The idea of multi-scale mesh adaptation is to vary the spatial
-# resolution such that we are able to capture multiple such scales at the same time.::
+# resolution such that we are able to capture multiple such scales at the same time. ::
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -54,14 +54,10 @@ def sensor_fn(x, y):
 # more prominent, as it is bounded by :math:`\pm\frac{\pi}{2}\approx\pm1.5708`, whereas
 # the short wavelength profile is bounded by :math:`\pm0.1`.'
 #
-# Define a square mesh on :math:`[0,2]^2` and subtract 1 from each coordinate to get a
-# mesh of the desired domain. ::
+# Define a square mesh on :math:`[-1,1]^2`. ::
 
 n = 50
-base_mesh = SquareMesh(n, n, 2, 2)
-coords = Function(base_mesh.coordinates.function_space())
-coords.interpolate(base_mesh.coordinates - as_vector([1, 1]))
-base_mesh = Mesh(coords)
+base_mesh = RectangleMesh(n, n, 1, 1, originX=-1, originY=-1)
 
 # Interpolate the sensor function in a :math:`\mathbb{P}1` space defined on the initial
 # mesh and plot it. ::
@@ -183,8 +179,8 @@ plt.savefig("metric_normalisation-l2_mesh.jpg", bbox_inches="tight")
 #
 # .. rubric:: Exercise
 #
-#    Experiment with other intermediate normalisation orders such as :math:`p=4` or
-#    :math:`p=10` and consider the different ways in which the sensor's features
-#    manifest in the adapted meshes.
+# Experiment with other intermediate normalisation orders such as :math:`p=4` or
+# :math:`p=10` and consider the different ways in which the sensor's features
+# manifest in the adapted meshes.
 #
 # This demo can also be accessed as a `Python script <metric_normalisation.py>`__.
