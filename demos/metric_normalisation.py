@@ -5,14 +5,14 @@
 # explain the meaning of the normalisation parameter :math:`p`.
 #
 # Consider a Riemannian metric
-# :math:`\mathcal{M}=\{\underline{\mathbf{M}}(\mathbf{x})\}_{\mathbf{x}\in\Omega}` defined over a
-# domain :math:`\Omega`. We have no guarantee that the scaling of this metric is
-# appropriate for use in mesh adaptation for any particular problem. The primary purpose
-# of metric normalisation is to rescale appropriately. There are two main ways to do
-# this: to rescale such that a target metric complexity is achieved, or to rescale such
-# that interpolation error is below a given threshold (assuming that the metric is
-# Hessian-based). The former case is more often used in Animate and is used throughout
-# this demo.
+# :math:`\mathcal{M}=\{\underline{\mathbf{M}}(\mathbf{x})\}_{\mathbf{x}\in\Omega}`
+# defined over a domain :math:`\Omega`. We have no guarantee that the scaling of this
+# metric is appropriate for use in mesh adaptation for any particular problem. The
+# primary purpose of metric normalisation is to rescale appropriately. There are two
+# main ways to do this: to rescale such that a target metric complexity is achieved, or
+# to rescale such that interpolation error is below a given threshold (assuming that the
+# metric is Hessian-based). The former case is more often used in Animate and is used
+# throughout this demo.
 #
 # A naive approach is to rescale as
 #
@@ -23,7 +23,8 @@
 # where
 #
 # .. math::
-#     \mathcal{C}(\mathcal{M})=\int_\Omega\det(\underline{\mathbf{M}}(\mathbf{x}))\,\mathrm{d}x
+#     \mathcal{C}(\mathcal{M})
+#     =\int_\Omega\det(\underline{\mathbf{M}}(\mathbf{x}))\,\mathrm{d}x
 #
 # is the complexity of :math:`\mathcal{M}` and :math:`\mathcal{C}_T` is the target
 # complexity. This is actually a special case of the more general :math:`L^p`
@@ -128,7 +129,8 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # .. math::
 #     \mathcal M_{L^p}:=
 #     \mathcal C_T
-#     \:\left(\int_{\Omega}\mathrm{det}(\underline{\mathbf{M}}(\mathbf{x}))^{\frac p{2(p+1)}}
+#     \:\left(\int_{\Omega}
+#     \mathrm{det}(\underline{\mathbf{M}}(\mathbf{x}))^{\frac{p}{{2(p+1)}}}
 #     \;\mathrm dx\right)^{-1}
 #     \:\mathrm{det}(\underline{\mathbf{M}}(\mathbf{x}))^{-\frac1{2(p+1)}}
 #     \:\underline{\mathbf{M}}(\mathbf{x}),
