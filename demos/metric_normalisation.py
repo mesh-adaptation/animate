@@ -133,11 +133,6 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 #
 # where :math:`p\in[1,\infty)`.
 #
-# .. rubric:: Exercise
-#
-#     Convince yourself that
-#     :math:`\lim_{p\rightarrow\infty}\mathcal{M}_{L^p}=\mathcal{M}_{L^\infty}`.
-#
 # We've tried :math:`L^\infty` normalisation - the upper limit of the range of
 # acceptable values for :math:`p`. Now let's try the other end of the scale:
 # :math:`L^1` normalisation. ::
@@ -177,10 +172,12 @@ plt.savefig("metric_normalisation-l2_mesh.jpg", bbox_inches="tight")
 #    :figwidth: 90%
 #    :align: center
 #
-# .. rubric:: Exercise
+# .. rubric:: Exercises
 #
-# Experiment with other intermediate normalisation orders such as :math:`p=4` or
-# :math:`p=10` and consider the different ways in which the sensor's features
-# manifest in the adapted meshes.
+# 1. Convince yourself that
+#    :math:`\lim_{p\rightarrow\infty}\mathcal{M}_{L^p}=\mathcal{M}_{L^\infty}`.
+# 2. Experiment with other intermediate normalisation orders such as :math:`p=4` or
+#    :math:`p=10` and consider the different ways in which the sensor's features
+#    manifest in the adapted meshes.
 #
 # This demo can also be accessed as a `Python script <metric_normalisation.py>`__.
