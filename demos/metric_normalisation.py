@@ -121,17 +121,20 @@ plt.savefig("metric_normalisation-linf_mesh.jpg", bbox_inches="tight")
 # Note that the adapted mesh only really captures the more prominent, low frequency
 # oscillation and doesn't capture the background, high frequency oscillation at all.
 #
-# The general formula for :math:`L^p` normalisation is given by :cite:`Loseille:2011`
+# The formula for :math:`L^p` normalisation in the 2D case is given by
+# :cite:`Loseille:2011`
 #
 # .. math::
 #     \mathcal M_{L^p}:=
-#     \mathcal C_T^{\frac2n}
-#     \:\left(\int_{\Omega}\mathrm{det}(\underline{\mathbf M})^{\frac p{2p+n}}
-#     \;\mathrm dx\right)^{-\frac2n}
-#     \:\mathrm{det}(\mathcal M)^{-\frac1{2p+n}}
+#     \mathcal C_T
+#     \:\left(\int_{\Omega}\mathrm{det}(\underline{\mathbf M})^{\frac p{2(p+1)}}
+#     \;\mathrm dx\right)^{-1}
+#     \:\mathrm{det}(\mathcal M)^{-\frac1{2(p+1)}}
 #     \:\mathcal M,
 #
-# where :math:`p\in[1,\infty)`.
+# where :math:`p\in[1,\infty)`. (See `the long-form metric-based documentation
+# <https://mesh-adaptation.github.io/docs/animate/1-metric-based.html>`__ for the
+# general form).
 #
 # We've tried :math:`L^\infty` normalisation - the upper limit of the range of
 # acceptable values for :math:`p`. Now let's try the other end of the scale:
