@@ -1,9 +1,5 @@
 """
-Sensor functions defined in [Olivier 2011].
-
-Olivier, Géraldine. Anisotropic metric-based mesh
-adaptation for unsteady CFD simulations involving
-moving geometries. Diss. 2011.
+Sensor functions defined in :cite`Olivier:2011`.
 """
 
 import ufl
@@ -13,31 +9,23 @@ __all__ = ["bowl", "hyperbolic", "multiscale", "interweaved", "mesh_for_sensors"
 
 
 def bowl(*coords):
-    """
-    Quadratic bowl sensor function in arbitrary dimensions.
-    """
+    """Quadratic bowl sensor function in arbitrary dimensions."""
     return 0.5 * sum([xi**2 for xi in coords])
 
 
 def hyperbolic(x, y):
-    """
-    Hyperbolic sensor function in 2D.
-    """
+    """Hyperbolic sensor function in 2D."""
     sn = ufl.sin(50 * x * y)
     return ufl.conditional(abs(x * y) < 2 * ufl.pi / 50, 0.01 * sn, sn)
 
 
 def multiscale(x, y):
-    """
-    Multi-scale sensor function in 2D.
-    """
+    """Multi-scale sensor function in 2D."""
     return 0.1 * ufl.sin(50 * x) + ufl.atan(0.1 / (ufl.sin(5 * y) - 2 * x))
 
 
 def interweaved(x, y):
-    """
-    Interweaved sensor function in 2D.
-    """
+    """Interweaved sensor function in 2D."""
     return ufl.atan(0.1 / (ufl.sin(5 * y) - 2 * x)) + ufl.atan(
         0.5 / (ufl.sin(3 * y) - 7 * x)
     )
