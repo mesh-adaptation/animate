@@ -8,7 +8,8 @@ import numpy as np
 import sympy
 import ufl
 from firedrake.__future__ import interpolate
-from firedrake.petsc import OptionsManager, PETSc
+from firedrake.petsc import PETSc
+from petsctools import OptionsManager
 from pyop2 import op2
 
 from .interpolation import clement_interpolant
