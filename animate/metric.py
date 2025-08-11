@@ -9,8 +9,13 @@ import sympy
 import ufl
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
-from petsctools import OptionsManager
 from pyop2 import op2
+
+try:
+    # only works in firedrake release <=2025.4.x
+    from firedrake.petsc import OptionsManager
+except ImportError:
+    from petsctools import OptionsManager
 
 from .interpolation import clement_interpolant
 from .recovery import (
