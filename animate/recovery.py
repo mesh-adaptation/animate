@@ -152,7 +152,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     h = firedrake.assemble(
         interpolate(ufl.CellDiameter(mesh), firedrake.FunctionSpace(mesh, "DG", 0))
     )
-    h = firedrake.Constant(1 / h.vector().gather().max() ** 2)
+    h = firedrake.Constant(1 / h.dat.global_data.max() ** 2)
     sp = {
         "ksp_type": "gmres",
         "ksp_gmres_restart": 20,

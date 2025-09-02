@@ -496,13 +496,13 @@ class RiemannianMetric(ffunc.Function):
         a_max = interp(self._variable_parameters["dm_plex_metric_a_max"])
 
         # Check minimal h_min value is positive and smaller than minimal h_max value
-        _hmin = h_min.vector().gather().min()
+        _hmin = h_min.dat.global_data.min()
         if _hmin <= 0.0:
             raise ValueError(f"Encountered non-positive h_min value: {_hmin}.")
-        if h_max.vector().gather().min() < _hmin:
+        if h_max.dat.global_data.min() < _hmin:
             raise ValueError(
                 "Minimum h_max value is smaller than minimum h_min value:"
-                f"{h_max.vector().gather().min()} < {_hmin}."
+                f"{h_max.dat.global_data.min()} < {_hmin}."
             )
 
         # Check h_max is always at least h_min
@@ -512,7 +512,7 @@ class RiemannianMetric(ffunc.Function):
             raise ValueError("Encountered regions where h_max < h_min.")
 
         # Check minimal a_max value is close to unity or larger
-        _a_max = a_max.vector().gather().min()
+        _a_max = a_max.dat.global_data.min()
         if not np.isclose(_a_max, 1.0) and _a_max < 1.0:
             raise ValueError(f"Encountered a_max value smaller than unity: {_a_max}.")
 
@@ -934,7 +934,7 @@ class RiemannianMetric(ffunc.Function):
         )
 
     def _any_inf(self, f):
-        arr = f.vector().gather()
+        arr = f.dat.global_data
         return np.isinf(arr).any() or np.isnan(arr).any()
 
     @PETSc.Log.EventDecorator()
@@ -1002,7 +1002,7 @@ class RiemannianMetric(ffunc.Function):
         P0 = firedrake.FunctionSpace(mesh, "DG", 0)
         K_opt = pow(error_indicator, 1 / (convergence_rate + 1))
         K_opt_av = (
-            K_opt / firedrake.assemble(interpolate(K_opt, P0)).vector().gather().sum()
+            K_opt / firedrake.assemble(interpolate(K_opt, P0)).dat.global_data.sum()
         )
         K_ratio = target_complexity * pow(abs(K_opt_av * K_hat / K), 2 / dim)
 

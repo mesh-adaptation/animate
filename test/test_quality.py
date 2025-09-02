@@ -60,7 +60,7 @@ class TestQuality(unittest.TestCase):
         truth = Function(q.function_space()).assign(expected)
         self.assertAlmostEqual(errornorm(truth, q), 0.0, places=6)
         if measure == "area":
-            s = q.vector().gather().sum()
+            s = q.dat.global_data.sum()
             self.assertAlmostEqual(s, 1.0)
 
     @parameterized.expand(
@@ -79,7 +79,7 @@ class TestQuality(unittest.TestCase):
         truth = Function(q.function_space()).assign(expected)
         self.assertAlmostEqual(errornorm(truth, q), 0.0)
         if measure == "volume":
-            s = q.vector().gather().sum()
+            s = q.dat.global_data.sum()
             self.assertAlmostEqual(s, 1.0)
 
     @parameterized.expand(

@@ -76,7 +76,7 @@ def test_no_adapt(dim, serialise):
     Ensure mesh adaptation operations can be turned off.
     """
     mesh = uniform_mesh(dim)
-    dofs = mesh.coordinates.vector().gather().shape
+    dofs = mesh.coordinates.dat.global_data.shape
     mp = {
         "dm_plex_metric": {
             "no_insert": None,
@@ -87,13 +87,19 @@ def test_no_adapt(dim, serialise):
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
     newmesh = try_adapt(mesh, metric, serialise=serialise)
-    assert newmesh.coordinates.vector().gather().shape == dofs
+    assert newmesh.coordinates.dat.global_data.shape == dofs
 
 
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
     # "dim,serialise", [(3, True), (3, False)], ids=["mmg3d", "ParMmg"]  # Hangs (#136)
-    "dim,serialise", [(3, True),], ids=["mmg3d",]
+    "dim,serialise",
+    [
+        (3, True),
+    ],
+    ids=[
+        "mmg3d",
+    ],
 )
 def test_no_adapt_parallel(dim, serialise):
     """
@@ -160,7 +166,7 @@ def test_adapt(dim, serialise):
     Test that we can successfully invoke Mmg and that it changes the DoF count.
     """
     mesh = uniform_mesh(dim)
-    dofs = mesh.coordinates.vector().gather().shape
+    dofs = mesh.coordinates.dat.global_data.shape
     mp = {
         "dm_plex_metric": {
             "target_complexity": 100.0,
@@ -169,7 +175,7 @@ def test_adapt(dim, serialise):
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
     newmesh = try_adapt(mesh, metric, serialise=serialise)
-    assert newmesh.coordinates.vector().gather().shape != dofs
+    assert newmesh.coordinates.dat.global_data.shape != dofs
 
 
 @pytest.mark.parallel(nprocs=2)
@@ -191,7 +197,7 @@ def test_adapt_parallel_np2(dim, serialise):
 @pytest.mark.parametrize(
     "dim,serialise",
     [(2, True), (3, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
-    ids=["mmg2d", "mmg3d"], # ["mmg2d", "mmg3d", "ParMmg"],
+    ids=["mmg2d", "mmg3d"],  # ["mmg2d", "mmg3d", "ParMmg"],
 )
 def test_adapt_parallel_np3(dim, serialise):
     """
@@ -212,11 +218,11 @@ def test_enforce_spd_h_min(dim):
     h = 0.1
     metric = uniform_metric(mesh, a=1 / h**2)
     newmesh = try_adapt(mesh, metric)
-    num_vertices = newmesh.coordinates.vector().gather().shape[0]
+    num_vertices = newmesh.coordinates.dat.global_data.shape[0]
     metric.set_parameters({"dm_plex_metric_h_min": 0.2})  # h_min > h => h := h_min
     metric.enforce_spd(restrict_sizes=True)
     newmesh = try_adapt(mesh, metric)
-    assert newmesh.coordinates.vector().gather().shape[0] < num_vertices
+    assert newmesh.coordinates.dat.global_data.shape[0] < num_vertices
 
 
 @pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])
@@ -229,11 +235,11 @@ def test_enforce_spd_h_max(dim):
     h = 0.1
     metric = uniform_metric(mesh, a=1 / h**2)
     newmesh = try_adapt(mesh, metric)
-    num_vertices = newmesh.coordinates.vector().gather().shape[0]
+    num_vertices = newmesh.coordinates.dat.global_data.shape[0]
     metric.set_parameters({"dm_plex_metric_h_max": 0.05})  # h_max < h => h := h_max
     metric.enforce_spd(restrict_sizes=True)
     newmesh = try_adapt(mesh, metric)
-    assert newmesh.coordinates.vector().gather().shape[0] > num_vertices
+    assert newmesh.coordinates.dat.global_data.shape[0] > num_vertices
 
 
 # Debugging

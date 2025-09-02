@@ -707,7 +707,7 @@ class TestMetricDecompositions(MetricTestCase):
             for i in range(dim - 1):
                 f = Function(P1).interpolate(evalues[i])
                 f -= Function(P1).interpolate(evalues[i + 1])
-                if f.vector().gather().min() < 0.0:
+                if f.dat.global_data.min() < 0.0:
                     raise ValueError(
                         f"Eigenvalues are not in descending order: {evalues.dat.data}"
                     )
