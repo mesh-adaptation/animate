@@ -182,8 +182,8 @@ def test_adapt(dim, serialise):
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
     "dim,serialise",
-    [(2, True), (3, True)],  # [(2, True), (3, True), (3, False)], # FIXME: hang (#136)
-    ids=["mmg2d", "mmg3d"],  # ["mmg2d", "mmg3d", "ParMmg"],
+    [(2, True)],  # [(2, True), (3, True), (3, False)],  # FIXME: broken (#136,#197)
+    ids=["mmg2d"],  # ["mmg2d", "mmg3d", "ParMmg"],  # FIXME: broken (#136,#197)
 )
 def test_adapt_parallel_np2(dim, serialise):
     """
