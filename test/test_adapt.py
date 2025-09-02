@@ -144,7 +144,6 @@ def test_preserve_facet_tags_2d(meshname):
     metric = uniform_metric(mesh)
     newmesh = try_adapt(mesh, metric)
 
-    newmesh.init()
     tags = set(mesh.exterior_facets.unique_markers)
     newtags = set(newmesh.exterior_facets.unique_markers)
     assert tags == newtags, "Facet tags do not match"
