@@ -13,6 +13,7 @@ from pyop2 import op2
 from .interpolation import clement_interpolant
 from .math import construct_basis
 from .quality import QualityMeasure, include_dir
+from .utility import function_data_max
 
 __all__ = ["recover_gradient_l2", "recover_hessian_clement", "recover_boundary_hessian"]
 
@@ -152,7 +153,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     h = firedrake.assemble(
         interpolate(ufl.CellDiameter(mesh), firedrake.FunctionSpace(mesh, "DG", 0))
     )
-    h = firedrake.Constant(1 / h.vector().gather().max() ** 2)
+    h = firedrake.Constant(1 / function_data_max(h) ** 2)
     sp = {
         "ksp_type": "gmres",
         "ksp_gmres_restart": 20,

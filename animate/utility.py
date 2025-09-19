@@ -10,8 +10,10 @@ import firedrake.mesh as fmesh
 import ufl
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
+from mpi4py import MPI
 
-__all__ = ["Mesh", "VTKFile", "norm", "errornorm"]
+__all__ = ["Mesh", "VTKFile", "norm", "errornorm",
+           "function_data_min", "function_data_max", "function_data_sum"]
 
 
 @PETSc.Log.EventDecorator()
@@ -309,3 +311,21 @@ def function2cofunction(func):
     else:
         cofunc.dat.data_with_halos[:] = func.dat.data_with_halos
     return cofunc
+
+
+def function_data_min(f):
+    """Compute node-wise global minimum of Firedrake function"""
+    mesh = ufl.domain.extract_unique_domain(f)
+    return mesh.comm.allreduce(f.dat.data_ro.min(), MPI.MIN)
+
+
+def function_data_max(f):
+    """Compute node-wise global maximum of Firedrake function"""
+    mesh = ufl.domain.extract_unique_domain(f)
+    return mesh.comm.allreduce(f.dat.data_ro.max(), MPI.MAX)
+
+
+def function_data_sum(f):
+    """Compute global sum of nodal values of Firedrake function"""
+    mesh = ufl.domain.extract_unique_domain(f)
+    return mesh.comm.allreduce(f.dat.data_ro.sum(), MPI.SUM)
