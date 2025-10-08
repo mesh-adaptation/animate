@@ -47,6 +47,9 @@ Repository = "https://github.com/mesh-adaptation/animate"
 [tool.setuptools]
 packages = ["animate"]
 
+[tool.setuptools.package-data]
+animate = ["cxx/*.cxx"]
+
 [tool.ruff]
 line-length = 88
 
