@@ -1079,7 +1079,7 @@ class RiemannianMetric(ffunc.Function):
             hessians = [hessians]
         mesh = self.function_space().mesh()
         P1 = firedrake.FunctionSpace(mesh, "CG", 1)
-        for error_indicator, hessian in zip(error_indicators, hessians):
+        for error_indicator, hessian in zip(error_indicators, hessians, strict=False):
             if mesh != error_indicator.function_space().mesh():
                 raise ValueError("Cannot use an error indicator from a different mesh.")
             if mesh != hessian.function_space().mesh():

@@ -12,8 +12,15 @@ from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
 from mpi4py import MPI
 
-__all__ = ["Mesh", "VTKFile", "norm", "errornorm",
-           "function_data_min", "function_data_max", "function_data_sum"]
+__all__ = [
+    "Mesh",
+    "VTKFile",
+    "norm",
+    "errornorm",
+    "function_data_min",
+    "function_data_max",
+    "function_data_sum",
+]
 
 
 @PETSc.Log.EventDecorator()
@@ -90,7 +97,7 @@ class VTKFile(firedrake.output.VTKFile):
                     "Writing different number of functions: expected"
                     f" {len(self._fnames)}, got {len(functions)}."
                 )
-            for name, f in zip(self._fnames, functions):
+            for name, f in zip(self._fnames, functions, strict=False):
                 if f.name() != name:
                     f.rename(name)
         return super()._write_vtu(*functions)
@@ -231,7 +238,10 @@ def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):  # noqa: C901
     # Case 2: UFL norms for mixed function spaces
     elif hasattr(uh.function_space(), "num_sub_spaces"):
         if norm_type == "L2":
-            vv = [uu - uuh for uu, uuh in zip(u.subfunctions, uh.subfunctions)]
+            vv = [
+                uu - uuh
+                for uu, uuh in zip(u.subfunctions, uh.subfunctions, strict=False)
+            ]
             dX = ufl.ds if boundary else ufl.dx
             return ufl.sqrt(firedrake.assemble(sum([ufl.inner(v, v) for v in vv]) * dX))
         else:
