@@ -2,7 +2,6 @@
 Unit tests for invoking mesh adaptation tools Mmg2d, Mmg3d, and ParMmg.
 """
 
-import importlib.util
 import os
 
 import numpy as np
@@ -150,7 +149,7 @@ def test_preserve_facet_tags_2d(meshname):
 
 
 @pytest.mark.parametrize(
-    "dim,serialise", [(2, True), (3, True)], ids=["mmg2d", "mmg3d"])
+    "dim,serialise", [(2, True), (3, True)], ids=["mmg2d", "mmg3d"]
 )
 def test_adapt(dim, serialise):
     """
