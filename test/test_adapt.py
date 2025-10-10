@@ -27,9 +27,7 @@ def load_mesh(fname):
     :return: the mesh
     :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
-    firedrake_spec = importlib.util.find_spec("firedrake")
-    firedrake_basedir = os.path.dirname(os.path.dirname(firedrake_spec.origin))
-    mesh_dir = os.path.join(firedrake_basedir, "tests", "firedrake", "meshes")
+    mesh_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "meshes")
     return Mesh(os.path.join(mesh_dir, fname + ".msh"))
 
 
@@ -94,7 +92,13 @@ def test_no_adapt(dim, serialise):
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
     # "dim,serialise", [(3, True), (3, False)], ids=["mmg3d", "ParMmg"]  # Hangs (#136)
-    "dim,serialise", [(3, True),], ids=["mmg3d",]
+    "dim,serialise",
+    [
+        (3, True),
+    ],
+    ids=[
+        "mmg3d",
+    ],
 )
 def test_no_adapt_parallel(dim, serialise):
     """
