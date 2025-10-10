@@ -163,7 +163,7 @@ time_labels = [r"$t=0$", r"$t=T/2$"]
 c_values = [[c0_coarse, c0_fine], [c_coarse_final, c_fine_final]]
 meshes = [mesh_coarse, mesh_fine]
 for i in range(2):
-    for ax, c, mesh in zip(axes[i], c_values[i], meshes):
+    for ax, c, mesh in zip(axes[i], c_values[i], meshes, strict=False):
         im = tripcolor(c, axes=ax)
         ax.set_title(f"{mesh.num_vertices()} mesh vertices")
         ax.text(0.05, 0.05, time_labels[i], fontsize=12, color="white", ha="left")

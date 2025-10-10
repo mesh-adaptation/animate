@@ -215,7 +215,7 @@ plt.savefig("ping_pong-quantities_bounded.jpg", bbox_inches="tight")
 fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
 levels = [-0.05, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.05]
 labels = ["<0.0", "0.0", "0.2", "0.4", "0.6", "0.8", "1.0", ">1.0"]
-for ax, f in zip(axes.flatten(), (source, f_interp, f_proj, f_bounded)):
+for ax, f in zip(axes.flatten(), (source, f_interp, f_proj, f_bounded), strict=False):
     ax.set_title(f.name())
     im = tricontourf(f, axes=ax, levels=levels)
     ax.axis(False)

@@ -178,7 +178,7 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     _validate_matching_spaces(Vs, Vt)
     assert isinstance(target, firedrake.Function)
     if hasattr(Vt, "num_sub_spaces"):
-        for s, t in zip(source.subfunctions, target.subfunctions):
+        for s, t in zip(source.subfunctions, target.subfunctions, strict=False):
             if transfer_method == "interpolate":
                 t.interpolate(s, **kwargs)
             elif transfer_method == "project":
@@ -252,7 +252,7 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
         source_b_split = [source_b]
 
     # Apply adjoint transfer operator to each component
-    for i, (t_b, s_b) in enumerate(zip(target_b_split, source_b_split)):
+    for i, (t_b, s_b) in enumerate(zip(target_b_split, source_b_split, strict=False)):
         if transfer_method == "interpolate":
             raise NotImplementedError(
                 "Adjoint of interpolation operator not implemented."
