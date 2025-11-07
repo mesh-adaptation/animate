@@ -88,7 +88,7 @@ class RiemannianMetric(ffunc.Function):
         # Check that we have an appropriate tensor P1 function
         fs = self.function_space()
         mesh = fs.mesh()
-        tdim = mesh.topological_dimension()
+        tdim = mesh.topological_dimension
         if tdim not in (2, 3):
             raise ValueError(f"Riemannian metric should be 2D or 3D, not {tdim}D.")
         if isinstance(fs.dof_count, Iterable):
@@ -302,7 +302,7 @@ class RiemannianMetric(ffunc.Function):
         consistent.
         """
         entity_dofs = np.zeros(self._tdim + 1, dtype=np.int32)
-        entity_dofs[0] = self._mesh.geometric_dimension()
+        entity_dofs[0] = self._mesh.geometric_dimension
         coord_section = self._mesh.create_section(entity_dofs)[0]
         # NOTE: section doesn't have any fields, but PETSc assumes it to have one
         coord_dm = self._plex.getCoordinateDM()
@@ -517,7 +517,7 @@ class RiemannianMetric(ffunc.Function):
         if not np.isclose(_a_max, 1.0) and _a_max < 1.0:
             raise ValueError(f"Encountered a_max value smaller than unity: {_a_max}.")
 
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
         boundary_tag = self._variable_parameters.get("dm_plex_metric_boundary_tag")
         if boundary_tag is None:
             node_set = self.function_space().node_set
@@ -733,7 +733,7 @@ class RiemannianMetric(ffunc.Function):
         mesh = V_ten.mesh()
         fe = (V_ten.ufl_element().family(), V_ten.ufl_element().degree())
         V_vec = firedrake.VectorFunctionSpace(mesh, *fe)
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
         evectors, evalues = firedrake.Function(V_ten), firedrake.Function(V_vec)
         if reorder:
             name = "get_reordered_eigendecomposition"
@@ -787,7 +787,7 @@ class RiemannianMetric(ffunc.Function):
                 "Mismatching finite element space degrees:"
                 f" {fe_ten.degree()} vs. {fe_vec.degree()}."
             )
-        dim = V_ten.mesh().topological_dimension()
+        dim = V_ten.mesh().topological_dimension
         op2.par_loop(
             get_metric_kernel("set_eigendecomposition", dim),
             V_ten.node_set,
@@ -847,7 +847,7 @@ class RiemannianMetric(ffunc.Function):
         fs_ten = self.function_space()
         mesh = fs_ten.mesh()
         fe = (fs_ten.ufl_element().family(), fs_ten.ufl_element().degree())
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
         evectors, evalues = self.compute_eigendecomposition(reorder=reorder)
 
         # Extract density and quotients
@@ -885,7 +885,7 @@ class RiemannianMetric(ffunc.Function):
         mesh = ufl.domain.extract_unique_domain(error_indicator)
         if mesh != self.function_space().mesh():
             raise ValueError("Cannot use an error indicator from a different mesh.")
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
 
         # Interpolate P0 indicators into P1 space
         if interpolant == "Clement":
@@ -979,7 +979,7 @@ class RiemannianMetric(ffunc.Function):
         mesh = ufl.domain.extract_unique_domain(error_indicator)
         if mesh != self.function_space().mesh():
             raise ValueError("Cannot use an error indicator from a different mesh.")
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
         if convergence_rate < 1.0:
             raise ValueError(
                 f"Convergence rate must be at least one, not {convergence_rate}."
@@ -1079,7 +1079,7 @@ class RiemannianMetric(ffunc.Function):
             hessians = [hessians]
         mesh = self.function_space().mesh()
         P1 = firedrake.FunctionSpace(mesh, "CG", 1)
-        for error_indicator, hessian in zip(error_indicators, hessians):
+        for error_indicator, hessian in zip(error_indicators, hessians, strict=False):
             if mesh != error_indicator.function_space().mesh():
                 raise ValueError("Cannot use an error indicator from a different mesh.")
             if mesh != hessian.function_space().mesh():
@@ -1134,7 +1134,7 @@ def determine_metric_complexity(H_interior, H_boundary, target, p, **kwargs):
     :returns: unique solution of algebraic problem
     :rtype: :class:`float`
     """
-    d = H_interior.function_space().mesh().topological_dimension()
+    d = H_interior.function_space().mesh().topological_dimension
     if d not in (2, 3):
         raise ValueError(f"Spatial dimension {d} not supported.")
     if np.isinf(p):
@@ -1184,7 +1184,7 @@ def intersect_on_boundary(*metrics, boundary_tag="on_boundary"):
     n = len(metrics)
     assert n > 0, "Nothing to combine"
     fs = metrics[0].function_space()
-    dim = fs.mesh().topological_dimension()
+    dim = fs.mesh().topological_dimension
     if dim not in (2, 3):
         raise ValueError(
             f"Spatial dimension {dim} not supported. Must be either 2 or 3."

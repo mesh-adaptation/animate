@@ -2,7 +2,6 @@
 Unit tests for invoking mesh adaptation tools Mmg2d, Mmg3d, and ParMmg.
 """
 
-import importlib.util
 import os
 
 import numpy as np
@@ -27,9 +26,7 @@ def load_mesh(fname):
     :return: the mesh
     :rtype: :class:`firedrake.mesh.MeshGeometry`
     """
-    firedrake_spec = importlib.util.find_spec("firedrake")
-    firedrake_basedir = os.path.dirname(os.path.dirname(firedrake_spec.origin))
-    mesh_dir = os.path.join(firedrake_basedir, "tests", "firedrake", "meshes")
+    mesh_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "meshes")
     return Mesh(os.path.join(mesh_dir, fname + ".msh"))
 
 
@@ -93,8 +90,9 @@ def test_no_adapt(dim, serialise):
 
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
-    # "dim,serialise", [(3, True), (3, False)], ids=["mmg3d", "ParMmg"]  # Hangs (#136)
-    "dim,serialise", [(3, True),], ids=["mmg3d",]
+    "dim,serialise",
+    [(3, True), (3, False)],
+    ids=["mmg3d", "ParMmg"],  # Hangs (#136)
 )
 def test_no_adapt_parallel(dim, serialise):
     """
@@ -151,11 +149,7 @@ def test_preserve_facet_tags_2d(meshname):
 
 
 @pytest.mark.parametrize(
-    "dim,serialise",
-    # [(2, True), (3, True)],  # FIXME: Broken test (#197)
-    [(2, True)],
-    # ids=["mmg2d", "mmg3d"],  # FIXME: Broken test (#197)
-    ids=["mmg2d"],
+    "dim,serialise", [(2, True), (3, True)], ids=["mmg2d", "mmg3d"]
 )
 def test_adapt(dim, serialise):
     """
@@ -178,8 +172,8 @@ def test_adapt(dim, serialise):
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
     "dim,serialise",
-    [(2, True)],  # [(2, True), (3, True), (3, False)],  # FIXME: broken (#136,#197)
-    ids=["mmg2d"],  # ["mmg2d", "mmg3d", "ParMmg"],  # FIXME: broken (#136,#197)
+    [(2, True), (3, True), (3, False)],  # FIXME: broken (#136,#197)
+    ids=["mmg2d", "mmg3d", "ParMmg"],  # FIXME: broken (#136,#197)
 )
 def test_adapt_parallel_np2(dim, serialise):
     """
@@ -193,9 +187,8 @@ def test_adapt_parallel_np2(dim, serialise):
 @pytest.mark.parallel(nprocs=3)
 @pytest.mark.parametrize(
     "dim,serialise",
-    # [(2, True), (3, True), (3, False)],  # FIXME: broken tests (#136, #197)
-    [(2, True)],
-    ids=["mmg2d"],  # ["mmg2d", "mmg3d", "ParMmg"],  # FIXME: broken tests (#136, #197)
+    [(2, True), (3, True), (3, False)],  # FIXME: broken tests (#136, #197)
+    ids=["mmg2d", "mmg3d", "ParMmg"],  # FIXME: broken tests (#136, #197)
 )
 def test_adapt_parallel_np3(dim, serialise):
     """
@@ -206,13 +199,7 @@ def test_adapt_parallel_np3(dim, serialise):
     test_adapt(dim, serialise=serialise)
 
 
-@pytest.mark.parametrize(
-    "dim",
-    # [2, 3],  # FIXME: Broken test (#197)
-    [2],
-    # ids=["mmg2d", "mmg3d"]  # FIXME: Broken test (#197)
-    ids=["mmg2d"],
-)
+@pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])
 def test_enforce_spd_h_min(dim):
     """
     Tests that :meth:`animate.metric.RiemannianMetric.enforce_spd` applies minimum
@@ -230,13 +217,7 @@ def test_enforce_spd_h_min(dim):
     assert newdofs < dofs
 
 
-@pytest.mark.parametrize(
-    "dim",
-    # [2, 3],  # FIXME: Broken test (#197)
-    [2],
-    # ids=["mmg2d", "mmg3d"]  # FIXME: Broken test (#197)
-    ids=["mmg2d"],
-)
+@pytest.mark.parametrize("dim", [2, 3], ids=["mmg2d", "mmg3d"])
 def test_enforce_spd_h_max(dim):
     """
     Tests that :meth:`animate.metric.RiemannianMetric.enforce_spd` applies maximum

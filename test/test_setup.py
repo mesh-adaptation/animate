@@ -49,7 +49,7 @@ def uniform_metric(mesh, a=100.0, metric_parameters=None):
     else:
         function_space = mesh
         mesh = function_space.mesh()
-    dim = mesh.topological_dimension()
+    dim = mesh.topological_dimension
     metric = RiemannianMetric(function_space)
     metric.interpolate(a * ufl.Identity(dim))
     metric.set_parameters(metric_parameters)
