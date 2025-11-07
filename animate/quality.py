@@ -60,7 +60,7 @@ class QualityMeasure:
         self.mesh = mesh
         self.metric = metric
         self.python = python
-        self.dim = mesh.topological_dimension()
+        self.dim = mesh.topological_dimension
         self.coords = mesh.coordinates
         self.P0 = firedrake.FunctionSpace(mesh, "DG", 0)
         src_dir = os.path.join(os.path.dirname(__file__), "cxx")

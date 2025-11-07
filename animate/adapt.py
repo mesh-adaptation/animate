@@ -176,7 +176,7 @@ def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
     """
     nprocs = COMM_WORLD.size
 
-    dim = mesh.topological_dimension()
+    dim = mesh.topological_dimension
     if serialise is None:
         serialise = nprocs > 1 and dim != 3
     elif not serialise and dim != 3:

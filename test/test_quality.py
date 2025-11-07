@@ -37,7 +37,7 @@ class TestQuality(unittest.TestCase):
     """
 
     def quality(self, name, mesh, **kwargs):
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
         if name == "metric":
             P1_ten = TensorFunctionSpace(mesh, "CG", 1)
             M = Function(P1_ten).interpolate(ufl.Identity(dim))

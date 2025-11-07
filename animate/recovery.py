@@ -132,7 +132,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     """
 
     mesh = ufl.domain.extract_unique_domain(f)
-    d = mesh.topological_dimension()
+    d = mesh.topological_dimension
     assert d in (2, 3)
 
     # Apply Gram-Schmidt to get tangent vectors

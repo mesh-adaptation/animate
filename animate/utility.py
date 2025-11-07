@@ -50,7 +50,7 @@ def Mesh(arg, **kwargs):
         return mesh
     P0 = firedrake.FunctionSpace(mesh, "DG", 0)
     P1 = firedrake.FunctionSpace(mesh, "CG", 1)
-    dim = mesh.topological_dimension()
+    dim = mesh.topological_dimension
 
     # Facet area
     boundary_markers = sorted(mesh.exterior_facets.unique_markers)
