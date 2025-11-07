@@ -302,7 +302,7 @@ class RiemannianMetric(ffunc.Function):
         consistent.
         """
         entity_dofs = np.zeros(self._tdim + 1, dtype=np.int32)
-        entity_dofs[0] = self._mesh.geometric_dimension()
+        entity_dofs[0] = self._mesh.geometric_dimension
         coord_section = self._mesh.create_section(entity_dofs)[0]
         # NOTE: section doesn't have any fields, but PETSc assumes it to have one
         coord_dm = self._plex.getCoordinateDM()
