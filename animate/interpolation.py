@@ -24,7 +24,7 @@ __all__ = ["transfer", "interpolate", "project", "clement_interpolant"]
 @PETSc.Log.EventDecorator()
 def transfer(source, target_space, transfer_method="project", **kwargs):
     r"""
-    Overload functions :func:`firedrake.__future__.interpolate` and
+    Overload functions :func:`firedrake.interpolation.interpolate` and
     :func:`firedrake.projection.project` to account for the case of two mixed
     function spaces defined on different meshes and for the adjoint interpolation
     operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
@@ -46,7 +46,7 @@ def transfer(source, target_space, transfer_method="project", **kwargs):
     :rtype: :class:`firedrake.function.Function` or
         :class:`firedrake.cofunction.Cofunction`
 
-    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
+    Extra keyword arguments are passed to :func:`firedrake.interpolation.interpolate` or
         :func:`firedrake.projection.project`.
     """
     if transfer_method not in ("interpolate", "project"):
@@ -94,8 +94,8 @@ def _validate_consistent_spaces(Vs, Vt):
 @PETSc.Log.EventDecorator()
 def interpolate(source, target, **kwargs):
     r"""
-    Overload :func:`firedrake.__future__.interpolate` to account for the case of mixed
-    function spaces.
+    Overload :func:`firedrake.interpolation.interpolate` to account for the case of
+    mixed function spaces.
 
     :arg source: the function or cofunction to be transferred
     :type source: :class:`firedrake.function.Function` or
@@ -105,7 +105,7 @@ def interpolate(source, target, **kwargs):
     :type target: :class:`firedrake.function.Function` or
         :class:`firedrake.cofunction.Cofunction`
 
-    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate`
+    Extra keyword arguments are passed to :func:`firedrake.interpolation.interpolate`
     """
     _validate_consistent_spaces(source.function_space(), target.function_space())
     if hasattr(target.function_space(), "num_sub_spaces"):

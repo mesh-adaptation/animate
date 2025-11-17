@@ -6,7 +6,7 @@ import os
 
 import firedrake
 import ufl
-from firedrake.__future__ import interpolate
+from firedrake.interpolation import interpolate
 from firedrake.petsc import PETSc
 from pyop2 import op2
 

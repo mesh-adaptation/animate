@@ -8,7 +8,7 @@ import firedrake
 import firedrake.function as ffunc
 import firedrake.mesh as fmesh
 import ufl
-from firedrake.__future__ import interpolate
+from firedrake.interpolation import interpolate
 from firedrake.petsc import PETSc
 from mpi4py import MPI
 
