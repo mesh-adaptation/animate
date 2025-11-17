@@ -141,7 +141,7 @@ def _supermesh_project(source, target, bounded=False):
 def project(source, target, bounded=False, **kwargs):
     r"""
     Overload :func:`firedrake.projection.project` to account for the case of mixed
-    function spaces.
+    function spaces and handle dual Functions, with a bounded option.
 
     For details on the approach for achieving boundedness through mass lumping and
     post-processing, see :cite:`Farrell:2009`.
