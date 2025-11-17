@@ -64,8 +64,8 @@ plt.savefig("ping_pong-source_function.jpg", bbox_inches="tight")
 
 niter = 50
 initial_integral = assemble(source * dx)
-initial_min = source.vector().gather().min()
-initial_max = source.vector().gather().max()
+initial_min = function_data_min(source)
+initial_max = function_data_max(source)
 quantities = {
     "integral": {"interpolate": [initial_integral]},
     "minimum": {"interpolate": [initial_min]},
@@ -77,8 +77,8 @@ for _ in range(niter):
     interpolate(f_interp, tmp)
     interpolate(tmp, f_interp)
     quantities["integral"]["interpolate"].append(assemble(f_interp * dx))
-    quantities["minimum"]["interpolate"].append(f_interp.vector().gather().min())
-    quantities["maximum"]["interpolate"].append(f_interp.vector().gather().max())
+    quantities["minimum"]["interpolate"].append(function_data_min(f_interp))
+    quantities["maximum"]["interpolate"].append(function_data_max(f_interp))
 f_interp.rename("Interpolate")
 
 fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
@@ -139,8 +139,8 @@ for _ in range(niter):
     project(f_proj, tmp)
     project(tmp, f_proj)
     quantities["integral"]["project"].append(assemble(f_proj * dx))
-    quantities["minimum"]["project"].append(f_proj.vector().gather().min())
-    quantities["maximum"]["project"].append(f_proj.vector().gather().max())
+    quantities["minimum"]["project"].append(function_data_min(f_proj))
+    quantities["maximum"]["project"].append(function_data_max(f_proj))
 f_proj.rename("Project")
 
 fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
@@ -189,8 +189,8 @@ for _ in range(niter):
     project(f_bounded, tmp, bounded=True)
     project(tmp, f_bounded, bounded=True)
     quantities["integral"]["bounded"].append(assemble(f_bounded * dx))
-    quantities["minimum"]["bounded"].append(f_bounded.vector().gather().min())
-    quantities["maximum"]["bounded"].append(f_bounded.vector().gather().max())
+    quantities["minimum"]["bounded"].append(function_data_min(f_bounded))
+    quantities["maximum"]["bounded"].append(function_data_max(f_bounded))
 f_bounded.rename("Bounded project")
 
 fig, axes = plt.subplots(ncols=3, figsize=(18, 5))
@@ -215,7 +215,7 @@ plt.savefig("ping_pong-quantities_bounded.jpg", bbox_inches="tight")
 fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
 levels = [-0.05, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.05]
 labels = ["<0.0", "0.0", "0.2", "0.4", "0.6", "0.8", "1.0", ">1.0"]
-for ax, f in zip(axes.flatten(), (source, f_interp, f_proj, f_bounded)):
+for ax, f in zip(axes.flatten(), (source, f_interp, f_proj, f_bounded), strict=False):
     ax.set_title(f.name())
     im = tricontourf(f, axes=ax, levels=levels)
     ax.axis(False)

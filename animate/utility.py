@@ -10,8 +10,17 @@ import firedrake.mesh as fmesh
 import ufl
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
+from mpi4py import MPI
 
-__all__ = ["Mesh", "VTKFile", "norm", "errornorm"]
+__all__ = [
+    "Mesh",
+    "VTKFile",
+    "norm",
+    "errornorm",
+    "function_data_min",
+    "function_data_max",
+    "function_data_sum",
+]
 
 
 @PETSc.Log.EventDecorator()
@@ -41,7 +50,7 @@ def Mesh(arg, **kwargs):
         return mesh
     P0 = firedrake.FunctionSpace(mesh, "DG", 0)
     P1 = firedrake.FunctionSpace(mesh, "CG", 1)
-    dim = mesh.topological_dimension()
+    dim = mesh.topological_dimension
 
     # Facet area
     boundary_markers = sorted(mesh.exterior_facets.unique_markers)
@@ -88,7 +97,7 @@ class VTKFile(firedrake.output.VTKFile):
                     "Writing different number of functions: expected"
                     f" {len(self._fnames)}, got {len(functions)}."
                 )
-            for name, f in zip(self._fnames, functions):
+            for name, f in zip(self._fnames, functions, strict=False):
                 if f.name() != name:
                     f.rename(name)
         return super()._write_vtu(*functions)
@@ -229,7 +238,10 @@ def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):  # noqa: C901
     # Case 2: UFL norms for mixed function spaces
     elif hasattr(uh.function_space(), "num_sub_spaces"):
         if norm_type == "L2":
-            vv = [uu - uuh for uu, uuh in zip(u.subfunctions, uh.subfunctions)]
+            vv = [
+                uu - uuh
+                for uu, uuh in zip(u.subfunctions, uh.subfunctions, strict=False)
+            ]
             dX = ufl.ds if boundary else ufl.dx
             return ufl.sqrt(firedrake.assemble(sum([ufl.inner(v, v) for v in vv]) * dX))
         else:
@@ -315,3 +327,21 @@ def function2cofunction(func, cofunc=None):
     else:
         cofunc.dat.data_with_halos[:] = func.dat.data_with_halos
     return cofunc
+
+
+def function_data_min(f):
+    """Compute node-wise global minimum of Firedrake function"""
+    mesh = ufl.domain.extract_unique_domain(f)
+    return mesh.comm.allreduce(f.dat.data_ro.min(), MPI.MIN)
+
+
+def function_data_max(f):
+    """Compute node-wise global maximum of Firedrake function"""
+    mesh = ufl.domain.extract_unique_domain(f)
+    return mesh.comm.allreduce(f.dat.data_ro.max(), MPI.MAX)
+
+
+def function_data_sum(f):
+    """Compute global sum of nodal values of Firedrake function"""
+    mesh = ufl.domain.extract_unique_domain(f)
+    return mesh.comm.allreduce(f.dat.data_ro.sum(), MPI.SUM)

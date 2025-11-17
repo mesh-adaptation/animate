@@ -64,7 +64,7 @@ class TestClement(unittest.TestCase):
         elif rank == 1:
             return VectorFunctionSpace(self.mesh, family, degree)
         else:
-            shape = tuple(rank * [self.mesh.topological_dimension()])
+            shape = tuple(rank * [self.mesh.topological_dimension])
             return TensorFunctionSpace(self.mesh, family, degree, shape=shape)
 
     def analytic(self, rank):

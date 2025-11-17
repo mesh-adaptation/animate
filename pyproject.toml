@@ -7,13 +7,11 @@ version = "0.2"
 authors = [
   {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
   {name = "Davor Dundovic"},
-  {name = "Eleda Johnson"},
   {name = "Stephan C. Kramer"},
+  {name = "Eleda Johnson"},
 ]
 maintainers = [
   {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
-  {name = "Davor Dundovic"},
-  {name = "Eleda Johnson"},
   {name = "Stephan C. Kramer"},
 ]
 description = "Anisotropic mesh adaptation toolkit for Firedrake"

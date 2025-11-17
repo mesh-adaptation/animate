@@ -109,7 +109,7 @@ def interpolate(source, target, **kwargs):
     """
     _validate_consistent_spaces(source.function_space(), target.function_space())
     if hasattr(target.function_space(), "num_sub_spaces"):
-        for s, t in zip(source.subfunctions, target.subfunctions):
+        for s, t in zip(source.subfunctions, target.subfunctions, strict=True):
             t.interpolate(s, **kwargs)
     else:
         target.interpolate(source, **kwargs)
@@ -160,13 +160,13 @@ def project(source, target, bounded=False, **kwargs):
     """
     _validate_consistent_spaces(source.function_space(), target.function_space())
     if not source.function_space()._dual:
-        for s, t in zip(source.subfunctions, target.subfunctions):
+        for s, t in zip(source.subfunctions, target.subfunctions, strict=True):
             if bounded:
                 _supermesh_project(s, t, bounded=True)
             else:
                 t.project(s, **kwargs)
     else:
-        for s, t in zip(source.subfunctions, target.subfunctions):
+        for s, t in zip(source.subfunctions, target.subfunctions, strict=True):
             sf = cofunction2function(s)
             tf = cofunction2function(t)
             Vs = sf.function_space()
@@ -212,7 +212,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
     if rank not in (0, 1, 2):
         raise ValueError(f"Rank-{rank + 1} tensors are not supported.")
     mesh = Vs.mesh()
-    dim = mesh.topological_dimension()
+    dim = mesh.topological_dimension
 
     # Process target space
     Vt = target_space

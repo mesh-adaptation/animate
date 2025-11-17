@@ -25,6 +25,10 @@ modifications = {
         "simulation_end_time = T / 2.0": "simulation_end_time = T / 10.0",
         "num_adaptations = 15": "num_adaptations = 2",
     },
+    "metric_normalisation.py": {
+        "num_adapt = 4": "num_adapt = 1",
+        "target_complexity = 10000.0": "target_complexity = 100.0",
+    },
 }
 
 
@@ -52,9 +56,9 @@ def test_modifications_original_exists():
         with open(demo_path, "r") as file:
             demo_content = file.read()
             for original in changes.keys():
-                assert re.search(
-                    original, demo_content, re.DOTALL
-                ), f"Error: '{original}' not found in '{demo_name}'."
+                assert re.search(original, demo_content, re.DOTALL), (
+                    f"Error: '{original}' not found in '{demo_name}'."
+                )
 
 
 def test_demos(demo_file, tmpdir, monkeypatch):

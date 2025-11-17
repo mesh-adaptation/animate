@@ -16,6 +16,7 @@ from sensors import bowl, hyperbolic, interweaved, multiscale
 from test_setup import uniform_mesh, uniform_metric
 
 from animate.metric import P0Metric, RiemannianMetric
+from animate.utility import function_data_min
 
 
 class MetricTestCase(unittest.TestCase):
@@ -707,7 +708,7 @@ class TestMetricDecompositions(MetricTestCase):
             for i in range(dim - 1):
                 f = Function(P1).interpolate(evalues[i])
                 f -= Function(P1).interpolate(evalues[i + 1])
-                if f.vector().gather().min() < 0.0:
+                if function_data_min(f) < 0.0:
                     raise ValueError(
                         f"Eigenvalues are not in descending order: {evalues.dat.data}"
                     )

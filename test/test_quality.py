@@ -10,6 +10,7 @@ from parameterized import parameterized
 from test_setup import uniform_mesh
 
 from animate.quality import QualityMeasure
+from animate.utility import function_data_sum
 
 
 @pytest.fixture(params=[2, 3])
@@ -36,7 +37,7 @@ class TestQuality(unittest.TestCase):
     """
 
     def quality(self, name, mesh, **kwargs):
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
         if name == "metric":
             P1_ten = TensorFunctionSpace(mesh, "CG", 1)
             M = Function(P1_ten).interpolate(ufl.Identity(dim))
@@ -60,7 +61,7 @@ class TestQuality(unittest.TestCase):
         truth = Function(q.function_space()).assign(expected)
         self.assertAlmostEqual(errornorm(truth, q), 0.0, places=6)
         if measure == "area":
-            s = q.vector().gather().sum()
+            s = function_data_sum(q)
             self.assertAlmostEqual(s, 1.0)
 
     @parameterized.expand(
@@ -79,7 +80,7 @@ class TestQuality(unittest.TestCase):
         truth = Function(q.function_space()).assign(expected)
         self.assertAlmostEqual(errornorm(truth, q), 0.0)
         if measure == "volume":
-            s = q.vector().gather().sum()
+            s = function_data_sum(q)
             self.assertAlmostEqual(s, 1.0)
 
     @parameterized.expand(
