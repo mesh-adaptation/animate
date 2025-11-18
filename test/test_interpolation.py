@@ -22,13 +22,11 @@ from parameterized import parameterized
 
 from animate.interpolation import (
     _supermesh_project,
-    _transfer_adjoint,
-    _transfer_forward,
     clement_interpolant,
     project,
     transfer,
 )
-from animate.utility import function2cofunction
+from animate.utility import cofunction2function, function2cofunction
 
 
 class TestClement(unittest.TestCase):
@@ -168,15 +166,6 @@ class TestTransfer(unittest.TestCase):
         msg = "Invalid transfer method: proj. Options are 'interpolate' and 'project'."
         self.assertEqual(str(cm.exception), msg)
 
-    @parameterized.expand([_transfer_forward, _transfer_adjoint])
-    def test_method_typo_error_private(self, private_transfer_func):
-        Vs = FunctionSpace(self.source_mesh, "CG", 1)
-        Vt = FunctionSpace(self.target_mesh, "CG", 1)
-        with self.assertRaises(ValueError) as cm:
-            private_transfer_func(Function(Vs), Function(Vt), transfer_method="proj")
-        msg = "Invalid transfer method: proj. Options are 'interpolate' and 'project'."
-        self.assertEqual(str(cm.exception), msg)
-
     @parameterized.expand(["interpolate", "project"])
     def test_notimplemented_error(self, transfer_method):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
@@ -185,6 +174,13 @@ class TestTransfer(unittest.TestCase):
             transfer(2 * Function(Vs), Vt, transfer_method)
         msg = f"Can only currently {transfer_method} Functions and Cofunctions."
         self.assertEqual(str(cm.exception), msg)
+
+    def test_primal_dual_inconsistency_error(self):
+        Vs = FunctionSpace(self.source_mesh, "CG", 1)
+        Vt = FunctionSpace(self.target_mesh, "CG", 1).dual()
+        with self.assertRaises(ValueError) as cm:
+            transfer(Function(Vs), Function(Vt))
+        self.assertEqual(str(cm.exception), "Spaces must be both primal or both dual.")
 
     @parameterized.expand(["interpolate", "project"])
     def test_no_sub_source_space(self, transfer_method):
@@ -203,7 +199,7 @@ class TestTransfer(unittest.TestCase):
         Vt = Vt * Vt
         with self.assertRaises(ValueError) as cm:
             transfer(Cofunction(Vs.dual()), Cofunction(Vt.dual()), transfer_method)
-        msg = "Source space has multiple components but target space does not."
+        msg = "Target space has multiple components but source space does not."
         self.assertEqual(str(cm.exception), msg)
 
     @parameterized.expand(["interpolate", "project"])
@@ -223,7 +219,7 @@ class TestTransfer(unittest.TestCase):
         Vs = Vs * Vs
         with self.assertRaises(ValueError) as cm:
             transfer(Cofunction(Vs.dual()), Cofunction(Vt.dual()), transfer_method)
-        msg = "Target space has multiple components but source space does not."
+        msg = "Source space has multiple components but target space does not."
         self.assertEqual(str(cm.exception), msg)
 
     @parameterized.expand(["interpolate", "project"])
@@ -255,16 +251,14 @@ class TestTransfer(unittest.TestCase):
         expected = source
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_adjoint(self, transfer_method):
-        pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
-        source = Function(Vs).interpolate(self.sinusoid())
-        source = function2cofunction(source)
+        expected = Function(Vs).interpolate(self.sinusoid())
+        source = function2cofunction(expected)
         target = Cofunction(Vs.dual())
         transfer(source, target, transfer_method)
-        expected = source
-        self.assertAlmostEqual(errornorm(expected, target), 0)
+        self.assertAlmostEqual(errornorm(expected, cofunction2function(target)), 0)
 
     @parameterized.expand(["project", "interpolate"])
     def test_transfer_same_space_mixed(self, transfer_method):
@@ -279,20 +273,18 @@ class TestTransfer(unittest.TestCase):
         expected = source
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_space_mixed_adjoint(self, transfer_method):
-        pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
         Vs = P1 * P1
-        source = Function(Vs)
-        s1, s2 = source.subfunctions
-        s1.interpolate(self.sinusoid())
-        s2.interpolate(-self.sinusoid())
-        source = function2cofunction(source)
+        expected = Function(Vs)
+        e1, e2 = expected.subfunctions
+        e1.interpolate(self.sinusoid())
+        e2.interpolate(-self.sinusoid())
+        source = function2cofunction(expected)
         target = Cofunction(Vs.dual())
         transfer(source, target, transfer_method)
-        expected = source
-        self.assertAlmostEqual(errornorm(expected, target), 0)
+        self.assertAlmostEqual(errornorm(expected, cofunction2function(target)), 0)
 
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_mesh(self, transfer_method):
@@ -307,7 +299,7 @@ class TestTransfer(unittest.TestCase):
             expected = Function(Vt).project(source)
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_mesh_adjoint(self, transfer_method):
         pytest.skip()  # TODO: (#114)
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
@@ -343,7 +335,7 @@ class TestTransfer(unittest.TestCase):
             e2.project(s2)
         self.assertAlmostEqual(errornorm(expected, target), 0)
 
-    @parameterized.expand(["project"])  # TODO: interpolate (#113)
+    @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_mesh_mixed_adjoint(self, transfer_method):
         pytest.skip()  # TODO: (#114)
         P1 = FunctionSpace(self.source_mesh, "CG", 1)
@@ -377,11 +369,11 @@ class TestTransfer(unittest.TestCase):
     @parameterized.expand([(True, True), (True, False), (False, True), (False, False)])
     def test_supermesh_project(self, same_mesh, same_degree, tol=1.0e-07):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
+        x, y = ufl.SpatialCoordinate(self.source_mesh)
+        source = Function(Vs).interpolate(self.sinusoid())
         target_mesh = self.source_mesh if same_mesh else self.target_mesh
         target_degree = 1 if same_degree else 0
         Vt = FunctionSpace(target_mesh, "DG", target_degree)
-        x, y = ufl.SpatialCoordinate(self.source_mesh)
-        source = Function(Vs).interpolate(self.sinusoid())
         target = Function(Vt)
         _supermesh_project(source, target, bounded=False)
         expected = Function(Vt).project(source)
@@ -393,10 +385,11 @@ class TestTransfer(unittest.TestCase):
     @parameterized.expand([(True,), (False,)])
     def test_mass_lumping(self, same_mesh, tol=1.0e-08):
         Vs = FunctionSpace(self.source_mesh, "CG", 1)
-        target_mesh = self.source_mesh if same_mesh else self.target_mesh
-        Vt = FunctionSpace(target_mesh, "CG", 1)
         x, y = ufl.SpatialCoordinate(self.source_mesh)
         source = Function(Vs).interpolate(self.sinusoid())
-        target = project(source, Vt, bounded=True)
+        target_mesh = self.source_mesh if same_mesh else self.target_mesh
+        Vt = FunctionSpace(target_mesh, "CG", 1)
+        target = Function(Vt)
+        project(source, target, bounded=True)
         self.assertTrue(self.check_conservation(source, target, tol=tol))
         self.assertTrue(self.check_no_new_extrema(source, target, tol=tol))

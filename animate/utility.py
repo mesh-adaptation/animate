@@ -8,7 +8,7 @@ import firedrake
 import firedrake.function as ffunc
 import firedrake.mesh as fmesh
 import ufl
-from firedrake.__future__ import interpolate
+from firedrake.interpolation import interpolate
 from firedrake.petsc import PETSc
 from mpi4py import MPI
 
@@ -291,14 +291,17 @@ def assemble_mass_matrix(space, norm_type="L2", lumped=False):
         return mass_matrix.createDiagonal(x)
 
 
-def cofunction2function(cofunc):
+def cofunction2function(cofunc, func=None):
     """
     :arg cofunc: a cofunction
     :type cofunc: :class:`firedrake.cofunction.Cofunction`
+    :kwarg func: a function for the return value
+    :type func: :class:`firedrake.function.Function`
     :returns: a function with the same underyling data
     :rtype: :class:`firedrake.function.Function`
     """
-    func = ffunc.Function(cofunc.function_space().dual())
+    if func is None:
+        func = ffunc.Function(cofunc.function_space().dual())
     if isinstance(func.dat.data_with_halos, tuple):
         for i, arr in enumerate(func.dat.data_with_halos):
             arr[:] = cofunc.dat.data_with_halos[i]
@@ -307,14 +310,17 @@ def cofunction2function(cofunc):
     return func
 
 
-def function2cofunction(func):
+def function2cofunction(func, cofunc=None):
     """
     :arg func: a function
     :type func: :class:`firedrake.function.Function`
+    :kwarg cofunc: a cofunction for the return value
+    :type cofunc: :class:`firedrake.cofunction.Cofunction`
     :returns: a cofunction with the same underlying data
     :rtype: :class:`firedrake.cofunction.Cofunction`
     """
-    cofunc = firedrake.Cofunction(func.function_space().dual())
+    if cofunc is None:
+        cofunc = firedrake.Cofunction(func.function_space().dual())
     if isinstance(cofunc.dat.data_with_halos, tuple):
         for i, arr in enumerate(cofunc.dat.data_with_halos):
             arr[:] = func.dat.data_with_halos[i]

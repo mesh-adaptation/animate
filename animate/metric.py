@@ -7,7 +7,7 @@ import firedrake.mesh as fmesh
 import numpy as np
 import sympy
 import ufl
-from firedrake.__future__ import interpolate
+from firedrake.interpolation import interpolate
 from firedrake.petsc import PETSc
 from pyop2 import op2
 
