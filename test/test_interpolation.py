@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import pytest
 import ufl
+from adapt_common.utility import function2cofunction
 from firedrake.assemble import assemble
 from firedrake.cofunction import Cofunction
 from firedrake.constant import Constant
@@ -28,7 +29,6 @@ from animate.interpolation import (
     project,
     transfer,
 )
-from animate.utility import function2cofunction
 
 
 class TestClement(unittest.TestCase):

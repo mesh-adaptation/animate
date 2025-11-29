@@ -17,6 +17,8 @@ try:
 except ImportError:
     from petsctools import OptionsManager
 
+from adapt_common.reduction import function_data_min, function_data_sum
+
 from .interpolation import clement_interpolant
 from .recovery import (
     get_metric_kernel,
@@ -24,7 +26,6 @@ from .recovery import (
     recover_gradient_l2,
     recover_hessian_clement,
 )
-from .utility import function_data_min, function_data_sum
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 
@@ -1002,9 +1003,7 @@ class RiemannianMetric(ffunc.Function):
         # Get optimal element volume
         P0 = firedrake.FunctionSpace(mesh, "DG", 0)
         K_opt = pow(error_indicator, 1 / (convergence_rate + 1))
-        K_opt_av = (
-            K_opt / function_data_sum(firedrake.assemble(interpolate(K_opt, P0)))
-        )
+        K_opt_av = K_opt / function_data_sum(firedrake.assemble(interpolate(K_opt, P0)))
         K_ratio = target_complexity * pow(abs(K_opt_av * K_hat / K), 2 / dim)
 
         if self._any_inf(firedrake.assemble(interpolate(K_ratio, P0))):

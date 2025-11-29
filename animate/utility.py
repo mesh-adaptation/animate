@@ -8,19 +8,11 @@ import firedrake
 import firedrake.function as ffunc
 import firedrake.mesh as fmesh
 import ufl
+from adapt_common.utility import cofunction2function
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
-from mpi4py import MPI
 
-__all__ = [
-    "Mesh",
-    "VTKFile",
-    "norm",
-    "errornorm",
-    "function_data_min",
-    "function_data_max",
-    "function_data_sum",
-]
+__all__ = ["Mesh", "norm", "errornorm"]
 
 
 @PETSc.Log.EventDecorator()
@@ -68,39 +60,6 @@ def Mesh(arg, **kwargs):
         mesh.delta_x = firedrake.assemble(interpolate(ufl.CellDiameter(mesh), P0))
 
     return mesh
-
-
-class VTKFile(firedrake.output.VTKFile):
-    """
-    Overload :class:`firedrake.output.VTKFile` so that it uses ``adaptive`` mode by
-    default.
-
-    Whilst this means that the mesh topology is recomputed at every export, it removes
-    any need for the user to reset it manually.
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("adaptive", True)
-        super().__init__(*args, **kwargs)
-
-    def _write_vtu(self, *functions):
-        """
-        Overload the Firedrake functionality under the blind assumption that the same
-        list of functions are outputted each time (albeit on different meshes).
-
-        The arguments and return values are the same as for
-        :meth:`firedrake.output.File._write_vtu`.
-        """
-        if self._fnames is not None:
-            if len(self._fnames) != len(functions):
-                raise ValueError(
-                    "Writing different number of functions: expected"
-                    f" {len(self._fnames)}, got {len(functions)}."
-                )
-            for name, f in zip(self._fnames, functions, strict=False):
-                if f.name() != name:
-                    f.rename(name)
-        return super()._write_vtu(*functions)
 
 
 @PETSc.Log.EventDecorator()
@@ -254,88 +213,3 @@ def errornorm(u, uh, norm_type="L2", boundary=False, **kwargs):  # noqa: C901
         v = u - uh
 
     return norm(v, norm_type=norm_type, **kwargs)
-
-
-@PETSc.Log.EventDecorator()
-def assemble_mass_matrix(space, norm_type="L2", lumped=False):
-    """
-    Assemble a mass matrix associated with some finite element space and norm.
-
-    :arg space: function space to build the mass matrix with
-    :type space: :class:`firedrake.functionspaceimpl.FunctionSpace`
-    :kwarg norm_type: the type norm to build the mass matrix with
-    :type norm_type: :class:`str`
-    :kwarg lumped: if `True`, mass lumping is applied
-    :type lumped: :class:`bool`
-    :returns: the corresponding mass matrix
-    :rtype: petsc4py.PETSc.Mat
-    """
-    trial = firedrake.TrialFunction(space)
-    test = firedrake.TestFunction(space)
-    if norm_type == "L2":
-        lhs = ufl.inner(trial, test) * ufl.dx
-    elif norm_type == "H1":
-        lhs = (
-            ufl.inner(trial, test) * ufl.dx
-            + ufl.inner(ufl.grad(trial), ufl.grad(test)) * ufl.dx
-        )
-    else:
-        raise ValueError(f"Norm type '{norm_type}' not recognised.")
-    mass_matrix = firedrake.assemble(lhs).petscmat
-    if not lumped:
-        return mass_matrix
-    rhs = ffunc.Function(space).assign(1.0)
-    product = ffunc.Function(space)
-    with rhs.dat.vec_ro as b, product.dat.vec as x:
-        mass_matrix.mult(b, x)
-        return mass_matrix.createDiagonal(x)
-
-
-def cofunction2function(cofunc):
-    """
-    :arg cofunc: a cofunction
-    :type cofunc: :class:`firedrake.cofunction.Cofunction`
-    :returns: a function with the same underyling data
-    :rtype: :class:`firedrake.function.Function`
-    """
-    func = ffunc.Function(cofunc.function_space().dual())
-    if isinstance(func.dat.data_with_halos, tuple):
-        for i, arr in enumerate(func.dat.data_with_halos):
-            arr[:] = cofunc.dat.data_with_halos[i]
-    else:
-        func.dat.data_with_halos[:] = cofunc.dat.data_with_halos
-    return func
-
-
-def function2cofunction(func):
-    """
-    :arg func: a function
-    :type func: :class:`firedrake.function.Function`
-    :returns: a cofunction with the same underlying data
-    :rtype: :class:`firedrake.cofunction.Cofunction`
-    """
-    cofunc = firedrake.Cofunction(func.function_space().dual())
-    if isinstance(cofunc.dat.data_with_halos, tuple):
-        for i, arr in enumerate(cofunc.dat.data_with_halos):
-            arr[:] = func.dat.data_with_halos[i]
-    else:
-        cofunc.dat.data_with_halos[:] = func.dat.data_with_halos
-    return cofunc
-
-
-def function_data_min(f):
-    """Compute node-wise global minimum of Firedrake function"""
-    mesh = ufl.domain.extract_unique_domain(f)
-    return mesh.comm.allreduce(f.dat.data_ro.min(), MPI.MIN)
-
-
-def function_data_max(f):
-    """Compute node-wise global maximum of Firedrake function"""
-    mesh = ufl.domain.extract_unique_domain(f)
-    return mesh.comm.allreduce(f.dat.data_ro.max(), MPI.MAX)
-
-
-def function_data_sum(f):
-    """Compute global sum of nodal values of Firedrake function"""
-    mesh = ufl.domain.extract_unique_domain(f)
-    return mesh.comm.allreduce(f.dat.data_ro.sum(), MPI.SUM)

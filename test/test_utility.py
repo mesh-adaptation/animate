@@ -1,4 +1,3 @@
-import os
 import unittest
 
 import numpy as np
@@ -7,11 +6,10 @@ from firedrake.function import Function
 from firedrake.functionspace import FunctionSpace, VectorFunctionSpace
 from firedrake.norms import errornorm as ferrnorm
 from firedrake.norms import norm as fnorm
-from firedrake.utility_meshes import UnitSquareMesh, UnitTriangleMesh
 from parameterized import parameterized
 from test_setup import uniform_mesh
 
-from animate.utility import VTKFile, assemble_mass_matrix, errornorm, norm
+from animate.utility import errornorm, norm
 
 pointwise_norm_types = [["l1"], ["l2"], ["linf"]]
 integral_scalar_norm_types = [["L1"], ["L2"], ["L4"], ["H1"], ["HCurl"]]
@@ -20,76 +18,6 @@ scalar_norm_types = pointwise_norm_types + integral_scalar_norm_types
 # ---------------------------
 # standard tests for pytest
 # ---------------------------
-
-
-class TestVTK(unittest.TestCase):
-    """
-    Test the subclass of Firedrake's :class:`VTKFile`.
-    """
-
-    def setUp(self):
-        self.fs = FunctionSpace(UnitSquareMesh(1, 1), "CG", 1)
-        self.fname = os.path.join(os.path.dirname(__file__), "tmp.pvd")
-
-    def tearDown(self):
-        fname = os.path.splitext(self.fname)[0]
-        for ext in (".pvd", "_0.vtu", "_1.vtu"):
-            if os.path.exists(fname + ext):
-                os.remove(fname + ext)
-
-    def test_adaptive(self):
-        file = VTKFile(self.fname)
-        self.assertTrue(os.path.exists(self.fname))
-        self.assertTrue(file._adaptive)
-
-    def test_different_fnames(self):
-        f = Function(self.fs, name="f")
-        g = Function(self.fs, name="g")
-        file = VTKFile(self.fname)
-        file.write(f)
-        file.write(g)
-        self.assertEqual("f", g.name())
-
-    def test_different_lengths(self):
-        f = Function(self.fs, name="f")
-        g = Function(self.fs, name="g")
-        file = VTKFile(self.fname)
-        file.write(f)
-        with self.assertRaises(ValueError) as cm:
-            file.write(f, g)
-        msg = "Writing different number of functions: expected 1, got 2."
-        self.assertEqual(str(cm.exception), msg)
-
-
-class TestMassMatrix(unittest.TestCase):
-    """
-    Unit tests for :func:`~.assemble_mass_matrix`.
-    """
-
-    @parameterized.expand([("L2",), ("H1",)])
-    def test_tiny(self, norm_type):
-        mesh = uniform_mesh(2, 1)
-        V = FunctionSpace(mesh, "DG", 0)
-        matrix = assemble_mass_matrix(V, norm_type=norm_type)
-        expected = np.array([[0.5, 0], [0, 0.5]])
-        got = matrix.convert("dense").getDenseArray()
-        self.assertTrue(np.allclose(expected, got))
-
-    def test_norm_type_error(self):
-        mesh = uniform_mesh(2, 1)
-        V = FunctionSpace(mesh, "DG", 0)
-        with self.assertRaises(ValueError) as cm:
-            assemble_mass_matrix(V, norm_type="HDiv")
-        self.assertEqual(str(cm.exception), "Norm type 'HDiv' not recognised.")
-
-    def test_lumping(self):
-        mesh = UnitTriangleMesh()
-        fs = FunctionSpace(mesh, "CG", 1)
-        matrix = assemble_mass_matrix(fs, norm_type="L2", lumped=True)
-        self.assertEqual(matrix.type, "diagonal")
-        expected = np.eye(3) / 6
-        got = matrix.convert("dense").getDenseArray()
-        self.assertTrue(np.allclose(expected, got))
 
 
 class TestNorm(unittest.TestCase):
