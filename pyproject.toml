@@ -3,7 +3,7 @@ requires = ["setuptools"]
 
 [project]
 name = "animate"
-version = "0.2"
+version = "0.3"
 authors = [
   {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
   {name = "Davor Dundovic"},
