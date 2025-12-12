@@ -47,7 +47,9 @@ packages = ["animate", "adapt_common"]
 
 [tool.setuptools.package-data]
 animate = ["cxx/*.cxx"]
-adapt_common = ["adapt_common/adapt_common/*.py"]
+
+[tool.setuptools.package-dir]
+adapt_common = "adapt_common/adapt_common"
 
 [tool.ruff]
 line-length = 88
