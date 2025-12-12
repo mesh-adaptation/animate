@@ -9,6 +9,7 @@ on:
       - '**.py'
       - '**.cxx'
       - '.github/workflows/test_suite.yml'
+      - '.gitmodules'
       - 'pyproject.toml'
 
   # Run test suite whenever commits are pushed to an open PR
@@ -17,6 +18,7 @@ on:
       - '**.py'
       - '**.cxx'
       - '.github/workflows/test_suite.yml'
+      - '.gitmodules'
       - 'pyproject.toml'
 
   # Run test suite every Sunday at 1AM
