@@ -43,10 +43,11 @@ Documentation = "https://mesh-adaptation.github.io/animate/index.html"
 Repository = "https://github.com/mesh-adaptation/animate"
 
 [tool.setuptools]
-packages = ["animate"]
+packages = ["animate", "adapt_common"]
 
 [tool.setuptools.package-data]
 animate = ["cxx/*.cxx"]
+adapt_common = ["adapt_common/adapt_common/*.py"]
 
 [tool.ruff]
 line-length = 88
