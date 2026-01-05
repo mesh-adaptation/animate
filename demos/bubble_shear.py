@@ -40,6 +40,7 @@
 # where :math:`T` is the period. At each timestep of the simulation we will update this
 # field so we define a function that will return its vector expression. ::
 
+import numpy as np
 from firedrake import *
 
 T = 6.0
