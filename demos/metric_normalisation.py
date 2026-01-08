@@ -40,6 +40,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import ufl
 from firedrake import *
 from firedrake.pyplot import *
 
