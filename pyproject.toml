@@ -3,7 +3,7 @@ requires = ["setuptools"]
 
 [project]
 name = "animate"
-version = "0.2"
+version = "0.3"
 authors = [
   {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
   {name = "Davor Dundovic"},
@@ -43,10 +43,13 @@ Documentation = "https://mesh-adaptation.github.io/animate/index.html"
 Repository = "https://github.com/mesh-adaptation/animate"
 
 [tool.setuptools]
-packages = ["animate"]
+packages = ["animate", "adapt_common"]
 
 [tool.setuptools.package-data]
 animate = ["cxx/*.cxx"]
+
+[tool.setuptools.package-dir]
+adapt_common = "adapt_common/adapt_common"
 
 [tool.ruff]
 line-length = 88

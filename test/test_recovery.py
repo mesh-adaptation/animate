@@ -5,6 +5,7 @@ Test derivative recovery techniques.
 import unittest
 
 import ufl
+from adapt_common.norms import errornorm, norm
 from firedrake.assemble import assemble
 from firedrake.constant import Constant
 from firedrake.function import Function
@@ -14,7 +15,6 @@ from sensors import bowl, mesh_for_sensors
 
 from animate.math import construct_basis
 from animate.metric import RiemannianMetric
-from animate.utility import errornorm, norm
 
 # ---------------------------
 # standard tests for pytest
