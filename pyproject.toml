@@ -16,7 +16,8 @@ maintainers = [
 ]
 description = "Anisotropic mesh adaptation toolkit for Firedrake"
 readme = "README.md"
-license = {file = "LICENSE"}
+license-files = ["LICENSE"]
+license = "MIT"
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
