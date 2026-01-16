@@ -1,0 +1,24 @@
+name: 'Run Animate test suite (release)'
+
+on:
+  # Run test suite whenever the release branch is updated
+  push:
+    branches:
+      - release
+    paths:
+      - '.github/workflows/test_suite_release.yml'
+
+  # Run test suite whenever commits that change this workflow are pushed to an open PR
+  pull_request:
+    paths:
+      - '.github/workflows/test_suite_release.yml'
+
+  # Run test suite at 3AM on the first of the month
+  schedule:
+    - cron: '0 3 1 * *'
+
+jobs:
+  test_suite:
+    uses: mesh-adaptation/docs/.github/workflows/reusable_test_suite.yml@main
+    with:
+      docker-image: 'firedrake-parmmg-release'

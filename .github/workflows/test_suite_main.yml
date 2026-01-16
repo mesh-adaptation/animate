@@ -1,14 +1,14 @@
-name: 'Run Animate Test Suite'
+name: 'Run Animate test suite (main)'
 
 on:
-  # Run test suite whenever main is updated
+  # Run test suite whenever the main branch is updated
   push:
     branches:
       - main
     paths:
       - '**.py'
       - '**.cxx'
-      - '.github/workflows/test_suite.yml'
+      - '.github/workflows/test_suite_main.yml'
       - '.gitmodules'
       - 'pyproject.toml'
 
@@ -17,7 +17,7 @@ on:
     paths:
       - '**.py'
       - '**.cxx'
-      - '.github/workflows/test_suite.yml'
+      - '.github/workflows/test_suite_main.yml'
       - '.gitmodules'
       - 'pyproject.toml'
 
@@ -28,3 +28,5 @@ on:
 jobs:
   test_suite:
     uses: mesh-adaptation/docs/.github/workflows/reusable_test_suite.yml@main
+    with:
+      docker-image: 'firedrake-parmmg'
