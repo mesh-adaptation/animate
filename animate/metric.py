@@ -109,7 +109,7 @@ class RiemannianMetric(ffunc.Function):
         self._tdim = tdim
 
         # Ensure DMPlex coordinates are consistent
-        self._set_plex_coordinates()
+        # self._set_plex_coordinates()
 
         # Adjust the section
         entity_dofs = np.zeros(tdim + 1, dtype=np.int32)
