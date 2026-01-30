@@ -17,13 +17,13 @@ try:
 except ImportError:
     from petsctools import OptionsManager
 
+from adapt_common.recovery import recover_gradient_l2
 from adapt_common.reduction import function_data_min, function_data_sum
 
 from .interpolation import clement_interpolant
 from .recovery import (
     get_metric_kernel,
     recover_boundary_hessian,
-    recover_gradient_l2,
     recover_hessian_clement,
 )
 
