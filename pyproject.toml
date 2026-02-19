@@ -47,7 +47,10 @@ Repository = "https://github.com/mesh-adaptation/animate"
 packages = ["animate", "adapt_common"]
 
 [tool.setuptools.package-data]
-animate = ["cxx/*.cxx"]
+animate = [
+  "cxx/*.cxx",
+  "cython/*.pyx",
+]
 
 [tool.setuptools.package-dir]
 adapt_common = "adapt_common/adapt_common"
