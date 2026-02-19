@@ -23,6 +23,7 @@ classifiers = [
   "Programming Language :: Python",
 ]
 dependencies = [
+  "Cython",
   "sympy",
   "vtk",
 ]
@@ -45,6 +46,9 @@ Repository = "https://github.com/mesh-adaptation/animate"
 
 [tool.setuptools]
 packages = ["animate", "adapt_common"]
+ext-modules = [
+  {name = "animate.cython.numbering", sources = ["animate/cython/numbering.pyx"], language = "c", depends = ["petsc", "numpy"]}
+]
 
 [tool.setuptools.package-data]
 animate = [
