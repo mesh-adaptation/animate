@@ -93,9 +93,6 @@ select = [
   "F403",  # unable to detect undefined names
   "F405",  # name may be undefined, or defined from star imports
 ]
-"build_helpers/__init__.py" = [
-  "C901",  # function is too complex
-]
 
 [tool.pytest.ini_options]
 filterwarnings = [
