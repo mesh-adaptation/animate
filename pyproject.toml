@@ -1,5 +1,14 @@
 [build-system]
-requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+requires = [
+  "Cython",
+  "firedrake",
+  "numpy",
+  "petsc4py",
+  "petsctools",
+  "setuptools>=77.0.3",
+  "wheel",
+]
 
 [project]
 name = "animate"
@@ -23,7 +32,6 @@ classifiers = [
   "Programming Language :: Python",
 ]
 dependencies = [
-  "Cython",
   "sympy",
   "vtk",
 ]
@@ -44,11 +52,19 @@ Homepage = "https://mesh-adaptation.github.io"
 Documentation = "https://mesh-adaptation.github.io/animate/index.html"
 Repository = "https://github.com/mesh-adaptation/animate"
 
+# Note:
+# - Extension modules are generated dynamically at build time using the legacy
+#   helper (`setup.py`) which performs PETSc detection and populates Extension
+#   objects based on the local PETSc installation (via petsctools/petsc4py).
+# - We intentionally do not declare ext-modules statically here so the build
+#   helper can compute include/library dirs and other flags based on an
+#   existing PETSc build.
+#
+# The build backend requirements above ensure that, during isolated builds,
+# the build environment will have Cython, numpy, petsctools, petsc4py, etc.
+# available before the build helper runs Cython to generate .c files.
 [tool.setuptools]
 packages = ["animate", "adapt_common"]
-ext-modules = [
-  {name = "animate.cython.numbering", sources = ["animate/cython/numbering.pyx"], language = "c", depends = ["petsc", "numpy"]}
-]
 
 [tool.setuptools.package-data]
 animate = [
@@ -70,15 +86,19 @@ select = [
   "F",  # Pyflakes
   "I",  # isort
 ]
+
 [tool.ruff.lint.per-file-ignores]
 "demos/*" = [
   "E402",  # module level import not at top of file
   "F403",  # unable to detect undefined names
   "F405",  # name may be undefined, or defined from star imports
 ]
+"build_helpers/__init__.py" = [
+  "C901",  # function is too complex
+]
 
 [tool.pytest.ini_options]
 filterwarnings = [
-	"ignore:`np.bool8` is a deprecated alias for `np.bool_`*:DeprecationWarning",
-	"ignore:unable to find git revision*:UserWarning",
+  "ignore:`np.bool8` is a deprecated alias for `np.bool_`*:DeprecationWarning",
+  "ignore:unable to find git revision*:UserWarning",
 ]
