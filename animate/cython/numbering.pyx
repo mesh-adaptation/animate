@@ -1,3 +1,6 @@
+"""
+Cython module for handling numberings of PETSc Vecs corresponding to Firedrake Functions.
+"""
 import numpy as np
 from firedrake.petsc import PETSc
 from firedrake.utils import IntType, ScalarType
