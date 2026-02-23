@@ -1,11 +1,11 @@
 import abc
 import os
+from functools import cached_property
 from shutil import rmtree
 
 import firedrake.checkpointing as fchk
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
-import firedrake.utils as futils
 from firedrake import COMM_SELF, COMM_WORLD
 from firedrake.cython.dmcommon import to_petsc_local_numbering
 from firedrake.petsc import PETSc
@@ -87,7 +87,7 @@ class MetricBasedAdaptor(AdaptorBase):
         self.metric = metric
         self.projectors = []
 
-    @futils.cached_property
+    @cached_property
     @PETSc.Log.EventDecorator()
     def adapted_mesh(self):
         """
