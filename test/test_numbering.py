@@ -3,7 +3,6 @@
 import firedrake as fd
 import numpy as np
 import pytest
-
 from animate.cython.numbering import to_petsc_local_numbering
 
 
