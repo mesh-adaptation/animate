@@ -97,10 +97,9 @@ class MetricBasedAdaptor(AdaptorBase):
         :rtype: :class:`firedrake.mesh.MeshGeometry`
         """
         self.metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
-        size = self.metric.dat.dataset.layout_vec.getSizes()
-        data = self.metric.dat._data[: size[0]]
+        data = self.metric.dat.data_ro_with_halos
         v = PETSc.Vec().createWithArray(
-            data, size=size, bsize=self.metric.dat.cdim, comm=self.mesh.comm
+            data, size=data.size, bsize=self.metric.dat.cdim, comm=COMM_SELF
         )
         reordered = to_petsc_local_numbering(v, self.metric.function_space())
         v.destroy()
