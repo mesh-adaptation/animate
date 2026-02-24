@@ -7,11 +7,11 @@ import firedrake.checkpointing as fchk
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
 from firedrake import COMM_SELF, COMM_WORLD
-from firedrake.cython.dmcommon import to_petsc_local_numbering
 from firedrake.petsc import PETSc
 from firedrake.projection import Projector
 
 from .checkpointing import get_checkpoint_dir, load_checkpoint, save_checkpoint
+from .cython.numbering import to_petsc_local_numbering
 from .metric import RiemannianMetric
 
 __all__ = ["MetricBasedAdaptor", "adapt"]

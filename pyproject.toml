@@ -1,9 +1,18 @@
 [build-system]
-requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+requires = [
+  "Cython",
+  "firedrake",
+  "numpy",
+  "petsc4py",
+  "petsctools",
+  "setuptools>=77.0.3",
+  "wheel",
+]
 
 [project]
 name = "animate"
-version = "0.3"
+version = "0.4"
 authors = [
   {name = "Joseph G. Wallwork", email = "joe.wallwork@outlook.com"},
   {name = "Davor Dundovic"},
@@ -43,11 +52,25 @@ Homepage = "https://mesh-adaptation.github.io"
 Documentation = "https://mesh-adaptation.github.io/animate/index.html"
 Repository = "https://github.com/mesh-adaptation/animate"
 
+# Note:
+# - Extension modules are generated dynamically at build time using the legacy
+#   helper (`setup.py`) which performs PETSc detection and populates Extension
+#   objects based on the local PETSc installation (via petsctools/petsc4py).
+# - We intentionally do not declare ext-modules statically here so the build
+#   helper can compute include/library dirs and other flags based on an
+#   existing PETSc build.
+#
+# The build backend requirements above ensure that, during isolated builds,
+# the build environment will have Cython, numpy, petsctools, petsc4py, etc.
+# available before the build helper runs Cython to generate .c files.
 [tool.setuptools]
 packages = ["animate", "adapt_common"]
 
 [tool.setuptools.package-data]
-animate = ["cxx/*.cxx"]
+animate = [
+  "cxx/*.cxx",
+  "cython/*.pyx",
+]
 
 [tool.setuptools.package-dir]
 adapt_common = "adapt_common/adapt_common"
@@ -63,6 +86,7 @@ select = [
   "F",  # Pyflakes
   "I",  # isort
 ]
+
 [tool.ruff.lint.per-file-ignores]
 "demos/*" = [
   "E402",  # module level import not at top of file
@@ -72,6 +96,6 @@ select = [
 
 [tool.pytest.ini_options]
 filterwarnings = [
-	"ignore:`np.bool8` is a deprecated alias for `np.bool_`*:DeprecationWarning",
-	"ignore:unable to find git revision*:UserWarning",
+  "ignore:`np.bool8` is a deprecated alias for `np.bool_`*:DeprecationWarning",
+  "ignore:unable to find git revision*:UserWarning",
 ]
