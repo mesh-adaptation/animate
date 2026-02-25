@@ -27,7 +27,7 @@ def to_petsc_local_numbering(PETSc.Vec vec, V):
     """
     Reorder a PETSc Vec corresponding to a Firedrake Function w.r.t.
     the PETSc natural numbering, i.e. the numbering consistent with
-    that of the dmplex topological points.
+    that of the DMPlex topological points.
 
     :arg vec: the PETSc Vec to reorder; must be a local vector, i.e.
               a sequential vector that includes all (owned and halo) DOFs
@@ -57,5 +57,10 @@ def to_petsc_local_numbering(PETSc.Vec vec, V):
                 for k in range(dim):
                     oarray[idx] = varray[off + dim * d + k]
                     idx += 1
-    assert idx == lsize
+    if idx != lsize:
+        raise ValueError(
+           f"Number of local section entries not the same as vector size"
+           f"({idx} vs. {lsize}). Need to provide local vector including halo DOFS."
+        )
+        
     return out
