@@ -66,6 +66,8 @@ def test_is_permutation(function_space):
     assert reordered_vec is not None
     assert reordered_vec.size == lvec.size
     assert sorted(reordered_vec.array) == sorted(lvec.array)
+    lvec.destroy()
+    reordered_vec.destroy()
 
 
 @pytest.mark.parallel(nprocs=2)
