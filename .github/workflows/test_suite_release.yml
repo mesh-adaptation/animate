@@ -3,13 +3,13 @@ name: 'Run Animate test suite (release)'
 on:
   # Run test suite whenever the release branch is updated
   push:
-    branches:
-      - release
+    branches: [release]
     paths:
       - '.github/workflows/test_suite_release.yml'
 
   # Run test suite whenever commits that change this workflow are pushed to an open PR
   pull_request:
+    branches: [release]
     paths:
       - '.github/workflows/test_suite_release.yml'
 

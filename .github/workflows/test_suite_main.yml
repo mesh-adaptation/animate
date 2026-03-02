@@ -3,8 +3,7 @@ name: 'Run Animate test suite (main)'
 on:
   # Run test suite whenever the main branch is updated
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - '**.py'
       - '**.cxx'
@@ -14,6 +13,7 @@ on:
 
   # Run test suite whenever commits are pushed to an open PR
   pull_request:
+    branches: [main]
     paths:
       - '**.py'
       - '**.cxx'
