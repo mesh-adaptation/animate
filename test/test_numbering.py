@@ -40,7 +40,7 @@ def test_is_permutation(function_space):
     # unique float 0<=x<1 for each rank:
     rank_fraction = comm.rank / (comm.size + 1)
 
-    # Initialise owned and in in particular halo DoFs, so we can check they
+    # Initialise owned and in particular halo DoFs, so we can check they
     # have been updated later on
     f.assign(-1)
 
