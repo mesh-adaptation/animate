@@ -1,17 +1,17 @@
 import abc
 import os
+from functools import cached_property
 from shutil import rmtree
 
 import firedrake.checkpointing as fchk
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
-import firedrake.utils as futils
 from firedrake import COMM_SELF, COMM_WORLD
-from firedrake.cython.dmcommon import to_petsc_local_numbering
 from firedrake.petsc import PETSc
 from firedrake.projection import Projector
 
 from .checkpointing import get_checkpoint_dir, load_checkpoint, save_checkpoint
+from .cython.numbering import to_petsc_local_numbering
 from .metric import RiemannianMetric
 
 __all__ = ["MetricBasedAdaptor", "adapt"]
@@ -87,7 +87,7 @@ class MetricBasedAdaptor(AdaptorBase):
         self.metric = metric
         self.projectors = []
 
-    @futils.cached_property
+    @cached_property
     @PETSc.Log.EventDecorator()
     def adapted_mesh(self):
         """
@@ -176,7 +176,7 @@ def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
     """
     nprocs = COMM_WORLD.size
 
-    dim = mesh.topological_dimension
+    dim = mesh.topological_dimension()
     if serialise is None:
         serialise = nprocs > 1 and dim != 3
     elif not serialise and dim != 3:

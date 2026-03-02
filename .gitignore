@@ -10,9 +10,12 @@ __pycache__/
 .coverage
 
 # File extensions
+*.c
+*.h5
 *.jpg
 *.jpeg
 *.pdf
 *.png
 *.pvd
+*.so
 *.vtu

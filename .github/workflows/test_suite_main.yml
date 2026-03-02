@@ -1,23 +1,23 @@
-name: 'Run Animate Test Suite'
+name: 'Run Animate test suite (main)'
 
 on:
-  # Run test suite whenever main is updated
+  # Run test suite whenever the main branch is updated
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - '**.py'
       - '**.cxx'
-      - '.github/workflows/test_suite.yml'
+      - '.github/workflows/test_suite_main.yml'
       - '.gitmodules'
       - 'pyproject.toml'
 
   # Run test suite whenever commits are pushed to an open PR
   pull_request:
+    branches: [main]
     paths:
       - '**.py'
       - '**.cxx'
-      - '.github/workflows/test_suite.yml'
+      - '.github/workflows/test_suite_main.yml'
       - '.gitmodules'
       - 'pyproject.toml'
 
