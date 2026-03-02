@@ -3,13 +3,13 @@ import unittest
 import numpy as np
 import pytest
 import ufl
+from adapt_common.reduction import function_data_sum
 from firedrake.function import Function
 from firedrake.functionspace import TensorFunctionSpace
 from firedrake.norms import errornorm
 from parameterized import parameterized
 from test_setup import uniform_mesh
 
-from adapt_common.reduction import function_data_sum
 from animate.quality import QualityMeasure
 
 

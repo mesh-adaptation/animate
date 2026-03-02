@@ -6,11 +6,10 @@ import os
 
 import firedrake
 import ufl
+from adapt_common.reduction import function_data_max
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
 from pyop2 import op2
-
-from adapt_common.reduction import function_data_max
 
 from .interpolation import clement_interpolant
 from .math import construct_basis

@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import pytest
 import ufl
+from adapt_common.utility import function2cofunction
 from firedrake.assemble import assemble
 from firedrake.cofunction import Cofunction
 from firedrake.constant import Constant
@@ -20,7 +21,6 @@ from firedrake.norms import errornorm
 from firedrake.utility_meshes import UnitSquareMesh
 from parameterized import parameterized
 
-from adapt_common.utility import function2cofunction
 from animate.interpolation import (
     _supermesh_project,
     _transfer_adjoint,
