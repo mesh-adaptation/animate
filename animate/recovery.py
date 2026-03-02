@@ -6,10 +6,11 @@ import os
 
 import firedrake
 import ufl
-from adapt_common.reduction import function_data_max
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
 from pyop2 import op2
+
+from adapt_common.reduction import function_data_max
 
 from .interpolation import clement_interpolant
 from .math import construct_basis
@@ -132,7 +133,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     """
 
     mesh = ufl.domain.extract_unique_domain(f)
-    d = mesh.topological_dimension
+    d = mesh.topological_dimension()
     assert d in (2, 3)
 
     # Apply Gram-Schmidt to get tangent vectors

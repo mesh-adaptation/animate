@@ -5,17 +5,17 @@ Driver functions for mesh-to-mesh data transfer.
 import firedrake
 import numpy as np
 import ufl
-from adapt_common.utility import (
-    assemble_mass_matrix,
-    cofunction2function,
-    function2cofunction,
-)
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
 from firedrake.petsc import PETSc
 from firedrake.supermeshing import assemble_mixed_mass_matrix
 from petsc4py import PETSc as petsc4py
 from pyop2 import op2
 
+from adapt_common.utility import (
+    assemble_mass_matrix,
+    cofunction2function,
+    function2cofunction,
+)
 from animate.quality import QualityMeasure
 
 __all__ = ["transfer", "interpolate", "project", "clement_interpolant"]
@@ -324,7 +324,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
     if rank not in (0, 1, 2):
         raise ValueError(f"Rank-{rank + 1} tensors are not supported.")
     mesh = Vs.mesh()
-    dim = mesh.topological_dimension
+    dim = mesh.topological_dimension()
 
     # Process target space
     Vt = target_space

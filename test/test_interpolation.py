@@ -7,7 +7,6 @@ import unittest
 import numpy as np
 import pytest
 import ufl
-from adapt_common.utility import function2cofunction
 from firedrake.assemble import assemble
 from firedrake.cofunction import Cofunction
 from firedrake.constant import Constant
@@ -21,6 +20,7 @@ from firedrake.norms import errornorm
 from firedrake.utility_meshes import UnitSquareMesh
 from parameterized import parameterized
 
+from adapt_common.utility import function2cofunction
 from animate.interpolation import (
     _supermesh_project,
     _transfer_adjoint,
@@ -66,7 +66,7 @@ class TestClement(unittest.TestCase):
         elif rank == 1:
             return VectorFunctionSpace(self.mesh, family, degree)
         else:
-            shape = tuple(rank * [self.mesh.topological_dimension])
+            shape = tuple(rank * [self.mesh.topological_dimension()])
             return TensorFunctionSpace(self.mesh, family, degree, shape=shape)
 
     def analytic(self, rank):

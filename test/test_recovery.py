@@ -5,7 +5,6 @@ Test derivative recovery techniques.
 import unittest
 
 import ufl
-from adapt_common.norms import errornorm, norm
 from firedrake.assemble import assemble
 from firedrake.constant import Constant
 from firedrake.function import Function
@@ -13,6 +12,7 @@ from firedrake.functionspace import FunctionSpace, TensorFunctionSpace
 from parameterized import parameterized
 from sensors import bowl, mesh_for_sensors
 
+from adapt_common.norms import errornorm, norm
 from animate.math import construct_basis
 from animate.metric import RiemannianMetric
 
@@ -120,7 +120,7 @@ class TestRecoveryBowl(unittest.TestCase):
     @staticmethod
     def relative_error(approx, ignore_boundary=False):
         mesh = approx.function_space().mesh()
-        dim = mesh.topological_dimension
+        dim = mesh.topological_dimension()
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         identity = Function(P1_ten).interpolate(ufl.Identity(dim))
 
