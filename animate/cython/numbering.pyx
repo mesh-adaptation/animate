@@ -26,25 +26,27 @@ cdef extern from "petscis.h" nogil:
 def to_petsc_local_numbering(PETSc.Vec vec, V):
     """
     Reorder a PETSc Vec corresponding to a Firedrake Function w.r.t.
-    the PETSc natural numbering.
+    the PETSc natural numbering, i.e. the numbering consistent with
+    that of the DMPlex topological points.
 
-    :arg vec: the PETSc Vec to reorder; must be a global vector
+    :arg vec: the PETSc Vec to reorder; must be a local vector, i.e.
+              a sequential vector that includes all (owned and halo) DoFs
     :arg V: the FunctionSpace of the Function which the Vec comes from
     :ret out: a copy of the Vec, ordered with the PETSc natural numbering
     """
-    cdef int dim, idx, start, end, p, d, k
+    cdef int dim, idx, lsize, p, d, k
     cdef PetscInt dof, off
     cdef PETSc.Vec out
     cdef PETSc.Section section
     cdef np.ndarray varray, oarray
 
-    section = V.dm.getGlobalSection()
+    section = V.dm.getLocalSection()
     out = vec.duplicate()
     varray = vec.array_r
     oarray = out.array
     dim = V.value_size
     idx = 0
-    start, end = vec.getOwnershipRange()
+    lsize = vec.getSize()
     for p in range(*section.getChart()):
         CHKERR(PetscSectionGetDof(section.sec, p, &dof))
         if dof > 0:
@@ -53,7 +55,12 @@ def to_petsc_local_numbering(PETSc.Vec vec, V):
             off *= dim
             for d in range(dof):
                 for k in range(dim):
-                    oarray[idx] = varray[off + dim * d + k - start]
+                    oarray[idx] = varray[off + dim * d + k]
                     idx += 1
-    assert idx == (end - start)
+    if idx != lsize:
+        raise ValueError(
+           f"Number of local section entries not the same as vector size"
+           f"({idx} vs. {lsize}). Need to provide local vector including halo DoFs."
+        )
+        
     return out

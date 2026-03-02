@@ -1,4 +1,5 @@
 import abc
+import gc
 import os
 from functools import cached_property
 from shutil import rmtree
@@ -97,10 +98,9 @@ class MetricBasedAdaptor(AdaptorBase):
         :rtype: :class:`firedrake.mesh.MeshGeometry`
         """
         self.metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
-        size = self.metric.dat.dataset.layout_vec.getSizes()
-        data = self.metric.dat._data[: size[0]]
+        data = self.metric.dat.data_ro_with_halos
         v = PETSc.Vec().createWithArray(
-            data, size=size, bsize=self.metric.dat.cdim, comm=self.mesh.comm
+            data, size=data.size, bsize=self.metric.dat.cdim, comm=COMM_SELF
         )
         reordered = to_petsc_local_numbering(v, self.metric.function_space())
         v.destroy()
@@ -193,13 +193,20 @@ def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
         chk_fpath = os.path.join(chk_dir, "adapted_mesh_checkpoint.h5")
         metric_name = "tmp_metric"
         save_checkpoint(chk_fpath, metric, metric_name)
+        # Ensure all processes are finished writing
+        COMM_WORLD.barrier()
 
         if COMM_WORLD.rank == 0:
             metric0 = load_checkpoint(chk_fpath, mesh.name, metric_name, comm=COMM_SELF)
             adaptor0 = MetricBasedAdaptor(metric0._mesh, metric0, name=name)
             with fchk.CheckpointFile(chk_fpath, "w", comm=COMM_SELF) as chk:
                 chk.save_mesh(adaptor0.adapted_mesh)
+        # Ensure rank 0 is finished writing
         COMM_WORLD.barrier()
+        # Garbage collection might be called at different times on different ranks due
+        # to diverging paths, which appears to stall in final cleanup on Python
+        # system exit. Ensure everything is in-sync again at this point
+        gc.collect()
 
         # In parallel, load from the checkpoint
         if not os.path.exists(chk_fpath):
