@@ -43,7 +43,7 @@ def test_is_permutation(function_space):
     f.assign(-1)
 
     # Fill the vector with arbitrary values
-    # vec below is a global vec, so owned entries only
+    # f.dat.vec below is a global Vec, so owned entries only
     # halos values should be updated automatically coming out of the context
     with f.dat.vec as vec:
         vec.array[:] = np.arange(vec.sizes[0]) + rank_fraction
