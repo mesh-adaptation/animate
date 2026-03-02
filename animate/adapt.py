@@ -203,8 +203,8 @@ def adapt(mesh, *metrics, name=None, serialise=None, remove_checkpoints=True):
                 chk.save_mesh(adaptor0.adapted_mesh)
         # Ensure rank 0 is finished writing
         COMM_WORLD.barrier()
-        # Garbage collection might be called at different times on diff. ranks due to
-        # diverging paths, which appears to stall in final cleanup on Python
+        # Garbage collection might be called at different times on different ranks due
+        # to diverging paths, which appears to stall in final cleanup on Python
         # system exit. Ensure everything is in-sync again at this point
         gc.collect()
 
