@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import ufl
-from adapt_common.reduction import function_data_min
 from firedrake.bcs import DirichletBC
 from firedrake.constant import Constant
 from firedrake.function import Function
@@ -16,6 +15,7 @@ from parameterized import parameterized
 from sensors import bowl, hyperbolic, interweaved, multiscale
 from test_setup import uniform_mesh, uniform_metric
 
+from adapt_common.reduction import function_data_min
 from animate.metric import P0Metric, RiemannianMetric
 
 
@@ -193,6 +193,32 @@ class TestHessianMetric(MetricTestCase):
     """
     Unit tests for the :meth:`compute_hessian` method of :class:`RiemannianMetric`.
     """
+
+    def test_vector_rank_error(self):
+        mesh = uniform_mesh(2)
+        P1_vec = VectorFunctionSpace(mesh, "CG", 1)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(P1_ten).compute_hessian(Function(P1_vec))
+        msg = (
+            "RiemannianMetric.compute_hessian only accepts scalar fields. To "
+            "recover Hessians of higher rank fields, call the method on separate "
+            "RiemannianMetrics for each component and combine them with "
+            "RiemannianMetric.combine."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_tensor_rank_error(self):
+        P1_ten = TensorFunctionSpace(uniform_mesh(2), "CG", 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(P1_ten).compute_hessian(Function(P1_ten))
+        msg = (
+            "RiemannianMetric.compute_hessian only accepts scalar fields. To "
+            "recover Hessians of higher rank fields, call the method on separate "
+            "RiemannianMetrics for each component and combine them with "
+            "RiemannianMetric.combine."
+        )
+        self.assertEqual(str(cm.exception), msg)
 
     def test_bowl(self, dim=2, places=7):
         mesh = uniform_mesh(dim, 4, recentre=True)
