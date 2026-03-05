@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import ufl
+from adapt_common.reduction import function_data_min
 from firedrake.bcs import DirichletBC
 from firedrake.constant import Constant
 from firedrake.function import Function
@@ -15,7 +16,6 @@ from parameterized import parameterized
 from sensors import bowl, hyperbolic, interweaved, multiscale
 from test_setup import uniform_mesh, uniform_metric
 
-from adapt_common.reduction import function_data_min
 from animate.metric import P0Metric, RiemannianMetric
 
 
