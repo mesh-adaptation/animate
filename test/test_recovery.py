@@ -47,7 +47,7 @@ class TestRecoverySetup(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
     def test_clement_space_error(self):
-        f = self.get_func_ones("RT", 1)
+        f = self.get_func_ones("DG", 1)
         with self.assertRaises(ValueError) as cm:
             self.metric.compute_hessian(f, method="Clement")
         msg = (
