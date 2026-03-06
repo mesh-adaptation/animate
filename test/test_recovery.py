@@ -15,6 +15,7 @@ from sensors import bowl, mesh_for_sensors
 
 from animate.math import construct_basis
 from animate.metric import RiemannianMetric
+from animate.recovery import recover_gradient_l2
 
 # ---------------------------
 # standard tests for pytest
@@ -47,7 +48,7 @@ class TestRecoverySetup(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
     def test_clement_space_error(self):
-        f = self.get_func_ones("DG", 1)
+        f = self.get_func_ones("DG", 0)
         with self.assertRaises(ValueError) as cm:
             self.metric.compute_hessian(f, method="Clement")
         msg = (
@@ -69,14 +70,14 @@ class TestRecoverySetup(unittest.TestCase):
     def test_l2_projection_function_error(self):
         f = bowl(*ufl.SpatialCoordinate(self.mesh))
         with self.assertRaises(ValueError) as cm:
-            self.metric.compute_hessian(f, method="L2")
+            recover_gradient_l2(f)
         msg = "If a target space is not provided then the input must be a Function."
         self.assertEqual(str(cm.exception), msg)
 
     def test_l2_projection_rank_error(self):
         f = Function(TensorFunctionSpace(self.mesh, "CG", 1))
         with self.assertRaises(ValueError) as cm:
-            self.metric.compute_hessian(f, method="L2")
+            recover_gradient_l2(f)
         msg = (
             "L2 projection can only be used to compute gradients of scalar or vector"
             " Functions, not Functions of rank 2."
