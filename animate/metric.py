@@ -349,7 +349,7 @@ class RiemannianMetric(ffunc.Function):
         for the gradient recovery. The target space for the Hessian recovery is
         inherited from the metric itself.
         """
-        if len(field.function_space().value_shape) > 0:
+        if len(field.ufl_shape) > 0:
             value_error = (
                 "RiemannianMetric.compute_hessian only accepts scalar fields. To "
                 "recover Hessians of higher rank fields, call the method on separate "
