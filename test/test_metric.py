@@ -308,14 +308,35 @@ class TestCombination(MetricTestCase):
         mesh = uniform_mesh(dim, 1)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 
-        metric1 = uniform_metric(P1_ten, 100.0)
-        metric2 = uniform_metric(P1_ten, 40.0)
+        metric1 = uniform_metric(P1_ten, 40.0)
+        metric2 = uniform_metric(P1_ten, 100.0)
         metric3 = uniform_metric(P1_ten, 20.0)
-        expected = metric1
+        expected = metric2
 
         metric = RiemannianMetric(P1_ten)
         metric.assign(metric1)
         metric.intersect(metric2, metric3)
+        self.assertAlmostMatching(metric, expected)
+
+    @parameterized.expand([[2], [3]])
+    def test_multiple_variable_intersect(self, dim):
+        mesh = uniform_mesh(dim, 1)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+
+        expected = RiemannianMetric(P1_ten)
+        expected.interpolate(ufl.Identity(dim))
+        metrics = []
+        for i in range(P1_ten.node_count):
+            metric = RiemannianMetric(P1_ten)
+            metric.interpolate(ufl.Identity(dim))
+            # change to (i+1)I at node i only
+            metric.dat.data[i] *= float(i+1)
+            expected.dat.data[i] *= float(i+1)
+            metrics.append(metric)
+
+        metric = RiemannianMetric(P1_ten)
+        metric.assign(metrics[0])
+        metric.intersect(*metrics[1:])
         self.assertAlmostMatching(metric, expected)
 
 

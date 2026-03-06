@@ -629,25 +629,28 @@ class RiemannianMetric(ffunc.Function):
                     "Cannot intersect metrics with different function spaces."
                 )
 
-        # Intersect the metrics recursively one at a time
         if len(metrics) == 0:
-            pass
-        elif len(metrics) == 1:
-            v1 = self._create_from_array(self.dat.data_with_halos)
-            v2 = self._create_from_array(metrics[0].dat.data_ro_with_halos)
-            vout = self._create_from_array(np.zeros_like(self.dat.data_with_halos))
+            return self
 
-            # Compute the intersection on the PETSc level
-            self._plex.metricIntersection2(v1, v2, vout)
+        # Intersect the metrics recursively, starting with metrics[0]
+        v1 = self._create_from_array(self.dat.data_with_halos)
+        v2 = self._create_from_array(metrics[0].dat.data_ro_with_halos)
+        vout = self._create_from_array(np.zeros_like(self.dat.data_with_halos))
 
-            # Assign to the output of the intersection
-            size = np.shape(self.dat.data_with_halos)
-            self.dat.data_with_halos[:] = np.reshape(vout.array, size)
-            v2.destroy()
-            v1.destroy()
-            vout.destroy()
-        else:
+        # Compute the intersection on the PETSc level
+        self._plex.metricIntersection2(v1, v2, vout)
+
+        # Assign to the output of the intersection
+        size = np.shape(self.dat.data_with_halos)
+        self.dat.data_with_halos[:] = np.reshape(vout.array, size)
+        v2.destroy()
+        v1.destroy()
+        vout.destroy()
+
+        # Intersect with the remaining metrics
+        if len(metrics) > 1:
             self.intersect(*metrics[1:])
+
         return self
 
     @PETSc.Log.EventDecorator()
