@@ -8,10 +8,10 @@ import firedrake
 import ufl
 from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
-from petsctools import get_petsc_dir
+from petsctools import get_petsc_dirs
 from pyop2 import op2
 
-petsc_dirs = get_petsc_dir()
+petsc_dirs = get_petsc_dirs()
 include_dir = ["%s/include/eigen3" % petsc_dirs[-1]]
 
 __all__ = ["QualityMeasure"]
