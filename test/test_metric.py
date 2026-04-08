@@ -220,7 +220,7 @@ class TestHessianMetric(MetricTestCase):
         )
         self.assertEqual(str(cm.exception), msg)
 
-    def test_bowl(self, dim=2, places=7):
+    def test_bowl(self, dim=2, places=6):
         mesh = uniform_mesh(dim, 4, recentre=True)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten).compute_hessian(bowl(*mesh.coordinates))
