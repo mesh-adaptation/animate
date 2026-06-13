@@ -194,7 +194,33 @@ class TestHessianMetric(MetricTestCase):
     Unit tests for the :meth:`compute_hessian` method of :class:`RiemannianMetric`.
     """
 
-    def test_bowl(self, dim=2, places=7):
+    def test_vector_rank_error(self):
+        mesh = uniform_mesh(2)
+        P1_vec = VectorFunctionSpace(mesh, "CG", 1)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(P1_ten).compute_hessian(Function(P1_vec))
+        msg = (
+            "RiemannianMetric.compute_hessian only accepts scalar fields. To "
+            "recover Hessians of higher rank fields, call the method on separate "
+            "RiemannianMetrics for each component and combine them with "
+            "RiemannianMetric.combine."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_tensor_rank_error(self):
+        P1_ten = TensorFunctionSpace(uniform_mesh(2), "CG", 1)
+        with self.assertRaises(ValueError) as cm:
+            RiemannianMetric(P1_ten).compute_hessian(Function(P1_ten))
+        msg = (
+            "RiemannianMetric.compute_hessian only accepts scalar fields. To "
+            "recover Hessians of higher rank fields, call the method on separate "
+            "RiemannianMetrics for each component and combine them with "
+            "RiemannianMetric.combine."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
+    def test_bowl(self, dim=2, places=6):
         mesh = uniform_mesh(dim, 4, recentre=True)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         metric = RiemannianMetric(P1_ten).compute_hessian(bowl(*mesh.coordinates))
@@ -282,14 +308,35 @@ class TestCombination(MetricTestCase):
         mesh = uniform_mesh(dim, 1)
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
 
-        metric1 = uniform_metric(P1_ten, 100.0)
-        metric2 = uniform_metric(P1_ten, 40.0)
+        metric1 = uniform_metric(P1_ten, 40.0)
+        metric2 = uniform_metric(P1_ten, 100.0)
         metric3 = uniform_metric(P1_ten, 20.0)
-        expected = metric1
+        expected = metric2
 
         metric = RiemannianMetric(P1_ten)
         metric.assign(metric1)
         metric.intersect(metric2, metric3)
+        self.assertAlmostMatching(metric, expected)
+
+    @parameterized.expand([[2], [3]])
+    def test_multiple_variable_intersect(self, dim):
+        mesh = uniform_mesh(dim, 1)
+        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+
+        expected = RiemannianMetric(P1_ten)
+        expected.interpolate(ufl.Identity(dim))
+        metrics = []
+        for i in range(P1_ten.node_count):
+            metric = RiemannianMetric(P1_ten)
+            metric.interpolate(ufl.Identity(dim))
+            # change to (i+1)I at node i only
+            metric.dat.data[i] *= float(i+1)
+            expected.dat.data[i] *= float(i+1)
+            metrics.append(metric)
+
+        metric = RiemannianMetric(P1_ten)
+        metric.assign(metrics[0])
+        metric.intersect(*metrics[1:])
         self.assertAlmostMatching(metric, expected)
 
 

@@ -187,7 +187,7 @@ void intersect(double M_[9], const double * A_, const double * B_) {
   // Solve eigenvalue problem for triple product of inverse square root metric and the second metric
   SelfAdjointEigenSolver<Matrix<double, 3, 3, RowMajor>> eigensolver2(Sqi.transpose() * B * Sqi);
   Q = eigensolver2.eigenvectors();
-  D = eigensolver2.eigenvalues().array().max(1).matrix().asDiagonal();
+  D = eigensolver2.eigenvalues().array().cwiseMax(1).matrix().asDiagonal();
 
   // Compute metric intersection
   M = Sq.transpose() * Q * D * Q.transpose() * Sq;
