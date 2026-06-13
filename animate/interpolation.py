@@ -324,7 +324,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
     if rank not in (0, 1, 2):
         raise ValueError(f"Rank-{rank + 1} tensors are not supported.")
     mesh = Vs.mesh()
-    dim = mesh.topological_dimension()
+    dim = mesh.topological_dimension
 
     # Process target space
     Vt = target_space

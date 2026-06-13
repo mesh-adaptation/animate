@@ -120,7 +120,7 @@ class TestRecoveryBowl(unittest.TestCase):
     @staticmethod
     def relative_error(approx, ignore_boundary=False):
         mesh = approx.function_space().mesh()
-        dim = mesh.topological_dimension()
+        dim = mesh.topological_dimension
         P1_ten = TensorFunctionSpace(mesh, "CG", 1)
         identity = Function(P1_ten).interpolate(ufl.Identity(dim))
 

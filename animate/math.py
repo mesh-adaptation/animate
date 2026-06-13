@@ -73,7 +73,7 @@ def construct_basis(vector, normalise=True):
         if not isinstance(vector, ufl.core.expr.Expr):
             raise TypeError(f"Expected UFL Expr, not '{type(vector)}'.")
         as_vector = ufl.as_vector
-        dim = ufl.domain.extract_unique_domain(vector).topological_dimension()
+        dim = ufl.domain.extract_unique_domain(vector).topological_dimension
 
     if dim not in (2, 3):
         raise ValueError(f"Dimension {dim} not supported.")
