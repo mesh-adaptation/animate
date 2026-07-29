@@ -24,7 +24,7 @@ __all__ = ["transfer", "interpolate", "project", "clement_interpolant"]
 @PETSc.Log.EventDecorator()
 def transfer(source, target_space, transfer_method="project", **kwargs):
     r"""
-    Overload functions :func:`firedrake.__future__.interpolate` and
+    Overload functions :func:`firedrake.interpolation.interpolate` and
     :func:`firedrake.projection.project` to account for the case of two mixed
     function spaces defined on different meshes and for the adjoint interpolation
     operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
@@ -46,7 +46,7 @@ def transfer(source, target_space, transfer_method="project", **kwargs):
     :rtype: :class:`firedrake.function.Function` or
         :class:`firedrake.cofunction.Cofunction`
 
-    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
+    Extra keyword arguments are passed to :func:`firedrake.interpolation.interpolate` or
         :func:`firedrake.projection.project`.
     """
     if transfer_method not in ("interpolate", "project"):
@@ -77,8 +77,8 @@ def transfer(source, target_space, transfer_method="project", **kwargs):
 @PETSc.Log.EventDecorator()
 def interpolate(source, target_space, **kwargs):
     r"""
-    Overload function :func:`firedrake.__future__.interpolate` to account for the case
-    of two mixed function spaces defined on different meshes and for the adjoint
+    Overload function :func:`firedrake.interpolation.interpolate` to account for the
+    case of two mixed function spaces defined on different meshes and for the adjoint
     interpolation operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
 
     :arg source: the function to be transferred
@@ -92,7 +92,7 @@ def interpolate(source, target_space, **kwargs):
     :rtype: :class:`firedrake.function.Function` or
         :class:`firedrake.cofunction.Cofunction`
 
-    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate`
+    Extra keyword arguments are passed to :func:`firedrake.interpolation.interpolate`
     """
     return transfer(source, target_space, transfer_method="interpolate", **kwargs)
 
@@ -152,8 +152,9 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     """
     Apply mesh-to-mesh transfer operator to a Function.
 
-    This function extends the functionality of :func:`firedrake.__future__.interpolate`
-    and :func:`firedrake.projection.project` to account for mixed spaces.
+    This function extends the functionality of
+    :func:`firedrake.interpolation.interpolate` and
+    :func:`firedrake.projection.project` to account for mixed spaces.
 
     :arg source: the Function to be transferred
     :type source: :class:`firedrake.function.Function`
@@ -168,7 +169,7 @@ def _transfer_forward(source, target, transfer_method, **kwargs):
     :returns: the transferred Function
     :rtype: :class:`firedrake.function.Function`
 
-    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
+    Extra keyword arguments are passed to :func:`firedrake.interpolation.interpolate` or
         :func:`firedrake.projection.project`.
     """
     is_project = transfer_method == "project"
@@ -225,7 +226,7 @@ def _transfer_adjoint(target_b, source_b, transfer_method, **kwargs):
     :returns: the transferred Cofunction
     :rtype: :class:`firedrake.cofunction.Cofunction`
 
-    Extra keyword arguments are passed to :func:`firedrake.__future__.interpolate` or
+    Extra keyword arguments are passed to :func:`firedrake.interpolation.interpolate` or
         :func:`firedrake.projection.project`.
     """
     is_project = transfer_method == "project"
