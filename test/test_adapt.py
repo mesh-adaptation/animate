@@ -14,7 +14,7 @@ from petsc4py import PETSc
 from pyop2.mpi import COMM_WORLD
 from test_setup import uniform_mesh, uniform_metric
 
-from animate.adapt import adapt
+from animate.adapt import MetricBasedAdaptor, adapt
 
 
 def load_mesh(fname):
@@ -146,6 +146,60 @@ def test_preserve_facet_tags_2d(meshname):
         bnd = assemble(one * ufl.ds(tag, domain=mesh))
         newbnd = assemble(one * ufl.ds(tag, domain=newmesh))
         assert np.isclose(bnd, newbnd), f"Length of arc {tag} not preserved"
+
+
+@pytest.mark.parametrize(
+    "meshname",
+    ["annulus", "circle_in_square"],
+)
+def test_fix_boundary(meshname):
+    """
+    Ensure that facets tagged via `dm_plex_metric_fix_boundary` retain their exact
+    position (and hence total boundary length) during adaptation, that facet tags are
+    correctly restored on the adapted mesh, that no "Colored Face Sets" label is left
+    behind, and that the new boundary ids introduced during adaptation are recorded on
+    the :class:`~.MetricBasedAdaptor`.
+    """
+    mesh = load_mesh(meshname)
+    dm = mesh.topology_dm
+    tags = sorted(int(t) for t in dm.getLabelIdIS("Face Sets").indices)
+    fix_tag = tags[0]
+
+    mp = {
+        "dm_plex_metric": {"target_complexity": 300.0, "p": 1.0},
+        "dm_plex_metric_fix_boundary": [fix_tag],
+    }
+    metric = uniform_metric(mesh, metric_parameters=mp)
+    adaptor = MetricBasedAdaptor(mesh, metric)
+    try:
+        newmesh = adaptor.adapted_mesh
+    except PETSc.Error as exc:
+        if exc.ierr == 63:
+            pytest.xfail("No mesh adaptation tools are installed")
+        else:
+            raise Exception(f"PETSc error code {exc.ierr}") from exc
+
+    # Facet tags should be unchanged, and the new "Face Sets" label should be the only
+    # one present (i.e., the temporary "Colored Face Sets" label should be gone)
+    newdm = newmesh.topology_dm
+    newtags = sorted(int(t) for t in newdm.getLabelIdIS("Face Sets").indices)
+    assert tags == newtags, "Facet tags do not match"
+    assert not newdm.hasLabel("Colored Face Sets")
+    assert not dm.hasLabel("Colored Face Sets")
+
+    # The fixed boundary should have exactly the same total length as before, since its
+    # facets have not been allowed to move
+    one = Constant(1.0)
+    bnd = assemble(one * ufl.ds(fix_tag, domain=mesh))
+    newbnd = assemble(one * ufl.ds(fix_tag, domain=newmesh))
+    assert np.isclose(bnd, newbnd), "Length of fixed boundary not preserved"
+
+    # The map from the fixed boundary id to the new, unique ids generated for its
+    # facets should be recorded on the adaptor
+    assert set(adaptor.fixed_boundary_id_map.keys()) == {fix_tag}
+    new_ids = adaptor.fixed_boundary_id_map[fix_tag]
+    assert len(new_ids) == len(set(new_ids)), "New boundary ids are not unique"
+    assert not set(new_ids) & set(tags), "New boundary ids clash with existing ones"
 
 
 @pytest.mark.parametrize(

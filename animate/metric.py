@@ -63,6 +63,7 @@ class RiemannianMetric(ffunc.Function):
         "dm_plex_metric_isotropic",
         "dm_plex_metric_uniform",
         "dm_plex_metric_restrict_anisotropy_first",
+        "dm_plex_metric_fix_boundary",
     )
 
     @PETSc.Log.EventDecorator()
@@ -235,6 +236,13 @@ class RiemannianMetric(ffunc.Function):
         * `uniform`: Optimisation for uniform metrics. (Currently unsupported.)
         * `restrict_anisotropy_first`: Boolean flag specifying that anisotropy should be
             restricted before normalisation when True. Default: True.
+        * `fix_boundary`: List of boundary ids (integers), or the string
+            `"on_boundary"`, specifying boundary segments whose facets should be
+            preserved (i.e., not coarsened, refined, or otherwise modified) during
+            adaptation. Unset by default, which implies no boundary facets are fixed.
+            (Note that this parameter does not currently exist in the underlying PETSc
+            implementation - see :meth:`~.MetricBasedAdaptor.adapted_mesh`, where it is
+            implemented by assigning a unique label value to each facet to be fixed.)
 
         :kwarg metric_parameters: parameters as above
         :type metric_parameters: :class:`dict` with :class:`str` keys and value which
@@ -252,6 +260,26 @@ class RiemannianMetric(ffunc.Function):
             )
         else:
             self._restrict_anisotropy_first = True
+
+        # The `dm_plex_metric_fix_boundary` option does not exist in PETSc - it is
+        # implemented in Animate's MetricBasedAdaptor by re-labelling facets prior to
+        # calling PETSc's adaptation routines - so we handle it here rather than
+        # passing it on.
+        if "dm_plex_metric_fix_boundary" in mp:
+            fix_boundary = mp.pop("dm_plex_metric_fix_boundary")
+            valid = fix_boundary == "on_boundary" or (
+                isinstance(fix_boundary, (list, tuple))
+                and all(isinstance(b, (int, np.integer)) for b in fix_boundary)
+            )
+            if not valid:
+                raise ValueError(
+                    "dm_plex_metric_fix_boundary must be a list of boundary ids"
+                    " (integers) or the string 'on_boundary',"
+                    f" not {fix_boundary!r}."
+                )
+            self._fix_boundary = fix_boundary
+        else:
+            self._fix_boundary = None
 
         # Stash the metric parameters on the RiemannianMetric
         self._metric_parameters.update(mp)

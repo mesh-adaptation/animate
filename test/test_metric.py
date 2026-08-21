@@ -133,6 +133,32 @@ class TestSetParameters(MetricTestCase):
             metric._variable_parameters["dm_plex_metric_boundary_tag"], value
         )
 
+    def test_set_fix_boundary_default(self):
+        metric = uniform_metric(uniform_mesh(2))
+        metric.set_parameters()
+        self.assertTrue("dm_plex_metric_fix_boundary" not in metric._metric_parameters)
+        self.assertTrue("dm_plex_metric_fix_boundary" not in metric.metric_parameters)
+        self.assertIsNone(metric._fix_boundary)
+
+    @parameterized.expand([["on_boundary"], [[1]], [[1, 2, 3]], [()]])
+    def test_set_fix_boundary(self, value):
+        metric = uniform_metric(uniform_mesh(2))
+        metric.set_parameters({"dm_plex_metric_fix_boundary": value})
+        self.assertTrue("dm_plex_metric_fix_boundary" not in metric._metric_parameters)
+        self.assertTrue("dm_plex_metric_fix_boundary" not in metric.metric_parameters)
+        self.assertEqual(metric._fix_boundary, value)
+
+    @parameterized.expand([["on_boundar"], [1], [1.0], [["a"]], [[1.0]]])
+    def test_set_fix_boundary_error(self, value):
+        metric = uniform_metric(uniform_mesh(2))
+        with self.assertRaises(ValueError) as cm:
+            metric.set_parameters({"dm_plex_metric_fix_boundary": value})
+        msg = (
+            "dm_plex_metric_fix_boundary must be a list of boundary ids (integers) or"
+            f" the string 'on_boundary', not {value!r}."
+        )
+        self.assertEqual(str(cm.exception), msg)
+
     def test_passing_parameters_methods(self):
         mp = {"dm_plex_metric_h_max": 1.0}
         metric1 = uniform_metric(uniform_mesh(2), metric_parameters=mp)
