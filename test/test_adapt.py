@@ -10,6 +10,7 @@ import ufl
 from firedrake.assemble import assemble
 from firedrake.constant import Constant
 from firedrake.mesh import Mesh
+from firedrake import VTKFile
 from petsc4py import PETSc
 from pyop2.mpi import COMM_WORLD
 from test_setup import uniform_mesh, uniform_metric
@@ -147,12 +148,11 @@ def test_preserve_facet_tags_2d(meshname):
         newbnd = assemble(one * ufl.ds(tag, domain=newmesh))
         assert np.isclose(bnd, newbnd), f"Length of arc {tag} not preserved"
 
-
 @pytest.mark.parametrize(
-    "meshname",
-    ["annulus", "circle_in_square"],
+    "boundary_id_list",
+    [(2,), (3,), (2, 3), "on_boundary"]
 )
-def test_fix_boundary(meshname):
+def test_fix_boundary(boundary_id_list, export=False):
     """
     Ensure that facets tagged via `dm_plex_metric_fix_boundary` retain their exact
     position (and hence total boundary length) during adaptation, that facet tags are
@@ -160,14 +160,19 @@ def test_fix_boundary(meshname):
     behind, and that the new boundary ids introduced during adaptation are recorded on
     the :class:`~.MetricBasedAdaptor`.
     """
-    mesh = load_mesh(meshname)
+    mesh = load_mesh("square_without_circle")
+    if export:
+        test_name = os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0]
+        pvd1 = VTKFile(test_name + '_before.pvd')
+        pvd2 = VTKFile(test_name + '_after.pvd')
+        pvd1.write(mesh.coordinates)
     dm = mesh.topology_dm
     tags = sorted(int(t) for t in dm.getLabelIdIS("Face Sets").indices)
-    fix_tag = tags[0]
+    fix_tag = tags[-1]
 
     mp = {
-        "dm_plex_metric": {"target_complexity": 300.0, "p": 1.0},
-        "dm_plex_metric_fix_boundary": [fix_tag],
+        "dm_plex_metric": {"target_complexity": 300.0, "hausdorff_number": 1e-10, "h_min": 5},
+        "dm_plex_metric_fix_boundary": boundary_id_list,
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
     adaptor = MetricBasedAdaptor(mesh, metric)
@@ -187,19 +192,34 @@ def test_fix_boundary(meshname):
     assert not newdm.hasLabel("Colored Face Sets")
     assert not dm.hasLabel("Colored Face Sets")
 
-    # The fixed boundary should have exactly the same total length as before, since its
-    # facets have not been allowed to move
-    one = Constant(1.0)
-    bnd = assemble(one * ufl.ds(fix_tag, domain=mesh))
-    newbnd = assemble(one * ufl.ds(fix_tag, domain=newmesh))
-    assert np.isclose(bnd, newbnd), "Length of fixed boundary not preserved"
+    if export:
+        pvd2.write(newmesh.coordinates)
 
-    # The map from the fixed boundary id to the new, unique ids generated for its
-    # facets should be recorded on the adaptor
-    assert set(adaptor.fixed_boundary_id_map.keys()) == {fix_tag}
-    new_ids = adaptor.fixed_boundary_id_map[fix_tag]
-    assert len(new_ids) == len(set(new_ids)), "New boundary ids are not unique"
-    assert not set(new_ids) & set(tags), "New boundary ids clash with existing ones"
+    if boundary_id_list == "on_boundary":
+        # The fixed boundary should have exactly the same total length as before, since its
+        # facets have not been allowed to move
+        one = Constant(1.0)
+        bnd = assemble(one * ufl.ds(domain=mesh))
+        newbnd = assemble(one * ufl.ds(domain=newmesh))
+        assert np.isclose(bnd, newbnd), "Length of fixed boundary not preserved"
+        area = assemble(one * ufl.dx(domain=mesh))
+        newarea = assemble(one * ufl.dx(domain=newmesh))
+        assert np.isclose(area, newarea), "Length of fixed boundary not preserved"
+    else:
+        # The fixed boundary should have exactly the same total length as before, since its
+        # facets have not been allowed to move
+        one = Constant(1.0)
+        bnd = assemble(one * ufl.ds(boundary_id_list, domain=mesh))
+        newbnd = assemble(one * ufl.ds(boundary_id_list, domain=newmesh))
+        assert np.isclose(bnd, newbnd), "Length of fixed boundary not preserved"
+
+        # The map from the fixed boundary id to the new, unique ids generated for its
+        # facets should be recorded on the adaptor
+        assert set(adaptor.fixed_boundary_id_map.keys()) == set(boundary_id_list)
+        for fix_tag in boundary_id_list:
+            new_ids = adaptor.fixed_boundary_id_map[fix_tag]
+            assert len(new_ids) == len(set(new_ids)), "New boundary ids are not unique"
+            assert not set(new_ids) & set(tags), "New boundary ids clash with existing ones"
 
 
 @pytest.mark.parametrize(
