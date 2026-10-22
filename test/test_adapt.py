@@ -11,7 +11,7 @@ from firedrake.assemble import assemble
 from firedrake.constant import Constant
 from firedrake.mesh import Mesh
 from petsc4py import PETSc
-from pyop2.mpi import COMM_WORLD
+from pyop3.mpi import COMM_WORLD
 from test_setup import uniform_mesh, uniform_metric
 
 from animate.adapt import adapt
