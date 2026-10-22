@@ -25,7 +25,7 @@ def test_facet_areas(dim):
     (isotropic) triangular or tetrahedral mesh.
     """
     mesh = uniform_mesh(dim, 1)
-    qm = QualityMeasure(mesh, python=True)
+    qm = QualityMeasure(mesh)
     f = qm("facet_area")
     expected = 5.414214 if dim == 2 else 10.242641
     assert np.isclose(sum(f.dat.data), expected)
@@ -85,36 +85,6 @@ class TestQuality(unittest.TestCase):
 
     @parameterized.expand(
         [
-            ("area", 2),
-            ("aspect_ratio", 2),
-            ("scaled_jacobian", 2),
-            ("volume", 3),
-        ]
-    )
-    def test_consistency(self, measure, dim):
-        np.random.seed(0)
-        mesh = uniform_mesh(dim, 4)
-        mesh.coordinates.dat.data[:] += np.random.rand(*mesh.coordinates.dat.data.shape)
-        quality_cpp = self.quality(measure, mesh, python=False)
-        quality_py = self.quality(measure, mesh, python=True)
-        self.assertAlmostEqual(errornorm(quality_cpp, quality_py), 0.0)
-
-    @parameterized.expand(
-        [
-            ("facet_area", 2),
-            ("facet_area", 3),
-            ("skewness", 3),
-        ]
-    )
-    def test_cxx_notimplemented(self, measure, dim):
-        mesh = uniform_mesh(dim, 1)
-        with self.assertRaises(NotImplementedError) as cm:
-            self.quality(measure, mesh, python=False)
-        msg = f"Quality measure '{measure}' not implemented in the {dim}D case in C++."
-        self.assertEqual(str(cm.exception), msg)
-
-    @parameterized.expand(
-        [
             ("min_angle", 2),
             ("min_angle", 3),
             ("aspect_ratio", 3),
@@ -127,18 +97,16 @@ class TestQuality(unittest.TestCase):
             ("metric", 3),
         ]
     )
-    def test_python_notimplemented(self, measure, dim):
+    def test_notimplemented(self, measure, dim):
         mesh = uniform_mesh(dim, 1)
         with self.assertRaises(NotImplementedError) as cm:
-            self.quality(measure, mesh, python=True)
-        msg = (
-            f"Quality measure '{measure}' not implemented in the {dim}D case in Python."
-        )
+            self.quality(measure, mesh)
+        msg = f"Quality measure '{measure}' not implemented in the {dim}D case."
         self.assertEqual(str(cm.exception), msg)
 
     def test_unrecognised_error(self):
         mesh = uniform_mesh(2, 1)
         with self.assertRaises(ValueError) as cm:
-            self.quality("invalid", mesh, python=False)
+            self.quality("invalid", mesh)
         msg = "Quality measure 'invalid' not recognised."
         self.assertEqual(str(cm.exception), msg)

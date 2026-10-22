@@ -47,18 +47,15 @@ class QualityMeasure:
     )
 
     @PETSc.Log.EventDecorator()
-    def __init__(self, mesh, metric=None, python=False):
+    def __init__(self, mesh, metric=None):
         """
         :arg mesh: the input mesh to do computations on
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
         :arg metric: the tensor field representing the metric space transformation
         :type metric: :class:`~.RiemannianMetric`
-        :kwarg python: compute the measure using Python?
-        :type python: :class:`bool`
         """
         self.mesh = mesh
         self.metric = metric
-        self.python = python
         self.dim = mesh.topological_dimension
         self.coords = mesh.coordinates
         self.P0 = firedrake.FunctionSpace(mesh, "DG", 0)
@@ -87,22 +84,6 @@ class QualityMeasure:
         msg = (
             f"Quality measure '{name}' not implemented in the {self.dim}D case in C++."
         )
-        if self.python:
-            return self._call_python(name)
-        elif name == "facet_area":
-            raise NotImplementedError(msg)
-        elif name == "skewness" and self.dim == 3:
-            raise NotImplementedError(msg)
-        with open(self.fname, "r") as f:
-            code = f.read()
-        func = firedrake.Function(self.P0, name=name)
-        kwargs = {"cpp": True, "include_dirs": include_dir}
-        kernel = op2.Kernel(code, f"get_{name}", **kwargs)
-        op2.par_loop(kernel, self.mesh.cell_set, *self._get_dats(func))
-        return func
-
-    @PETSc.Log.EventDecorator()
-    def _call_python(self, name):
         if name in ("area", "volume"):
             return firedrake.Function(self.P0).interpolate(ufl.CellVolume(self.mesh))
         elif name == "facet_area":
@@ -154,6 +135,5 @@ class QualityMeasure:
             )
         else:
             raise NotImplementedError(
-                f"Quality measure '{name}' not implemented in the {self.dim}D case in"
-                " Python."
+                f"Quality measure '{name}' not implemented in the {self.dim}D case."
             )

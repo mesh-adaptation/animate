@@ -358,7 +358,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
     # Compute the patch volume at each vertex
     if not boundary:
         dX = ufl.dx(domain=mesh)
-        volume = QualityMeasure(mesh, python=True)("volume")
+        volume = QualityMeasure(mesh)("volume")
 
         # Compute patch volume
         patch_volume = firedrake.Function(P1)
