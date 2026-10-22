@@ -10,10 +10,10 @@ from adapt_common.utility import (
     cofunction2function,
     function2cofunction,
 )
+from firedrake import READ, RW
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
 from firedrake.petsc import PETSc
 from firedrake.supermeshing import assemble_mixed_mass_matrix
-from firedrake import READ, RW
 from petsc4py import PETSc as petsc4py
 
 from animate.quality import QualityMeasure

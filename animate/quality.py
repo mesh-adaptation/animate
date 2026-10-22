@@ -77,9 +77,6 @@ class QualityMeasure:
         """
         if name not in QualityMeasure._measures:
             raise ValueError(f"Quality measure '{name}' not recognised.")
-        msg = (
-            f"Quality measure '{name}' not implemented in the {self.dim}D case in C++."
-        )
         if name in ("area", "volume"):
             return firedrake.Function(self.P0).interpolate(ufl.CellVolume(self.mesh))
         elif name == "facet_area":
