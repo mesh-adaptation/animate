@@ -820,14 +820,15 @@ class RiemannianMetric(ffunc.Function):
                 "Mismatching finite element space degrees:"
                 f" {fe_ten.degree()} vs. {fe_vec.degree()}."
             )
+        # M = Q D Q^T, with D the diagonal matrix whose entries are `evalues`.
         dim = V_ten.mesh().topological_dimension
-        op2.par_loop(
-            get_metric_kernel("set_eigendecomposition", dim),
-            V_ten.node_set,
-            self.dat(op2.RW),
-            evectors.dat(op2.READ),
-            evalues.dat(op2.READ),
+        D = ufl.as_matrix(
+            [
+                [evalues[i] if i == j else 0.0 for j in range(dim)]
+                for i in range(dim)
+            ]
         )
+        self.interpolate(ufl.dot(evectors, ufl.dot(D, ufl.transpose(evectors))))
         return self
 
     @PETSc.Log.EventDecorator()
