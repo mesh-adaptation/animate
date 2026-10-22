@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterable
 
 import firedrake
@@ -8,6 +9,7 @@ import numpy as np
 import sympy
 import ufl
 from firedrake.petsc import PETSc
+from petsctools import get_petsc_dirs
 from pyop2 import op2
 
 try:
@@ -20,11 +22,31 @@ from adapt_common.reduction import function_data_min, function_data_sum
 
 from .interpolation import clement_interpolant
 from .recovery import (
-    get_metric_kernel,
     recover_boundary_hessian,
     recover_gradient_l2,
     recover_hessian_clement,
 )
+
+petsc_dirs = get_petsc_dirs()
+include_dir = ["%s/include/eigen3" % petsc_dirs[-1]]
+
+
+def get_metric_kernel(func, dim):
+    """
+    Helper function to easily pass Eigen kernels for metric utilities to Firedrake via
+    PyOP2.
+
+    :arg func: function name
+    :type func: :class:`str`
+    :arg dim: spatial dimension
+    :type dim: :class:`int`
+    :returns: kernel to execute
+    :rtype: :class:`op2.Kernel`
+    """
+    pwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
+    with open(os.path.join(pwd, f"metric{dim}d.cxx"), "r") as code:
+        return op2.Kernel(code.read(), func, cpp=True, include_dirs=include_dir)
+
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 
