@@ -6,9 +6,9 @@ import os
 
 import firedrake
 import ufl
+from firedrake import READ, WRITE
 from firedrake.petsc import PETSc
 from petsctools import get_petsc_dirs
-from pyop2 import op2
 
 petsc_dirs = get_petsc_dirs()
 include_dir = ["%s/include/eigen3" % petsc_dirs[-1]]
@@ -64,11 +64,11 @@ class QualityMeasure:
 
     def _get_dats(self, func):
         dats = (
-            func.dat(op2.WRITE, func.cell_node_map()),
-            self.coords.dat(op2.READ, self.coords.cell_node_map()),
+            func.dat(WRITE, func.cell_node_map()),
+            self.coords.dat(READ, self.coords.cell_node_map()),
         )
         if self.metric is not None:
-            dats += (self.metric.dat(op2.READ, self.metric.cell_node_map()),)
+            dats += (self.metric.dat(READ, self.metric.cell_node_map()),)
         return dats
 
     @PETSc.Log.EventDecorator()
