@@ -8,10 +8,6 @@ import firedrake
 import ufl
 from firedrake import READ, WRITE
 from firedrake.petsc import PETSc
-from petsctools import get_petsc_dirs
-
-petsc_dirs = get_petsc_dirs()
-include_dir = ["%s/include/eigen3" % petsc_dirs[-1]]
 
 __all__ = ["QualityMeasure"]
 
