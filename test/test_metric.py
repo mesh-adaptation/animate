@@ -326,12 +326,12 @@ class TestCombination(MetricTestCase):
         expected = RiemannianMetric(P1_ten)
         expected.interpolate(ufl.Identity(dim))
         metrics = []
-        for i in range(P1_ten.node_count):
+        for i in range(mesh.num_vertices()):
             metric = RiemannianMetric(P1_ten)
             metric.interpolate(ufl.Identity(dim))
             # change to (i+1)I at node i only
-            metric.dat.data[i] *= float(i+1)
-            expected.dat.data[i] *= float(i+1)
+            metric.dat.data[i] *= float(i + 1)
+            expected.dat.data[i] *= float(i + 1)
             metrics.append(metric)
 
         metric = RiemannianMetric(P1_ten)
