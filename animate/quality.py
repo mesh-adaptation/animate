@@ -4,7 +4,6 @@ Functions for computing mesh quality measures.
 
 import firedrake
 import ufl
-from firedrake import READ, WRITE
 from firedrake.petsc import PETSc
 
 __all__ = ["QualityMeasure"]
@@ -15,53 +14,31 @@ class QualityMeasure:
     Class for computing quality measures associated with a given mesh.
 
     Choices of quality measure:
-      * ``min_angle``: the minimum angle of each cell
       * ``area``: the area of each cell in a 2D triangular mesh
       * ``volume``: the volume of each cell in a 3D tetrahedral mesh
       * ``facet_area``: the area of each *facet*.
       * ``aspect_ratio``: the aspect ratio of each cell
-      * ``eskew``: the equiangle skew of each cell
-      * ``skewness``: the skewness of each cell in a 2D triangular mesh
       * ``scaled_jacobian``: the scaled Jacobian of each cell
-      * ``metric``:  given a Riemannian metric, this function outputs the
-        value of the quality measure :eq:`Q_M` based on the transformation
-        encoded by the metric.
     """
 
     _measures = (
-        "min_angle",
         "area",
         "volume",
         "facet_area",
         "aspect_ratio",
-        "eskew",
-        "skewness",
         "scaled_jacobian",
-        "metric",
     )
 
     @PETSc.Log.EventDecorator()
-    def __init__(self, mesh, metric=None):
+    def __init__(self, mesh):
         """
         :arg mesh: the input mesh to do computations on
         :type mesh: :class:`firedrake.mesh.MeshGeometry`
-        :arg metric: the tensor field representing the metric space transformation
-        :type metric: :class:`~.RiemannianMetric`
         """
         self.mesh = mesh
-        self.metric = metric
         self.dim = mesh.topological_dimension
         self.coords = mesh.coordinates
         self.P0 = firedrake.FunctionSpace(mesh, "DG", 0)
-
-    def _get_dats(self, func):
-        dats = (
-            func.dat(WRITE, func.cell_node_map()),
-            self.coords.dat(READ, self.coords.cell_node_map()),
-        )
-        if self.metric is not None:
-            dats += (self.metric.dat(READ, self.metric.cell_node_map()),)
-        return dats
 
     @PETSc.Log.EventDecorator()
     def __call__(self, name):
