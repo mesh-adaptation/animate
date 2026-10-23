@@ -62,7 +62,7 @@ def test_is_permutation(function_space):
     # Verify that reordering according to the PETSc numbering is a permutation
     data = f.dat.data_ro_with_halos
     lvec = PETSc.Vec().createWithArray(
-        data, size=data.size, bsize=f.dat.cdim, comm=fd.COMM_SELF
+        data, size=data.size, bsize=f.function_space().block_size, comm=fd.COMM_SELF
     )
     reordered_vec = to_petsc_local_numbering(lvec, function_space)
     assert reordered_vec is not None

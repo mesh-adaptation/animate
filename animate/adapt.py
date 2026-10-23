@@ -100,7 +100,7 @@ class MetricBasedAdaptor(AdaptorBase):
         self.metric.enforce_spd(restrict_sizes=True, restrict_anisotropy=True)
         data = self.metric.dat.data_ro_with_halos
         v = PETSc.Vec().createWithArray(
-            data, size=data.size, bsize=self.metric.dat.cdim, comm=COMM_SELF
+            data, size=data.size, bsize=self.metric.function_space().block_size, comm=COMM_SELF
         )
         reordered = to_petsc_local_numbering(v, self.metric.function_space())
         v.destroy()

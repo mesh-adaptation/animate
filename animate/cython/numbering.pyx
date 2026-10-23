@@ -34,7 +34,7 @@ def to_petsc_local_numbering(PETSc.Vec vec, V):
     :arg V: the FunctionSpace of the Function which the Vec comes from
     :ret out: a copy of the Vec, ordered with the PETSc natural numbering
     """
-    cdef int dim, idx, lsize, p, d, k
+    cdef int idx, lsize, p, d
     cdef PetscInt dof, off
     cdef PETSc.Vec out
     cdef PETSc.Section section
@@ -44,7 +44,6 @@ def to_petsc_local_numbering(PETSc.Vec vec, V):
     out = vec.duplicate()
     varray = vec.array_r
     oarray = out.array
-    dim = V.value_size
     idx = 0
     lsize = vec.getSize()
     for p in range(*section.getChart()):
@@ -52,11 +51,9 @@ def to_petsc_local_numbering(PETSc.Vec vec, V):
         if dof > 0:
             CHKERR(PetscSectionGetOffset(section.sec, p, &off))
             assert off >= 0
-            off *= dim
             for d in range(dof):
-                for k in range(dim):
-                    oarray[idx] = varray[off + dim * d + k]
-                    idx += 1
+                oarray[idx] = varray[off + d]
+                idx += 1
     if idx != lsize:
         raise ValueError(
            f"Number of local section entries not the same as vector size"

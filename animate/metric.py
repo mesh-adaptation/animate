@@ -95,7 +95,7 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(fs.dof_count, Iterable):
             raise ValueError("Riemannian metric cannot be built in a mixed space.")
         self._check_space()
-        rank = len(fs.dof_dset.dim)
+        rank = fs.rank
         if rank != 2:
             raise ValueError(
                 "Riemannian metric should be matrix-valued,"
@@ -112,9 +112,7 @@ class RiemannianMetric(ffunc.Function):
         self._set_plex_coordinates()
 
         # Adjust the section
-        entity_dofs = np.zeros(tdim + 1, dtype=np.int32)
-        entity_dofs[0] = tdim**2
-        plex.setLocalSection(mesh.create_section(entity_dofs)[0])
+        plex.setLocalSection(fs.section)
 
         # Process spatially variable metric parameters
         self._variable_parameters = {
@@ -291,8 +289,8 @@ class RiemannianMetric(ffunc.Function):
         return mp
 
     def _create_from_array(self, array):
-        bsize = self.dat.cdim
-        size = [self.dat.dataset.total_size * bsize] * 2
+        bsize = self.function_space().block_size
+        size = [self.dat.axes.local_size] * 2
         comm = PETSc.COMM_SELF
         return PETSc.Vec().createWithArray(array, size=size, bsize=bsize, comm=comm)
 
@@ -302,9 +300,7 @@ class RiemannianMetric(ffunc.Function):
         Ensure that the coordinates of the Firedrake mesh and the underlying DMPlex are
         consistent.
         """
-        entity_dofs = np.zeros(self._tdim + 1, dtype=np.int32)
-        entity_dofs[0] = self._mesh.geometric_dimension
-        coord_section = self._mesh.create_section(entity_dofs)[0]
+        coord_section = self._mesh.coordinates.function_space().section
         # NOTE: section doesn't have any fields, but PETSc assumes it to have one
         coord_dm = self._plex.getCoordinateDM()
         coord_dm.setLocalSection(coord_section)
