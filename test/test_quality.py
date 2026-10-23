@@ -35,7 +35,6 @@ class TestQuality(unittest.TestCase):
     """
 
     def quality(self, name, mesh, **kwargs):
-        dim = mesh.topological_dimension
         return QualityMeasure(mesh, **kwargs)(name)
 
     @parameterized.expand(
