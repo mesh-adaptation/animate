@@ -1,6 +1,6 @@
 """
 Helpers for building :class:`pyop3.Function` kernels from the plain-C source
-files under ``animate/cxx``.
+files under ``animate/c``.
 
 The C files use a simple section convention:
 
@@ -25,8 +25,8 @@ _PREAMBLE_BEGIN = "/* PREAMBLE-BEGIN */"
 _PREAMBLE_END = "/* PREAMBLE-END */"
 
 
-def _cxx_dir() -> str:
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
+def _c_dir() -> str:
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "c"))
 
 
 def _split_source(source: str) -> tuple[str, str]:
@@ -68,7 +68,7 @@ def get_metric_kernel(
 ) -> op3.Function:
     """
     Build a :class:`pyop3.Function` for one of the metric kernels in
-    ``animate/cxx/metric{dim}d.c``.
+    ``animate/c/metric{dim}d.c``.
 
     :arg func: kernel name (must match a ``void func(...) { ... }`` definition
         in the C file).
@@ -80,7 +80,7 @@ def get_metric_kernel(
     """
     if dim not in (2, 3):
         raise ValueError(f"Only 2D and 3D metric kernels are supported, not {dim}D.")
-    path = os.path.join(_cxx_dir(), f"metric{dim}d.c")
+    path = os.path.join(_c_dir(), f"metric{dim}d.c")
     with open(path) as fh:
         source = fh.read()
     preamble, kernels = _split_source(source)

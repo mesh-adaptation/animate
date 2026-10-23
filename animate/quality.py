@@ -2,8 +2,6 @@
 Functions for computing mesh quality measures.
 """
 
-import os
-
 import firedrake
 import ufl
 from firedrake import READ, WRITE
@@ -55,8 +53,6 @@ class QualityMeasure:
         self.dim = mesh.topological_dimension
         self.coords = mesh.coordinates
         self.P0 = firedrake.FunctionSpace(mesh, "DG", 0)
-        src_dir = os.path.join(os.path.dirname(__file__), "cxx")
-        self.fname = os.path.join(src_dir, f"quality{self.dim}d.cxx")
 
     def _get_dats(self, func):
         dats = (
