@@ -4,13 +4,13 @@ Driver functions for mesh-to-mesh data transfer.
 
 import firedrake
 import numpy as np
+import pyop3 as op3
 import ufl
 from adapt_common.utility import (
     assemble_mass_matrix,
     cofunction2function,
     function2cofunction,
 )
-from firedrake import READ, RW
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
 from firedrake.petsc import PETSc
 from firedrake.supermeshing import assemble_mixed_mass_matrix
@@ -364,7 +364,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
         patch_volume = firedrake.Function(P1)
         domain = "{[i]: 0 <= i < patch.dofs}"
         instructions = "patch[i, 0] = patch[i, 0] + vol[0, 0]"
-        keys = {"vol": (volume, READ), "patch": (patch_volume, RW)}
+        keys = {"vol": (volume, op3.READ), "patch": (patch_volume, op3.RW)}
         firedrake.par_loop((domain, instructions), dX, keys)
 
         # Take weighted average
@@ -377,9 +377,9 @@ def clement_interpolant(source, target_space=None, boundary=False):
             ),
         }[rank]
         keys = {
-            "s": (source, READ),
-            "v": (volume, READ),
-            "t": (target, RW),
+            "s": (source, op3.READ),
+            "v": (volume, op3.READ),
+            "t": (target, op3.RW),
         }
         firedrake.par_loop((tdomain, instructions), dX, keys)
     else:
@@ -403,9 +403,9 @@ def clement_interpolant(source, target_space=None, boundary=False):
         domain = "{[i]: 0 <= i < patch.dofs}"
         instructions = "patch[i, 0] = patch[i, 0] + indicator[i, 0] * bnd_vol[0, 0]"
         keys = {
-            "bnd_vol": (bnd_volume, READ),
-            "indicator": (bnd_indicator, READ),
-            "patch": (patch_volume, RW),
+            "bnd_vol": (bnd_volume, op3.READ),
+            "indicator": (bnd_indicator, op3.READ),
+            "patch": (patch_volume, op3.RW),
         }
         firedrake.par_loop((domain, instructions), dX, keys)
 
@@ -419,10 +419,10 @@ def clement_interpolant(source, target_space=None, boundary=False):
             ),
         }[rank]
         keys = {
-            "s": (source, READ),
-            "v": (bnd_volume, READ),
-            "b": (bnd_indicator, READ),
-            "t": (target, RW),
+            "s": (source, op3.READ),
+            "v": (bnd_volume, op3.READ),
+            "b": (bnd_indicator, op3.READ),
+            "t": (target, op3.RW),
         }
         firedrake.par_loop((tdomain, instructions), dX, keys)
 
