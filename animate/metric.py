@@ -1,4 +1,3 @@
-import os
 from collections.abc import Iterable
 
 import firedrake
@@ -6,11 +5,10 @@ import firedrake.function as ffunc
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
 import numpy as np
+import pyop3 as op3
 import sympy
 import ufl
 from firedrake.petsc import PETSc
-from petsctools import get_petsc_dirs
-from pyop2 import op2
 
 try:
     # only works in firedrake release <=2025.4.x
@@ -20,32 +18,13 @@ except ImportError:
 
 from adapt_common.reduction import function_data_min, function_data_sum
 
+from ._kernel import get_metric_kernel
 from .interpolation import clement_interpolant
 from .recovery import (
     recover_boundary_hessian,
     recover_gradient_l2,
     recover_hessian_clement,
 )
-
-petsc_dirs = get_petsc_dirs()
-include_dir = ["%s/include/eigen3" % petsc_dirs[-1]]
-
-
-def get_metric_kernel(func, dim):
-    """
-    Helper function to easily pass Eigen kernels for metric utilities to Firedrake via
-    PyOP2.
-
-    :arg func: function name
-    :type func: :class:`str`
-    :arg dim: spatial dimension
-    :type dim: :class:`int`
-    :returns: kernel to execute
-    :rtype: :class:`op2.Kernel`
-    """
-    pwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
-    with open(os.path.join(pwd, f"metric{dim}d.cxx"), "r") as code:
-        return op2.Kernel(code.read(), func, cpp=True, include_dirs=include_dir)
 
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
@@ -548,19 +527,32 @@ class RiemannianMetric(ffunc.Function):
             raise ValueError(f"Encountered a_max value smaller than unity: {_a_max}.")
 
         dim = mesh.topological_dimension
+        V = self.function_space()
         boundary_tag = self._variable_parameters.get("dm_plex_metric_boundary_tag")
         if boundary_tag is None:
-            node_set = self.function_space().node_set
+            loop_index = V.nodes.iter()
         else:
-            bc = firedrake.DirichletBC(self.function_space(), 0, boundary_tag)
-            node_set = bc.node_set
-        op2.par_loop(
-            get_metric_kernel("postproc_metric", dim),
-            node_set,
-            self.dat(op2.RW),
-            h_min.dat(op2.READ),
-            h_max.dat(op2.READ),
-            a_max.dat(op2.READ),
+            bc = firedrake.DirichletBC(V, 0, boundary_tag)
+            loop_index = V.nodes[bc.node_set].iter()
+        kernel = get_metric_kernel(
+            "postproc_metric",
+            dim,
+            [
+                ("A_", op3.ScalarType, op3.RW),
+                ("h_min", op3.ScalarType, op3.READ),
+                ("h_max", op3.ScalarType, op3.READ),
+                ("a_max", op3.ScalarType, op3.READ),
+            ],
+        )
+        op3.loop(
+            loop_index,
+            kernel(
+                self.dat[loop_index],
+                h_min.dat[loop_index],
+                h_max.dat[loop_index],
+                a_max.dat[loop_index],
+            ),
+            eager=True,
         )
         return self
 
@@ -772,13 +764,24 @@ class RiemannianMetric(ffunc.Function):
             name = "get_reordered_eigendecomposition"
         else:
             name = "get_eigendecomposition"
-        kernel = get_metric_kernel(name, dim)
-        op2.par_loop(
-            kernel,
-            V_ten.node_set,
-            evectors.dat(op2.RW),
-            evalues.dat(op2.RW),
-            self.dat(op2.READ),
+        kernel = get_metric_kernel(
+            name,
+            dim,
+            [
+                ("EVecs_", op3.ScalarType, op3.WRITE),
+                ("EVals_", op3.ScalarType, op3.WRITE),
+                ("M_", op3.ScalarType, op3.READ),
+            ],
+        )
+        loop_index = V_ten.nodes.iter()
+        op3.loop(
+            loop_index,
+            kernel(
+                evectors.dat[loop_index],
+                evalues.dat[loop_index],
+                self.dat[loop_index],
+            ),
+            eager=True,
         )
         return evectors, evalues
 
@@ -1244,17 +1247,29 @@ def intersect_on_boundary(*metrics, boundary_tag="on_boundary"):
             "It is unclear what to do with an empty"
             f" {type(boundary_tag)} of boundary tags."
         )
-    node_set = firedrake.DirichletBC(fs, 0, boundary_tag).node_set
+    boundary_slice = firedrake.DirichletBC(fs, 0, boundary_tag).node_set
 
     # Compute the intersection
     Mtmp = RiemannianMetric(fs)
+    kernel = get_metric_kernel(
+        "intersect",
+        dim,
+        [
+            ("M_", op3.ScalarType, op3.RW),
+            ("A_", op3.ScalarType, op3.READ),
+            ("B_", op3.ScalarType, op3.READ),
+        ],
+    )
+    loop_index = fs.nodes[boundary_slice].iter()
     for metric in metrics[1:]:
         Mtmp.assign(intersected_metric)
-        op2.par_loop(
-            get_metric_kernel("intersect", dim),
-            node_set,
-            intersected_metric.dat(op2.RW),
-            Mtmp.dat(op2.READ),
-            metric.dat(op2.READ),
+        op3.loop(
+            loop_index,
+            kernel(
+                intersected_metric.dat[loop_index],
+                Mtmp.dat[loop_index],
+                metric.dat[loop_index],
+            ),
+            eager=True,
         )
     return intersected_metric
