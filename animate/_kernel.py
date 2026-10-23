@@ -12,6 +12,7 @@ The C files use a simple section convention:
 
 Use :func:`get_metric_kernel` the same way the old pyop2 helper was used::
 """
+
 from __future__ import annotations
 
 import os
@@ -62,7 +63,9 @@ def _extract_function_body(source: str, name: str) -> str:
     raise ValueError(f"Unbalanced braces in kernel '{name}'.")
 
 
-def get_metric_kernel(func: str, dim: int, args: list[tuple[str, object, object]]) -> op3.Function:
+def get_metric_kernel(
+    func: str, dim: int, args: list[tuple[str, object, object]]
+) -> op3.Function:
     """
     Build a :class:`pyop3.Function` for one of the metric kernels in
     ``animate/cxx/metric{dim}d.c``.
@@ -86,7 +89,10 @@ def get_metric_kernel(func: str, dim: int, args: list[tuple[str, object, object]
         func,
         body,
         args,
-        preambles=[("10_blaslapack", "#include <petscblaslapack.h>"), ("20_metric", preamble)],
+        preambles=[
+            ("10_blaslapack", "#include <petscblaslapack.h>"),
+            ("20_metric", preamble),
+        ],
         include_dirs=BLASLAPACK_INCLUDE,
         libs=BLASLAPACK_LIB,
     )

@@ -26,7 +26,6 @@ from .recovery import (
     recover_hessian_clement,
 )
 
-
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 
 
