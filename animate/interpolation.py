@@ -363,17 +363,17 @@ def clement_interpolant(source, target_space=None, boundary=False):
         # Compute patch volume
         patch_volume = firedrake.Function(P1)
         domain = "{[i]: 0 <= i < patch.dofs}"
-        instructions = "patch[i] = patch[i] + vol[0]"
+        instructions = "patch[i, 0] = patch[i, 0] + vol[0, 0]"
         keys = {"vol": (volume, READ), "patch": (patch_volume, RW)}
         firedrake.par_loop((domain, instructions), dX, keys)
 
         # Take weighted average
         instructions = {
-            0: "t[i] = t[i] + v[0] * s[0]",
-            1: "t[i, j] = t[i, j] + v[0] * s[0, j]",
+            0: "t[i, 0] = t[i, 0] + v[0, 0] * s[0, 0]",
+            1: "t[i, j] = t[i, j] + v[0, 0] * s[0, j]",
             2: (
                 f"t[i, {dim} * j + k] ="
-                f" t[i, {dim} * j + k] + v[0] * s[0, {dim} * j + k]"
+                f" t[i, {dim} * j + k] + v[0, 0] * s[0, {dim} * j + k]"
             ),
         }[rank]
         keys = {
@@ -401,7 +401,7 @@ def clement_interpolant(source, target_space=None, boundary=False):
         # Compute patch volume
         patch_volume = firedrake.Function(P1)
         domain = "{[i]: 0 <= i < patch.dofs}"
-        instructions = "patch[i] = patch[i] + indicator[i] * bnd_vol[0]"
+        instructions = "patch[i, 0] = patch[i, 0] + indicator[i, 0] * bnd_vol[0, 0]"
         keys = {
             "bnd_vol": (bnd_volume, READ),
             "indicator": (bnd_indicator, READ),
@@ -411,11 +411,11 @@ def clement_interpolant(source, target_space=None, boundary=False):
 
         # Take weighted average
         instructions = {
-            0: "t[i] = t[i] + v[0] * b[i] * s[0]",
-            1: "t[i, j] = t[i, j] + v[0] * b[i] * s[0, j]",
+            0: "t[i, 0] = t[i, 0] + v[0, 0] * b[i, 0] * s[0, 0]",
+            1: "t[i, j] = t[i, j] + v[0, 0] * b[i, 0] * s[0, j]",
             2: (
                 f"t[i, {dim} * j + k] = "
-                f"t[i, {dim} * j + k] + v[0] * b[i] * s[0, {dim} * j + k]"
+                f"t[i, {dim} * j + k] + v[0, 0] * b[i, 0] * s[0, {dim} * j + k]"
             ),
         }[rank]
         keys = {
