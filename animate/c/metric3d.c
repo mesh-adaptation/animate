@@ -1,5 +1,5 @@
 /*
- * Plain-C ports of the Eigen-based metric kernels formerly in metric3d.cxx.
+ * C kernels for 3D metrics.
  *
  * All matrices are stored row-major; metrics are 3x3 symmetric positive
  * definite. Eigenvalue problems are delegated to LAPACK dsyev via PETSc's
@@ -30,12 +30,14 @@ static void eig3x3(double Q[9], double D[3], const double A[9]) {
   char uplo = 'U';
   PetscBLASInt n = 3;
   PetscBLASInt lda = 3;
-  PetscBLASInt lwork = 34;  /* dsyev has lwork >= 3*n - 1; allow headroom. */
+  PetscBLASInt lwork = 34; /* dsyev has lwork >= 3*n - 1; allow headroom. */
   PetscBLASInt info = 0;
   double work[34];
 
   /* Copy A into Q (dsyev overwrites the input with eigenvectors). */
-  for (int i = 0; i < 9; i++) Q[i] = A[i];
+  for (int i = 0; i < 9; i++) {
+    Q[i] = A[i];
+  }
   LAPACKsyev_(&jobz, &uplo, &n, Q, &lda, D, work, &lwork, &info);
   /* info != 0 should not occur for a 3x3; if it does, behaviour will be
    * clearly wrong downstream, which is preferable to silently corrupting. */
@@ -59,12 +61,13 @@ static void eig3x3(double Q[9], double D[3], const double A[9]) {
  * Compute the matrix product A = Q diag(d0, d1, d2) Q^T for a 3x3 row-major
  * orthogonal matrix Q.
  */
-static void rqdt_3x3(double M[9], const double Q[9], double d0, double d1, double d2) {
+static void rqdt_3x3(double M[9], const double Q[9], double d0, double d1,
+                     double d2) {
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      M[3 * i + j] = d0 * Q[3 * i + 0] * Q[3 * j + 0]
-                   + d1 * Q[3 * i + 1] * Q[3 * j + 1]
-                   + d2 * Q[3 * i + 2] * Q[3 * j + 2];
+      M[3 * i + j] = d0 * Q[3 * i + 0] * Q[3 * j + 0] +
+                     d1 * Q[3 * i + 1] * Q[3 * j + 1] +
+                     d2 * Q[3 * i + 2] * Q[3 * j + 2];
     }
   }
 }
@@ -74,7 +77,8 @@ static void rqdt_3x3(double M[9], const double Q[9], double d0, double d1, doubl
 /*
  * Extract eigenvectors and eigenvalues from a 3D metric field.
  */
-void get_eigendecomposition(double EVecs_[9], double EVals_[3], const double * M_) {
+void get_eigendecomposition(double EVecs_[9], double EVals_[3],
+                            const double *M_) {
   eig3x3(EVecs_, EVals_, M_);
 }
 
@@ -82,7 +86,8 @@ void get_eigendecomposition(double EVecs_[9], double EVals_[3], const double * M
  * Extract eigenvectors and eigenvalues from a 3D metric field, with
  * eigenvalues **decreasing** in magnitude.
  */
-void get_reordered_eigendecomposition(double EVecs_[9], double EVals_[3], const double * M_) {
+void get_reordered_eigendecomposition(double EVecs_[9], double EVals_[3],
+                                      const double *M_) {
   double D[3];
   double Q[9];
   eig3x3(Q, D, M_);
@@ -92,13 +97,24 @@ void get_reordered_eigendecomposition(double EVecs_[9], double EVals_[3], const 
   const double a0 = fabs(D[0]);
   const double a1 = fabs(D[1]);
   const double a2 = fabs(D[2]);
+
   /* Simple 3-element insertion sort on idx by descending |D[idx[]]|. */
-  if (a1 > a0) { idx[0] = 1; idx[1] = 0; } else { idx[0] = 0; idx[1] = 1; }
+  if (a1 > a0) {
+    idx[0] = 1;
+    idx[1] = 0;
+  } else {
+    idx[0] = 0;
+    idx[1] = 1;
+  }
   idx[2] = 2;
   if (fabs(D[idx[2]]) > fabs(D[idx[1]])) {
-    int tmp = idx[1]; idx[1] = idx[2]; idx[2] = tmp;
+    int tmp = idx[1];
+    idx[1] = idx[2];
+    idx[2] = tmp;
     if (fabs(D[idx[1]]) > fabs(D[idx[0]])) {
-      tmp = idx[0]; idx[0] = idx[1]; idx[1] = tmp;
+      tmp = idx[0];
+      idx[0] = idx[1];
+      idx[1] = tmp;
     }
   }
   for (int k = 0; k < 3; k++) {
@@ -113,7 +129,8 @@ void get_reordered_eigendecomposition(double EVecs_[9], double EVals_[3], const 
  * Post-process a 3D metric field in order to enforce maximum and minimum
  * tolerated metric magnitudes, as well as maximum tolerated anisotropy.
  */
-void postproc_metric(double A_[9], const double * h_min, const double * h_max, const double * a_max) {
+void postproc_metric(double A_[9], const double *h_min, const double *h_max,
+                     const double *a_max) {
   const double l_max = pow(*h_min, -2);
   const double l_min = pow(*h_max, -2);
   const double la_min = pow(*a_max, -2);
@@ -140,7 +157,7 @@ void postproc_metric(double A_[9], const double * h_min, const double * h_max, c
 /*
  * Intersect two 3D metric fields.
  */
-void intersect(double M_[9], const double * A_, const double * B_) {
+void intersect(double M_[9], const double *A_, const double *B_) {
   /* Eigendecomposition of A: A = Qa Da Qa^T. */
   double Qa[9];
   double Da[3];
@@ -165,7 +182,7 @@ void intersect(double M_[9], const double * A_, const double * B_) {
     for (int j = 0; j < 3; j++) {
       C[3 * i + j] = 0.0;
       for (int k = 0; k < 3; k++)
-        C[3 * i + j] += Sqi[3 * i + k] * tmp[3 * k + j];  /* Sqi^T = Sqi */
+        C[3 * i + j] += Sqi[3 * i + k] * tmp[3 * k + j]; /* Sqi^T = Sqi */
     }
 
   /* Eigendecomposition of C = Qc Dc Qc^T; clamp eigenvalues below at 1. */
@@ -190,6 +207,6 @@ void intersect(double M_[9], const double * A_, const double * B_) {
     for (int j = 0; j < 3; j++) {
       M_[3 * i + j] = 0.0;
       for (int k = 0; k < 3; k++)
-        M_[3 * i + j] += Sq[3 * i + k] * tmp2[3 * k + j];  /* Sq^T = Sq */
+        M_[3 * i + j] += Sq[3 * i + k] * tmp2[3 * k + j]; /* Sq^T = Sq */
     }
 }

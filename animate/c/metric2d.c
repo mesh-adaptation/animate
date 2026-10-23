@@ -1,5 +1,5 @@
 /*
- * Plain-C ports of the Eigen-based metric kernels formerly in metric2d.cxx.
+ * C kernels for 2D metrics.
  *
  * All matrices are stored row-major; metrics are 2x2 symmetric positive
  * definite. The eigenvalue solver is the closed-form Jacobi rotation for a
@@ -33,23 +33,29 @@ static void eig2x2(double Q[4], double D[2], const double A[4]) {
   const double b = A[1];
   const double c = A[3];
 
-  if (b == 0.0) {
+  if (abs(b) < 1e-16) {
     if (a <= c) {
-      Q[0] = 1.0; Q[1] = 0.0;
-      Q[2] = 0.0; Q[3] = 1.0;
-      D[0] = a;   D[1] = c;
+      Q[0] = 1.0;
+      Q[1] = 0.0;
+      Q[2] = 0.0;
+      Q[3] = 1.0;
+      D[0] = a;
+      D[1] = c;
     } else {
-      Q[0] = 0.0; Q[1] = 1.0;
-      Q[2] = 1.0; Q[3] = 0.0;
-      D[0] = c;   D[1] = a;
+      Q[0] = 0.0;
+      Q[1] = 1.0;
+      Q[2] = 1.0;
+      Q[3] = 0.0;
+      D[0] = c;
+      D[1] = a;
     }
     return;
   }
 
   const double m = 0.5 * (a + c);
   const double d = sqrt(0.25 * (a - c) * (a - c) + b * b);
-  const double l1 = m - d;  /* smaller */
-  const double l2 = m + d;  /* larger  */
+  const double l1 = m - d; /* smaller */
+  const double l2 = m + d; /* larger  */
 
   /* Eigenvector for l1: a nonzero null vector of M - l1 I. Pick the more
    * numerically robust of (b, l1 - a) and (l1 - c, b).
@@ -67,8 +73,10 @@ static void eig2x2(double Q[4], double D[2], const double A[4]) {
   const double uy = vy / n;
 
   /* Second eigenvector is the unit vector perpendicular to (ux, uy). */
-  Q[0] = ux;  Q[1] = -uy;
-  Q[2] = uy;  Q[3] = ux;
+  Q[0] = ux;
+  Q[1] = -uy;
+  Q[2] = uy;
+  Q[3] = ux;
   D[0] = l1;
   D[1] = l2;
 }
@@ -90,7 +98,8 @@ static void rqdt_2x2(double M[4], const double Q[4], double d0, double d1) {
 /*
  * Extract eigenvectors and eigenvalues from a 2D metric field.
  */
-void get_eigendecomposition(double EVecs_[4], double EVals_[2], const double * M_) {
+void get_eigendecomposition(double EVecs_[4], double EVals_[2],
+                            const double *M_) {
   eig2x2(EVecs_, EVals_, M_);
 }
 
@@ -98,19 +107,26 @@ void get_eigendecomposition(double EVecs_[4], double EVals_[2], const double * M
  * Extract eigenvectors and eigenvalues from a 2D metric field, with
  * eigenvalues **decreasing** in magnitude.
  */
-void get_reordered_eigendecomposition(double EVecs_[4], double EVals_[2], const double * M_) {
+void get_reordered_eigendecomposition(double EVecs_[4], double EVals_[2],
+                                      const double *M_) {
   double D[2];
   double Q[4];
   eig2x2(Q, D, M_);
   if (fabs(D[0]) >= fabs(D[1])) {
-    EVecs_[0] = Q[0]; EVecs_[1] = Q[1];
-    EVecs_[2] = Q[2]; EVecs_[3] = Q[3];
-    EVals_[0] = D[0]; EVals_[1] = D[1];
+    EVecs_[0] = Q[0];
+    EVecs_[1] = Q[1];
+    EVecs_[2] = Q[2];
+    EVecs_[3] = Q[3];
+    EVals_[0] = D[0];
+    EVals_[1] = D[1];
   } else {
     /* Swap columns to put the larger-magnitude eigenpair first. */
-    EVecs_[0] = Q[1]; EVecs_[1] = Q[0];
-    EVecs_[2] = Q[3]; EVecs_[3] = Q[2];
-    EVals_[0] = D[1]; EVals_[1] = D[0];
+    EVecs_[0] = Q[1];
+    EVecs_[1] = Q[0];
+    EVecs_[2] = Q[3];
+    EVecs_[3] = Q[2];
+    EVals_[0] = D[1];
+    EVals_[1] = D[0];
   }
 }
 
@@ -118,7 +134,8 @@ void get_reordered_eigendecomposition(double EVecs_[4], double EVals_[2], const 
  * Post-process a 2D metric field in order to enforce maximum and minimum
  * tolerated metric magnitudes, as well as maximum tolerated anisotropy.
  */
-void postproc_metric(double A_[4], const double * h_min, const double * h_max, const double * a_max) {
+void postproc_metric(double A_[4], const double *h_min, const double *h_max,
+                     const double *a_max) {
   const double l_max = pow(*h_min, -2);
   const double l_min = pow(*h_max, -2);
   const double la_min = pow(*a_max, -2);
@@ -143,7 +160,7 @@ void postproc_metric(double A_[4], const double * h_min, const double * h_max, c
 /*
  * Intersect two 2D metric fields.
  */
-void intersect(double M_[4], const double * A_, const double * B_) {
+void intersect(double M_[4], const double *A_, const double *B_) {
   /* Eigendecomposition of A: A = Qa Da Qa^T. */
   double Qa[4];
   double Da[2];
@@ -184,8 +201,8 @@ void intersect(double M_[4], const double * A_, const double * B_) {
   rqdt_2x2(QC, Qc, e0, e1);
   const double c00 = QC[0], c01 = QC[1];
   const double c10 = QC[2], c11 = QC[3];
-  const double r00 = Sq[0],  r01 = Sq[1];
-  const double r10 = Sq[2],  r11 = Sq[3];
+  const double r00 = Sq[0], r01 = Sq[1];
+  const double r10 = Sq[2], r11 = Sq[3];
   /* tmp2 = QC * Sq */
   const double u00 = c00 * r00 + c01 * r10;
   const double u01 = c00 * r01 + c01 * r11;
