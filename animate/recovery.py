@@ -148,7 +148,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
         for j, s1 in enumerate(s):
             for i, s0 in enumerate(s):
                 bcs = []
-                for tag in mesh.exterior_facets.unique_markers:
+                for tag in mesh.exterior_facets.facet_markers:
                     a_bc = v * Hs * ufl.ds(tag)
                     L_bc = (
                         -ufl.dot(s0, ufl.grad(v))
