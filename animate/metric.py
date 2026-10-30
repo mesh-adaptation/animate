@@ -821,7 +821,10 @@ class RiemannianMetric(ffunc.Function):
         # M = Q D Q^T, with D the diagonal matrix whose entries are `evalues`.
         dim = V_ten.mesh().topological_dimension
         D = ufl.as_matrix(
-            [[evalues[i] if i == j else 0.0 for j in range(dim)] for i in range(dim)]
+            [
+                [evalues[i] if i == j else 0.0 for j in range(dim)]
+                for i in range(dim)
+            ]
         )
         self.interpolate(ufl.dot(evectors, ufl.dot(D, ufl.transpose(evectors))))
         return self
