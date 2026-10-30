@@ -2,37 +2,16 @@
 Driver functions for derivative recovery.
 """
 
-import os
-
 import firedrake
 import ufl
-from firedrake.interpolation import interpolate
+from adapt_common.reduction import function_data_max
 from firedrake.petsc import PETSc
-from pyop2 import op2
 
 from .interpolation import clement_interpolant
 from .math import construct_basis
-from .quality import QualityMeasure, include_dir
-from .utility import function_data_max
+from .quality import QualityMeasure
 
 __all__ = ["recover_gradient_l2", "recover_hessian_clement", "recover_boundary_hessian"]
-
-
-def get_metric_kernel(func, dim):
-    """
-    Helper function to easily pass Eigen kernels for metric utilities to Firedrake via
-    PyOP2.
-
-    :arg func: function name
-    :type func: :class:`str`
-    :arg dim: spatial dimension
-    :type dim: :class:`int`
-    :returns: kernel to execute
-    :rtype: :class:`op2.Kernel`
-    """
-    pwd = os.path.abspath(os.path.join(os.path.dirname(__file__), "cxx"))
-    with open(os.path.join(pwd, f"metric{dim}d.cxx"), "r") as code:
-        return op2.Kernel(code.read(), func, cpp=True, include_dirs=include_dir)
 
 
 @PETSc.Log.EventDecorator()
@@ -150,9 +129,8 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     Hs = firedrake.TrialFunction(P1)
     v = firedrake.TestFunction(P1)
     l2_proj = [[firedrake.Function(P1) for i in range(d - 1)] for j in range(d - 1)]
-    h = firedrake.assemble(
-        interpolate(ufl.CellDiameter(mesh), firedrake.FunctionSpace(mesh, "DG", 0))
-    )
+    P0 = firedrake.FunctionSpace(mesh, "DG", 0)
+    h = firedrake.Function(P0).interpolate(ufl.CellDiameter(mesh))
     h = firedrake.Constant(1 / function_data_max(h) ** 2)
     sp = {
         "ksp_type": "gmres",
@@ -170,7 +148,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
         for j, s1 in enumerate(s):
             for i, s0 in enumerate(s):
                 bcs = []
-                for tag in mesh.exterior_facets.unique_markers:
+                for tag in mesh.facet_markers:
                     a_bc = v * Hs * ufl.ds(tag)
                     L_bc = (
                         -ufl.dot(s0, ufl.grad(v))
@@ -193,7 +171,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
         H = firedrake.Function(P1_ten)
         p0test = firedrake.TestFunction(P0_vec)
         p1test = firedrake.TestFunction(P1)
-        fa = QualityMeasure(mesh, python=True)("facet_area")
+        fa = QualityMeasure(mesh)("facet_area")
 
         source = firedrake.assemble(ufl.inner(p0test, ufl.grad(f)) / fa * ufl.ds)
 
@@ -202,7 +180,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
 
         # Recover Hessian
         H += clement_interpolant(
-            firedrake.assemble(interpolate(ufl.grad(c), P0_ten)),
+            firedrake.Function(P0_ten).interpolate(ufl.grad(c)),
             boundary=True,
             target_space=P1_ten,
         )
@@ -223,7 +201,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     # Construct tensor field
     Hbar = firedrake.Function(P1_ten)
     if d == 2:
-        Hsub = firedrake.assemble(interpolate(abs(l2_proj[0][0]), P1))
+        Hsub = firedrake.Function(P1).interpolate(abs(l2_proj[0][0]))
         H = ufl.as_matrix([[h, 0], [0, Hsub]])
     else:
         fs = firedrake.TensorFunctionSpace(mesh, "CG", 1, shape=(2, 2))
@@ -234,15 +212,16 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
             )
         )
 
-        # Enforce SPD
-        metric = firedrake.Function(fs)
-        op2.par_loop(
-            get_metric_kernel("metric_from_hessian", 2),
-            fs.node_set,
-            metric.dat(op2.RW),
-            Hsub.dat(op2.READ),
+        # Enforce SPD: take the matrix absolute value |B| of the symmetric part of
+        # Hsub. For a 2x2 symmetric matrix we have the closed form
+        #  |B| = (B @ B + sqrt(det(B @ B)) * I) / sqrt(tr(B @ B) + 2 * sqrt(det(B @ B)))
+        B = 0.5 * (Hsub + ufl.transpose(Hsub))
+        Bsq = ufl.dot(B, B)
+        sqrt_det = ufl.sqrt(ufl.det(Bsq))
+        abs_B = (Bsq + sqrt_det * ufl.Identity(2)) / ufl.sqrt(
+            ufl.tr(Bsq) + 2 * sqrt_det
         )
-        Hsub.assign(metric)
+        Hsub.interpolate(abs_B)
         # TODO: Could this be supported using RiemannianMetric.enforce_spd? (#131)
 
         # Construct Hessian

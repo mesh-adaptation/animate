@@ -5,11 +5,10 @@ import firedrake.function as ffunc
 import firedrake.functionspace as ffs
 import firedrake.mesh as fmesh
 import numpy as np
+import pyop3 as op3
 import sympy
 import ufl
-from firedrake.interpolation import interpolate
 from firedrake.petsc import PETSc
-from pyop2 import op2
 
 try:
     # only works in firedrake release <=2025.4.x
@@ -17,14 +16,15 @@ try:
 except ImportError:
     from petsctools import OptionsManager
 
+from adapt_common.reduction import function_data_min, function_data_sum
+
+from ._kernel import get_metric_kernel
 from .interpolation import clement_interpolant
 from .recovery import (
-    get_metric_kernel,
     recover_boundary_hessian,
     recover_gradient_l2,
     recover_hessian_clement,
 )
-from .utility import function_data_min, function_data_sum
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 
@@ -94,7 +94,7 @@ class RiemannianMetric(ffunc.Function):
         if isinstance(fs.dof_count, Iterable):
             raise ValueError("Riemannian metric cannot be built in a mixed space.")
         self._check_space()
-        rank = len(fs.dof_dset.dim)
+        rank = fs.rank
         if rank != 2:
             raise ValueError(
                 "Riemannian metric should be matrix-valued,"
@@ -111,9 +111,7 @@ class RiemannianMetric(ffunc.Function):
         self._set_plex_coordinates()
 
         # Adjust the section
-        entity_dofs = np.zeros(tdim + 1, dtype=np.int32)
-        entity_dofs[0] = tdim**2
-        plex.setSection(mesh.create_section(entity_dofs)[0])
+        plex.setLocalSection(fs.section)
 
         # Process spatially variable metric parameters
         self._variable_parameters = {
@@ -290,8 +288,8 @@ class RiemannianMetric(ffunc.Function):
         return mp
 
     def _create_from_array(self, array):
-        bsize = self.dat.cdim
-        size = [self.dat.dataset.total_size * bsize] * 2
+        bsize = self.function_space().block_size
+        size = [self.dat.axes.local_size] * 2
         comm = PETSc.COMM_SELF
         return PETSc.Vec().createWithArray(array, size=size, bsize=bsize, comm=comm)
 
@@ -301,12 +299,10 @@ class RiemannianMetric(ffunc.Function):
         Ensure that the coordinates of the Firedrake mesh and the underlying DMPlex are
         consistent.
         """
-        entity_dofs = np.zeros(self._tdim + 1, dtype=np.int32)
-        entity_dofs[0] = self._mesh.geometric_dimension
-        coord_section = self._mesh.create_section(entity_dofs)[0]
+        coord_section = self._mesh.coordinates.function_space().section
         # NOTE: section doesn't have any fields, but PETSc assumes it to have one
         coord_dm = self._plex.getCoordinateDM()
-        coord_dm.setSection(coord_section)
+        coord_dm.setLocalSection(coord_section)
         coords_local = coord_dm.createLocalVec()
         coords_local.array[:] = np.reshape(
             self._mesh.coordinates.dat.data_ro_with_halos, coords_local.array.shape
@@ -348,6 +344,14 @@ class RiemannianMetric(ffunc.Function):
         for the gradient recovery. The target space for the Hessian recovery is
         inherited from the metric itself.
         """
+        if len(field.ufl_shape) > 0:
+            value_error = (
+                "RiemannianMetric.compute_hessian only accepts scalar fields. To "
+                "recover Hessians of higher rank fields, call the method on separate "
+                "RiemannianMetrics for each component and combine them with "
+                "RiemannianMetric.combine."
+            )
+            raise ValueError(value_error)
         if method == "L2":
             gradient = recover_gradient_l2(
                 field, target_space=kwargs.get("target_space")
@@ -518,19 +522,32 @@ class RiemannianMetric(ffunc.Function):
             raise ValueError(f"Encountered a_max value smaller than unity: {_a_max}.")
 
         dim = mesh.topological_dimension
+        V = self.function_space()
         boundary_tag = self._variable_parameters.get("dm_plex_metric_boundary_tag")
         if boundary_tag is None:
-            node_set = self.function_space().node_set
+            loop_index = V.nodes.iter()
         else:
-            bc = firedrake.DirichletBC(self.function_space(), 0, boundary_tag)
-            node_set = bc.node_set
-        op2.par_loop(
-            get_metric_kernel("postproc_metric", dim),
-            node_set,
-            self.dat(op2.RW),
-            h_min.dat(op2.READ),
-            h_max.dat(op2.READ),
-            a_max.dat(op2.READ),
+            bc = firedrake.DirichletBC(V, 0, boundary_tag)
+            loop_index = V.nodes[bc.node_set].iter()
+        kernel = get_metric_kernel(
+            "postproc_metric",
+            dim,
+            [
+                ("A_", op3.ScalarType, op3.RW),
+                ("h_min", op3.ScalarType, op3.READ),
+                ("h_max", op3.ScalarType, op3.READ),
+                ("a_max", op3.ScalarType, op3.READ),
+            ],
+        )
+        op3.loop(
+            loop_index,
+            kernel(
+                self.dat[loop_index],
+                h_min.dat[loop_index],
+                h_max.dat[loop_index],
+                a_max.dat[loop_index],
+            ),
+            eager=True,
         )
         return self
 
@@ -620,25 +637,28 @@ class RiemannianMetric(ffunc.Function):
                     "Cannot intersect metrics with different function spaces."
                 )
 
-        # Intersect the metrics recursively one at a time
         if len(metrics) == 0:
-            pass
-        elif len(metrics) == 1:
-            v1 = self._create_from_array(self.dat.data_with_halos)
-            v2 = self._create_from_array(metrics[0].dat.data_ro_with_halos)
-            vout = self._create_from_array(np.zeros_like(self.dat.data_with_halos))
+            return self
 
-            # Compute the intersection on the PETSc level
-            self._plex.metricIntersection2(v1, v2, vout)
+        # Intersect the metrics recursively, starting with metrics[0]
+        v1 = self._create_from_array(self.dat.data_with_halos)
+        v2 = self._create_from_array(metrics[0].dat.data_ro_with_halos)
+        vout = self._create_from_array(np.zeros_like(self.dat.data_with_halos))
 
-            # Assign to the output of the intersection
-            size = np.shape(self.dat.data_with_halos)
-            self.dat.data_with_halos[:] = np.reshape(vout.array, size)
-            v2.destroy()
-            v1.destroy()
-            vout.destroy()
-        else:
+        # Compute the intersection on the PETSc level
+        self._plex.metricIntersection2(v1, v2, vout)
+
+        # Assign to the output of the intersection
+        size = np.shape(self.dat.data_with_halos)
+        self.dat.data_with_halos[:] = np.reshape(vout.array, size)
+        v2.destroy()
+        v1.destroy()
+        vout.destroy()
+
+        # Intersect with the remaining metrics
+        if len(metrics) > 1:
             self.intersect(*metrics[1:])
+
         return self
 
     @PETSc.Log.EventDecorator()
@@ -739,13 +759,24 @@ class RiemannianMetric(ffunc.Function):
             name = "get_reordered_eigendecomposition"
         else:
             name = "get_eigendecomposition"
-        kernel = get_metric_kernel(name, dim)
-        op2.par_loop(
-            kernel,
-            V_ten.node_set,
-            evectors.dat(op2.RW),
-            evalues.dat(op2.RW),
-            self.dat(op2.READ),
+        kernel = get_metric_kernel(
+            name,
+            dim,
+            [
+                ("EVecs_", op3.ScalarType, op3.WRITE),
+                ("EVals_", op3.ScalarType, op3.WRITE),
+                ("M_", op3.ScalarType, op3.READ),
+            ],
+        )
+        loop_index = V_ten.nodes.iter()
+        op3.loop(
+            loop_index,
+            kernel(
+                evectors.dat[loop_index],
+                evalues.dat[loop_index],
+                self.dat[loop_index],
+            ),
+            eager=True,
         )
         return evectors, evalues
 
@@ -787,14 +818,12 @@ class RiemannianMetric(ffunc.Function):
                 "Mismatching finite element space degrees:"
                 f" {fe_ten.degree()} vs. {fe_vec.degree()}."
             )
+        # M = Q D Q^T, with D the diagonal matrix whose entries are `evalues`.
         dim = V_ten.mesh().topological_dimension
-        op2.par_loop(
-            get_metric_kernel("set_eigendecomposition", dim),
-            V_ten.node_set,
-            self.dat(op2.RW),
-            evectors.dat(op2.READ),
-            evalues.dat(op2.READ),
+        D = ufl.as_matrix(
+            [[evalues[i] if i == j else 0.0 for j in range(dim)] for i in range(dim)]
         )
+        self.interpolate(ufl.dot(evectors, ufl.dot(D, ufl.transpose(evectors))))
         return self
 
     @PETSc.Log.EventDecorator()
@@ -1002,12 +1031,10 @@ class RiemannianMetric(ffunc.Function):
         # Get optimal element volume
         P0 = firedrake.FunctionSpace(mesh, "DG", 0)
         K_opt = pow(error_indicator, 1 / (convergence_rate + 1))
-        K_opt_av = (
-            K_opt / function_data_sum(firedrake.assemble(interpolate(K_opt, P0)))
-        )
+        K_opt_av = K_opt / function_data_sum(firedrake.Function(P0).interpolate(K_opt))
         K_ratio = target_complexity * pow(abs(K_opt_av * K_hat / K), 2 / dim)
 
-        if self._any_inf(firedrake.assemble(interpolate(K_ratio, P0))):
+        if self._any_inf(firedrake.Function(P0).interpolate(K_ratio)):
             raise ValueError("K_ratio contains non-finite values.")
 
         # Interpolate from P1 to P0
@@ -1212,17 +1239,29 @@ def intersect_on_boundary(*metrics, boundary_tag="on_boundary"):
             "It is unclear what to do with an empty"
             f" {type(boundary_tag)} of boundary tags."
         )
-    node_set = firedrake.DirichletBC(fs, 0, boundary_tag).node_set
+    boundary_slice = firedrake.DirichletBC(fs, 0, boundary_tag).node_set
 
     # Compute the intersection
     Mtmp = RiemannianMetric(fs)
+    kernel = get_metric_kernel(
+        "intersect",
+        dim,
+        [
+            ("M_", op3.ScalarType, op3.RW),
+            ("A_", op3.ScalarType, op3.READ),
+            ("B_", op3.ScalarType, op3.READ),
+        ],
+    )
+    loop_index = fs.nodes[boundary_slice].iter()
     for metric in metrics[1:]:
         Mtmp.assign(intersected_metric)
-        op2.par_loop(
-            get_metric_kernel("intersect", dim),
-            node_set,
-            intersected_metric.dat(op2.RW),
-            Mtmp.dat(op2.READ),
-            metric.dat(op2.READ),
+        op3.loop(
+            loop_index,
+            kernel(
+                intersected_metric.dat[loop_index],
+                Mtmp.dat[loop_index],
+                metric.dat[loop_index],
+            ),
+            eager=True,
         )
     return intersected_metric

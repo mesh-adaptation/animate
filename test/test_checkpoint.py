@@ -7,7 +7,6 @@ import numpy as np
 import ufl
 from firedrake.function import Function
 from firedrake.functionspace import FunctionSpace, TensorFunctionSpace
-from firedrake.mesh import _generate_default_mesh_topology_name
 from test_setup import uniform_mesh
 
 from animate.checkpointing import get_checkpoint_dir, load_checkpoint, save_checkpoint
@@ -57,8 +56,8 @@ class TestCheckpointing(unittest.TestCase):
         metric = metric or self.metric
         save_checkpoint(fpath, metric)
         self.assertTrue(os.path.exists(fpath))
-        mesh_name = metric._mesh.name
-        topology_name = _generate_default_mesh_topology_name(mesh_name)
+        mesh = ufl.domain.extract_unique_domain(metric)
+        topology_name = mesh.topology_dm.name
         with h5py.File(fpath, "r") as h5:
             self.assertTrue("topologies" in h5)
             self.assertTrue(topology_name in h5["topologies"].keys())

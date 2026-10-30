@@ -1,0 +1,11 @@
+# Build requirements needed to build cython module.
+# Note that we assume we are in a valid Firedrake
+# environment that have firedrake and petsc4py installed
+# already - we do not specify these here as they may
+# cause the locally installed ones to be replaced by the 
+# latest release from PyPI
+Cython
+numpy
+petsctools
+setuptools>=77.0.3
+wheel

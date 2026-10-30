@@ -8,6 +8,7 @@
 
 
 import matplotlib.pyplot as plt
+from adapt_common.reduction import function_data_max, function_data_min
 from firedrake import *
 from firedrake.pyplot import tricontourf, triplot
 

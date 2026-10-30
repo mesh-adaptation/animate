@@ -6,13 +6,18 @@ outputs/
 plots/
 __pycache__/
 
+# Auto-generated files
+animate/cython/*.c
+
 # Specific files
 .coverage
 
 # File extensions
+*.h5
 *.jpg
 *.jpeg
 *.pdf
 *.png
 *.pvd
+*.so
 *.vtu

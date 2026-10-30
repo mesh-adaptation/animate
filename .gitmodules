@@ -1,0 +1,3 @@
+[submodule "adapt_common"]
+	path = adapt_common
+	url = https://github.com/mesh-adaptation/adapt_common

@@ -4,19 +4,19 @@ Driver functions for mesh-to-mesh data transfer.
 
 import firedrake
 import numpy as np
+import pyop3 as op3
 import ufl
-from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
-from firedrake.petsc import PETSc
-from firedrake.supermeshing import assemble_mixed_mass_matrix
-from petsc4py import PETSc as petsc4py
-from pyop2 import op2
-
-from animate.quality import QualityMeasure
-from animate.utility import (
+from adapt_common.utility import (
     assemble_mass_matrix,
     cofunction2function,
     function2cofunction,
 )
+from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
+from firedrake.petsc import PETSc
+from firedrake.supermeshing import assemble_mixed_mass_matrix
+from petsc4py import PETSc as petsc4py
+
+from animate.quality import QualityMeasure
 
 __all__ = ["transfer", "interpolate", "project", "clement_interpolant"]
 
@@ -94,8 +94,9 @@ def _validate_consistent_spaces(Vs, Vt):
 @PETSc.Log.EventDecorator()
 def interpolate(source, target, **kwargs):
     r"""
-    Overload :func:`firedrake.interpolation.interpolate` to account for the case of
-    mixed function spaces.
+    Overload function :func:`firedrake.interpolation.interpolate` to account for the
+    case of two mixed function spaces defined on different meshes and for the adjoint
+    interpolation operator when applied to :class:`firedrake.cofunction.Cofunction`\s.
 
     :arg source: the function or cofunction to be transferred
     :type source: :class:`firedrake.function.Function` or
@@ -245,28 +246,28 @@ def clement_interpolant(source, target_space=None, boundary=False):
     # Compute the patch volume at each vertex
     if not boundary:
         dX = ufl.dx(domain=mesh)
-        volume = QualityMeasure(mesh, python=True)("volume")
+        volume = QualityMeasure(mesh)("volume")
 
         # Compute patch volume
         patch_volume = firedrake.Function(P1)
         domain = "{[i]: 0 <= i < patch.dofs}"
-        instructions = "patch[i] = patch[i] + vol[0]"
-        keys = {"vol": (volume, op2.READ), "patch": (patch_volume, op2.RW)}
+        instructions = "patch[i, 0] = patch[i, 0] + vol[0, 0]"
+        keys = {"vol": (volume, op3.READ), "patch": (patch_volume, op3.RW)}
         firedrake.par_loop((domain, instructions), dX, keys)
 
         # Take weighted average
         instructions = {
-            0: "t[i] = t[i] + v[0] * s[0]",
-            1: "t[i, j] = t[i, j] + v[0] * s[0, j]",
+            0: "t[i, 0] = t[i, 0] + v[0, 0] * s[0, 0]",
+            1: "t[i, j] = t[i, j] + v[0, 0] * s[0, j]",
             2: (
                 f"t[i, {dim} * j + k] ="
-                f" t[i, {dim} * j + k] + v[0] * s[0, {dim} * j + k]"
+                f" t[i, {dim} * j + k] + v[0, 0] * s[0, {dim} * j + k]"
             ),
         }[rank]
         keys = {
-            "s": (source, op2.READ),
-            "v": (volume, op2.READ),
-            "t": (target, op2.RW),
+            "s": (source, op3.READ),
+            "v": (volume, op3.READ),
+            "t": (target, op3.RW),
         }
         firedrake.par_loop((tdomain, instructions), dX, keys)
     else:
@@ -288,28 +289,28 @@ def clement_interpolant(source, target_space=None, boundary=False):
         # Compute patch volume
         patch_volume = firedrake.Function(P1)
         domain = "{[i]: 0 <= i < patch.dofs}"
-        instructions = "patch[i] = patch[i] + indicator[i] * bnd_vol[0]"
+        instructions = "patch[i, 0] = patch[i, 0] + indicator[i, 0] * bnd_vol[0, 0]"
         keys = {
-            "bnd_vol": (bnd_volume, op2.READ),
-            "indicator": (bnd_indicator, op2.READ),
-            "patch": (patch_volume, op2.RW),
+            "bnd_vol": (bnd_volume, op3.READ),
+            "indicator": (bnd_indicator, op3.READ),
+            "patch": (patch_volume, op3.RW),
         }
         firedrake.par_loop((domain, instructions), dX, keys)
 
         # Take weighted average
         instructions = {
-            0: "t[i] = t[i] + v[0] * b[i] * s[0]",
-            1: "t[i, j] = t[i, j] + v[0] * b[i] * s[0, j]",
+            0: "t[i, 0] = t[i, 0] + v[0, 0] * b[i, 0] * s[0, 0]",
+            1: "t[i, j] = t[i, j] + v[0, 0] * b[i, 0] * s[0, j]",
             2: (
                 f"t[i, {dim} * j + k] = "
-                f"t[i, {dim} * j + k] + v[0] * b[i] * s[0, {dim} * j + k]"
+                f"t[i, {dim} * j + k] + v[0, 0] * b[i, 0] * s[0, {dim} * j + k]"
             ),
         }[rank]
         keys = {
-            "s": (source, op2.READ),
-            "v": (bnd_volume, op2.READ),
-            "b": (bnd_indicator, op2.READ),
-            "t": (target, op2.RW),
+            "s": (source, op3.READ),
+            "v": (bnd_volume, op3.READ),
+            "b": (bnd_indicator, op3.READ),
+            "t": (target, op3.RW),
         }
         firedrake.par_loop((tdomain, instructions), dX, keys)
 

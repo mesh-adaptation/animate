@@ -11,7 +11,7 @@ from firedrake.assemble import assemble
 from firedrake.constant import Constant
 from firedrake.mesh import Mesh
 from petsc4py import PETSc
-from pyop2.mpi import COMM_WORLD
+from pyop3.mpi import COMM_WORLD
 from test_setup import uniform_mesh, uniform_metric
 
 from animate.adapt import adapt
@@ -73,7 +73,7 @@ def test_no_adapt(dim, serialise):
     Ensure mesh adaptation operations can be turned off.
     """
     mesh = uniform_mesh(dim)
-    dofs = mesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    dofs = mesh.coordinates.dat.axes.global_size
     mp = {
         "dm_plex_metric": {
             "no_insert": None,
@@ -84,7 +84,7 @@ def test_no_adapt(dim, serialise):
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
     newmesh = try_adapt(mesh, metric, serialise=serialise)
-    newdofs = newmesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    newdofs = newmesh.coordinates.dat.axes.global_size
     assert newdofs == dofs
 
 
@@ -92,7 +92,7 @@ def test_no_adapt(dim, serialise):
 @pytest.mark.parametrize(
     "dim,serialise",
     [(3, True), (3, False)],
-    ids=["mmg3d", "ParMmg"],  # Hangs (#136)
+    ids=["mmg3d", "ParMmg"],
 )
 def test_no_adapt_parallel(dim, serialise):
     """
@@ -137,8 +137,8 @@ def test_preserve_facet_tags_2d(meshname):
     metric = uniform_metric(mesh)
     newmesh = try_adapt(mesh, metric)
 
-    tags = set(mesh.exterior_facets.unique_markers)
-    newtags = set(newmesh.exterior_facets.unique_markers)
+    tags = set(mesh.facet_markers)
+    newtags = set(newmesh.facet_markers)
     assert tags == newtags, "Facet tags do not match"
 
     one = Constant(1.0)
@@ -156,7 +156,7 @@ def test_adapt(dim, serialise):
     Test that we can successfully invoke Mmg and that it changes the DoF count.
     """
     mesh = uniform_mesh(dim)
-    dofs = mesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    dofs = mesh.coordinates.dat.axes.global_size
     mp = {
         "dm_plex_metric": {
             "target_complexity": 100.0,
@@ -165,15 +165,15 @@ def test_adapt(dim, serialise):
     }
     metric = uniform_metric(mesh, metric_parameters=mp)
     newmesh = try_adapt(mesh, metric, serialise=serialise)
-    newdofs = newmesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    newdofs = newmesh.coordinates.dat.axes.global_size
     assert newdofs != dofs
 
 
 @pytest.mark.parallel(nprocs=2)
 @pytest.mark.parametrize(
     "dim,serialise",
-    [(2, True), (3, True), (3, False)],  # FIXME: broken (#136,#197)
-    ids=["mmg2d", "mmg3d", "ParMmg"],  # FIXME: broken (#136,#197)
+    [(2, True), (3, True), (3, False)],
+    ids=["mmg2d", "mmg3d", "ParMmg"],
 )
 def test_adapt_parallel_np2(dim, serialise):
     """
@@ -187,8 +187,10 @@ def test_adapt_parallel_np2(dim, serialise):
 @pytest.mark.parallel(nprocs=3)
 @pytest.mark.parametrize(
     "dim,serialise",
-    [(2, True), (3, True), (3, False)],  # FIXME: broken tests (#136, #197)
-    ids=["mmg2d", "mmg3d", "ParMmg"],  # FIXME: broken tests (#136, #197)
+    # [(2, True), (3, True), (3, False)],  # FIXME: ParMmg stalls (#136)
+    [(2, True), (3, True)],
+    # ids=["mmg2d", "mmg3d", "ParMmg"],
+    ids=["mmg2d", "mmg3d"],
 )
 def test_adapt_parallel_np3(dim, serialise):
     """
@@ -209,11 +211,11 @@ def test_enforce_spd_h_min(dim):
     h = 0.1
     metric = uniform_metric(mesh, a=1 / h**2)
     newmesh = try_adapt(mesh, metric)
-    dofs = newmesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    dofs = newmesh.coordinates.dat.axes.global_size
     metric.set_parameters({"dm_plex_metric_h_min": 0.2})  # h_min > h => h := h_min
     metric.enforce_spd(restrict_sizes=True)
     newmesh = try_adapt(mesh, metric)
-    newdofs = newmesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    newdofs = newmesh.coordinates.dat.axes.global_size
     assert newdofs < dofs
 
 
@@ -227,11 +229,11 @@ def test_enforce_spd_h_max(dim):
     h = 0.1
     metric = uniform_metric(mesh, a=1 / h**2)
     newmesh = try_adapt(mesh, metric)
-    dofs = newmesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    dofs = newmesh.coordinates.dat.axes.global_size
     metric.set_parameters({"dm_plex_metric_h_max": 0.05})  # h_max < h => h := h_max
     metric.enforce_spd(restrict_sizes=True)
     newmesh = try_adapt(mesh, metric)
-    newdofs = newmesh.coordinates.dat.dataset.layout_vec.getSizes()[-1]
+    newdofs = newmesh.coordinates.dat.axes.global_size
     assert newdofs > dofs
 
 
