@@ -6,11 +6,7 @@ import firedrake
 import numpy as np
 import pyop3 as op3
 import ufl
-from adapt_common.utility import (
-    assemble_mass_matrix,
-    cofunction2function,
-    function2cofunction,
-)
+from adapt_common.utility import assemble_mass_matrix, cofunction2function
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
 from firedrake.petsc import PETSc
 from firedrake.supermeshing import assemble_mixed_mass_matrix
@@ -178,7 +174,7 @@ def project(source, target, bounded=False, **kwargs):
                 residual = vs.copy()
                 ksp.solveTranspose(vs, residual)
                 mixed_mass.mult(residual, vt)  # NOTE: already transposed above
-            function2cofunction(tf, cofunc=t)
+            t.dat.data_with_halos[:] = tf.dat.data_with_halos
 
 
 @PETSc.Log.EventDecorator()
