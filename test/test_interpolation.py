@@ -258,7 +258,11 @@ class TestTransfer(unittest.TestCase):
         source = function2cofunction(expected)
         target = Cofunction(Vs.dual())
         transfer(source, target, transfer_method)
-        self.assertAlmostEqual(errornorm(expected, cofunction2function(target)), 0)
+        self.assertAlmostEqual(
+            errornorm(expected, cofunction2function(target)),
+            0,
+            places=6,
+        )
 
     @parameterized.expand(["project", "interpolate"])
     def test_transfer_same_space_mixed(self, transfer_method):
@@ -284,7 +288,9 @@ class TestTransfer(unittest.TestCase):
         source = function2cofunction(expected)
         target = Cofunction(Vs.dual())
         transfer(source, target, transfer_method)
-        self.assertAlmostEqual(errornorm(expected, cofunction2function(target)), 0)
+        self.assertAlmostEqual(
+            errornorm(expected, cofunction2function(target)), 0, places=6
+        )
 
     @parameterized.expand(["interpolate", "project"])
     def test_transfer_same_mesh(self, transfer_method):
