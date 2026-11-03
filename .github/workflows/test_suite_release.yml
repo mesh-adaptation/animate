@@ -15,8 +15,14 @@ on:
   schedule:
     - cron: '0 3 1 * *'
 
+  # Allow manually triggering a run of the test suite against the release branch
+  workflow_dispatch:
+
 jobs:
   test_suite:
     uses: mesh-adaptation/docs/.github/workflows/reusable_test_suite.yml@main
     with:
       docker-image: 'firedrake-parmmg:release'
+      # Scheduled and manual runs are triggered from the default branch (main), so
+      # explicitly check out release; otherwise use the ref that triggered the run
+      ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'release' || '' }}
