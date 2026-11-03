@@ -7,7 +7,6 @@ import os
 import firedrake
 import ufl
 from adapt_common.reduction import function_data_max
-from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
 from pyop2 import op2
 
@@ -150,9 +149,8 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     Hs = firedrake.TrialFunction(P1)
     v = firedrake.TestFunction(P1)
     l2_proj = [[firedrake.Function(P1) for i in range(d - 1)] for j in range(d - 1)]
-    h = firedrake.assemble(
-        interpolate(ufl.CellDiameter(mesh), firedrake.FunctionSpace(mesh, "DG", 0))
-    )
+    P0 = firedrake.FunctionSpace(mesh, "DG", 0)
+    h = firedrake.Function(P0).interpolate(ufl.CellDiameter(mesh))
     h = firedrake.Constant(1 / function_data_max(h) ** 2)
     sp = {
         "ksp_type": "gmres",
@@ -202,7 +200,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
 
         # Recover Hessian
         H += clement_interpolant(
-            firedrake.assemble(interpolate(ufl.grad(c), P0_ten)),
+            firedrake.Function(P0_ten).interpolate(ufl.grad(c)),
             boundary=True,
             target_space=P1_ten,
         )
@@ -223,7 +221,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     # Construct tensor field
     Hbar = firedrake.Function(P1_ten)
     if d == 2:
-        Hsub = firedrake.assemble(interpolate(abs(l2_proj[0][0]), P1))
+        Hsub = firedrake.Function(P1).interpolate(abs(l2_proj[0][0]))
         H = ufl.as_matrix([[h, 0], [0, Hsub]])
     else:
         fs = firedrake.TensorFunctionSpace(mesh, "CG", 1, shape=(2, 2))
