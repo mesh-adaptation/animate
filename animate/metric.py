@@ -7,7 +7,6 @@ import firedrake.mesh as fmesh
 import numpy as np
 import sympy
 import ufl
-from firedrake.__future__ import interpolate
 from firedrake.petsc import PETSc
 from pyop2 import op2
 
@@ -114,7 +113,7 @@ class RiemannianMetric(ffunc.Function):
         # Adjust the section
         entity_dofs = np.zeros(tdim + 1, dtype=np.int32)
         entity_dofs[0] = tdim**2
-        plex.setSection(mesh.create_section(entity_dofs)[0])
+        plex.setLocalSection(mesh.create_section(entity_dofs)[0])
 
         # Process spatially variable metric parameters
         self._variable_parameters = {
@@ -307,7 +306,7 @@ class RiemannianMetric(ffunc.Function):
         coord_section = self._mesh.create_section(entity_dofs)[0]
         # NOTE: section doesn't have any fields, but PETSc assumes it to have one
         coord_dm = self._plex.getCoordinateDM()
-        coord_dm.setSection(coord_section)
+        coord_dm.setLocalSection(coord_section)
         coords_local = coord_dm.createLocalVec()
         coords_local.array[:] = np.reshape(
             self._mesh.coordinates.dat.data_ro_with_halos, coords_local.array.shape
@@ -1014,10 +1013,10 @@ class RiemannianMetric(ffunc.Function):
         # Get optimal element volume
         P0 = firedrake.FunctionSpace(mesh, "DG", 0)
         K_opt = pow(error_indicator, 1 / (convergence_rate + 1))
-        K_opt_av = K_opt / function_data_sum(firedrake.assemble(interpolate(K_opt, P0)))
+        K_opt_av = K_opt / function_data_sum(firedrake.Function(P0).interpolate(K_opt))
         K_ratio = target_complexity * pow(abs(K_opt_av * K_hat / K), 2 / dim)
 
-        if self._any_inf(firedrake.assemble(interpolate(K_ratio, P0))):
+        if self._any_inf(firedrake.Function(P0).interpolate(K_ratio)):
             raise ValueError("K_ratio contains non-finite values.")
 
         # Interpolate from P1 to P0

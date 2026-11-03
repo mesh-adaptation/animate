@@ -5,13 +5,11 @@ on:
   push:
     branches:
       - release
-    paths:
-      - '.github/workflows/test_suite_release.yml'
 
-  # Run test suite whenever commits that change this workflow are pushed to an open PR
+  # Run test suite whenever commits are pushed to an open PR targetting release
   pull_request:
-    paths:
-      - '.github/workflows/test_suite_release.yml'
+    branches:
+      - release
 
   # Run test suite at 3AM on the first of the month
   schedule:
