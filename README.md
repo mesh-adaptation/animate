@@ -12,3 +12,30 @@ For more information on PETSc, please see: [PETSc metric-based mesh adaptation](
 ## Installation
 
 For installation instructions, we refer to the [Wiki page](https://github.com/mesh-adaptation/mesh-adaptation-docs/wiki/Installation-Instructions).
+
+## Example code snippet
+
+Animate centres around the `RiemannianMetric` object that it introduces. For a
+quick illustration of how to use Animate to adapt a mesh with respect to the
+Hessian metric of a scalar field `f`, see below:
+```python
+from firedrake import *
+from animate import *
+
+mesh = UnitSquareMesh(10, 10)
+P1 = FunctionSpace(mesh, "CG", 1)
+f = Function(P1)
+# [Set values of field]
+
+P1_ten = TensorFunctionSpace(mesh, "CG", 1)
+metric = RiemannianMetric(P1_ten)
+metric_parameters = {
+    "dm_plex_metric_target_complexity": 200,
+    # ...
+}
+metric.set_parameters(metric_parameters)
+metric.compute_hessian(f)
+metric.normalise()
+
+adapted_mesh = adapt(mesh, metric)
+```
