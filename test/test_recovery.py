@@ -168,7 +168,6 @@ class TestRecoveryBowl(unittest.TestCase):
 
     @parameterized.expand([[2]])
     def test_boundary_Clement(self, dim):
-        # FIXME: 3D case for test_boundary_Clement
         mesh = mesh_for_sensors(dim, 20)
         f = bowl(*mesh.coordinates)
         metric = self.metric(mesh)

@@ -18,9 +18,9 @@ except ImportError:
 
 from adapt_common.recovery import recover_gradient_l2
 from adapt_common.reduction import function_data_min, function_data_sum
+from adapt_common.transfer import clement_interpolant
 
 from ._kernel import get_metric_kernel
-from .interpolation import clement_interpolant
 from .recovery import recover_boundary_hessian, recover_hessian_clement
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
@@ -489,7 +489,7 @@ class RiemannianMetric(ffunc.Function):
               * `ValueError` indicates the :class:`Function` is not :math:`\mathbb{P}0`.
             """
             try:
-                return clement_interpolant(f, target_space=P1)
+                return clement_interpolant(f, target=P1)
             except TypeError:
                 return ffunc.Function(P1).assign(f)
             except ValueError:
@@ -1061,7 +1061,7 @@ class RiemannianMetric(ffunc.Function):
         fs = self.function_space()
         metric = RiemannianMetric(fs)
         if interpolant == "Clement":
-            metric.assign(clement_interpolant(P0_metric, target_space=fs))
+            metric.assign(clement_interpolant(P0_metric, target=fs))
         else:
             metric.project(P0_metric)
 
@@ -1115,7 +1115,7 @@ class RiemannianMetric(ffunc.Function):
                     f"Expected Hessian to be a RiemannianMetric, not {type(hessian)}."
                 )
             if interpolant == "Clement":
-                error_indicator = clement_interpolant(error_indicator, target_space=P1)
+                error_indicator = clement_interpolant(error_indicator, target=P1)
             elif interpolant == "L2":
                 error_indicator = firedrake.project(error_indicator, P1)
             else:

@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import pytest
 import ufl
+from adapt_common.transfer import clement_interpolant
 from adapt_common.utility import cofunction2function, function2cofunction
 from firedrake.assemble import assemble
 from firedrake.cofunction import Cofunction
@@ -23,7 +24,6 @@ from parameterized import parameterized
 
 from animate.interpolation import (
     _supermesh_project,
-    clement_interpolant,
     project,
     transfer,
 )
@@ -84,12 +84,6 @@ class TestClement(unittest.TestCase):
         )
         self.assertEqual(str(cm.exception), msg)
 
-    def test_rank_error(self):
-        with self.assertRaises(ValueError) as cm:
-            clement_interpolant(Function(self.get_space(3, "DG", 0)))
-        msg = "Rank-4 tensors are not supported."
-        self.assertEqual(str(cm.exception), msg)
-
     def test_source_space_error(self):
         with self.assertRaises(ValueError) as cm:
             clement_interpolant(Function(self.get_space(0, "CG", 1)))
@@ -98,7 +92,7 @@ class TestClement(unittest.TestCase):
 
     def test_target_space_error(self):
         with self.assertRaises(ValueError) as cm:
-            clement_interpolant(Function(self.P0), target_space=self.P0)
+            clement_interpolant(Function(self.P0), target=self.P0)
         msg = "Target space provided must be P1."
         self.assertEqual(str(cm.exception), msg)
 
@@ -107,7 +101,7 @@ class TestClement(unittest.TestCase):
         P1 = self.get_space(0, "CG", 1)
         source = Cofunction(P0.dual())
         source.dat.data_with_halos[:] = 1.0
-        target = clement_interpolant(source, target_space=P1.dual())
+        target = clement_interpolant(source, target=P1.dual())
         self.assertTrue(isinstance(target, Cofunction))
         self.assertTrue(np.allclose(target.dat.data_with_halos, 1.0))
 
@@ -116,7 +110,7 @@ class TestClement(unittest.TestCase):
         P1 = self.get_space(0, "CG", 1)
         source = Cofunction(P0.dual())
         source.dat.data_with_halos[:] = 1.0
-        target = clement_interpolant(source, target_space=P1)
+        target = clement_interpolant(source, target=P1)
         self.assertTrue(isinstance(target, Function))
         self.assertTrue(np.allclose(target.dat.data_with_halos, 1.0))
 
@@ -130,19 +124,6 @@ class TestClement(unittest.TestCase):
         expected = Function(P1).interpolate(exact)
         err = assemble(self.interior * (target - expected) ** 2 * ufl.dx)
         self.assertAlmostEqual(err, 0)
-
-    @parameterized.expand([[0], [1], [2]])
-    def test_facet_average_2d(self, rank):
-        exact = self.analytic(rank)
-        P0 = self.get_space(rank, "DG", 0)
-        source = Function(P0).project(exact)
-        target = clement_interpolant(source, boundary=True)
-        expected = source
-        integrand = (1 - self.corner) * (target - expected) ** 2
-
-        # Check approximate recovery
-        for tag in [1, 2, 3, 4]:
-            self.assertLess(assemble(integrand * ufl.ds(tag)), 5e-3)
 
 
 class TestTransfer(unittest.TestCase):
