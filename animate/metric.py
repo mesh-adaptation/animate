@@ -16,15 +16,12 @@ try:
 except ImportError:
     from petsctools import OptionsManager
 
+from adapt_common.recovery import recover_gradient_l2
 from adapt_common.reduction import function_data_min, function_data_sum
 
 from ._kernel import get_metric_kernel
 from .interpolation import clement_interpolant
-from .recovery import (
-    recover_boundary_hessian,
-    recover_gradient_l2,
-    recover_hessian_clement,
-)
+from .recovery import recover_boundary_hessian, recover_hessian_clement
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 
@@ -821,10 +818,7 @@ class RiemannianMetric(ffunc.Function):
         # M = Q D Q^T, with D the diagonal matrix whose entries are `evalues`.
         dim = V_ten.mesh().topological_dimension
         D = ufl.as_matrix(
-            [
-                [evalues[i] if i == j else 0.0 for j in range(dim)]
-                for i in range(dim)
-            ]
+            [[evalues[i] if i == j else 0.0 for j in range(dim)] for i in range(dim)]
         )
         self.interpolate(ufl.dot(evectors, ufl.dot(D, ufl.transpose(evectors))))
         return self
