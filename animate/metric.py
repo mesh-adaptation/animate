@@ -353,7 +353,9 @@ class RiemannianMetric(ffunc.Function):
             gradient = recover_gradient_l2(
                 field, target_space=kwargs.get("target_space")
             )
-            return self.assign(recover_gradient_l2(gradient))
+            return self.assign(
+                recover_gradient_l2(gradient, target_space=self.function_space())
+            )
         elif method == "mixed_L2":
             return self.interpolate(
                 self._compute_gradient_and_hessian(field, **kwargs)[1]
