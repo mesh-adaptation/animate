@@ -6,13 +6,12 @@ import firedrake
 import numpy as np
 import pyop3 as op3
 import ufl
+from adapt_common.quality import QualityMeasure
 from adapt_common.utility import assemble_mass_matrix, cofunction2function
 from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
 from firedrake.petsc import PETSc
 from firedrake.supermeshing import assemble_mixed_mass_matrix
 from petsc4py import PETSc as petsc4py
-
-from animate.quality import QualityMeasure
 
 __all__ = ["transfer", "interpolate", "project", "clement_interpolant"]
 
