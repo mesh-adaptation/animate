@@ -4,13 +4,13 @@ Driver functions for derivative recovery.
 
 import firedrake
 import ufl
+from adapt_common.quality import QualityMeasure
 from adapt_common.recovery import recover_gradient_l2
 from adapt_common.reduction import function_data_max
 from firedrake.petsc import PETSc
 
 from .interpolation import clement_interpolant
 from .math import construct_basis
-from .quality import QualityMeasure
 
 __all__ = ["recover_hessian_clement", "recover_boundary_hessian"]
 
