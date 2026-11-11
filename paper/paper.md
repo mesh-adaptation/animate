@@ -29,14 +29,14 @@ affiliations:
    index: 2
  - name: Department of Geosciences, University of Oslo, Norway
    index: 3
-date: 20 April 2025
+date: 11 November 2026
 bibliography: paper.bib
 
 ---
 
 # Summary
 
-*Animate* is a new Python package providing metric-based mesh adaptation
+*Animate* is a Python package providing metric-based mesh adaptation
 functionality for the *Firedrake* finite element package [@Firedrake].
 Standard mesh adaptation approaches only control an element's size, whereas
 metric-based adaptation has the key advantage that it can also be used to
@@ -72,8 +72,8 @@ adaptation library via a branch coupling it into PETSc [@Pragmatic].
 Unfortunately, Pragmatic is no longer maintained, so there was appetite to
 couple to a different, more actively developed metric-based mesh adaptation
 package.
-This was achieved by @WK22, in which the Mmg (serial) and ParMmg (MPI parallel)
-packages were coupled into PETSc.
+This was achieved by [@WK22], in which the Mmg (serial) and ParMmg (MPI
+parallel) packages were coupled into PETSc.
 It was initially proposed to expose this metric-based mesh adaptation
 functionality in Firedrake itself via bindings between C and Python.
 We later decided to create a separate package to handle metric-based mesh
@@ -81,7 +81,9 @@ adaptation, so that we could support advanced Riemannian metric constructions
 (e.g., related to goal-oriented mesh adaptation) without bloating Firedrake with
 functionality not integral to the finite element method.
 
-<!-- TODO: Mention SOFIA mesh -->
+A pure Python approach recently published in JOSS [@SOFIA] provides an
+alternative strategy, although it is not closely integrated into the Firedrake
+ecosystem.
 
 ## State of the field
 
@@ -113,17 +115,17 @@ AMR is a powerful approach, but a fundamentally different one from the
 metric-based adaptation provided by Animate.
 
 Recently, $h$-adaptive methods in Firedrake have been applied to free-boundary
-problems posed as variational inequalities by @VIAMR.
+problems posed as variational inequalities by [@VIAMR].
 They implemented algorithms that, in an *a posteriori* manner, locate the free
 boundary and refine the mesh in its vicinity.
 This may be driven by either using ngsPETSc's AMR or Animate's metric-based
 approach.
 
-For completeness, another $h$-adaptive approach can be found in the latest
-release of *Icepack* [@Icepack], which uses *Triangle* and *MeshPy* to remesh
-based on differences between approximate solutions with different degrees.
+For completeness, another $h$-adaptive approach can be found in *Icepack*
+[@Icepack], which uses *Triangle* and *MeshPy* to remesh based on differences
+between approximate solutions with different degrees.
 
-# Software description
+# Software design
 
 Like Firedrake, Animate is a Python-based package written in the UFL [@UFL]
 domain-specific language for finite element computations.
@@ -138,15 +140,19 @@ based on goal-oriented error indicators.
 It also provides utilities to normalise the metric and interface with PETSc to
 set Mmg parameters and combine with one or more other metrics.
 
-Animate has an automated test suite of unit and integration tests with excellent
-coverage, as well as an automated linting workflow.
-API documentation, examples, and long-form documentation may be found in the
-appropriate subsection of the
+[TODO: Mention `adapt_common`]
+
+Animate and `adapt_common` have automated test suites of unit tests with
+excellent coverage, as well as automated linting workflows.
+Animate additionally comes with a range of examples, which are also used as
+integration tests.
+API documentation and long-form documentation may be found in the appropriate
+subsections of the
 [https://mesh-adaptation.github.io](https://mesh-adaptation.github.io) website
 that Animate shares with other mesh adaptation tools developed and maintained by
 the authors.
 
-# Examples of use
+# Research impact
 
 Animate includes several examples as training materials and showcases of its
 functionality.
@@ -157,13 +163,16 @@ An earlier implementation (called *Pyroteus*) included both Animate and the
 goal-oriented error estimation functionality now provided by *Goalie*.
 These have since been separated out to give a clearer separation of concerns.
 Animate (and its earlier implementation in Pyroteus) has been applied to several
-computational and geophysical fluid mechanics applications spanning tracer
-transport, tidal energy, and glaciology in @WB22;@WA22;@DW25.
+computational and geophysical applications on a wide variety of scales.
+This ranges from nanometre-scale streamer simulation [@JA26], to
+metre-to-kilometre scale tracer transport [@WB22] and tidal energy [@WA22], and
+glaciology [@DW25], to global scale mantle convection simulation.
+[TODO: Stephan, is there a citation we can use here?]
 Animate has also been used to provide training data for a data-driven mesh
-adaptation approach in @WL22 and in a hybrid approach as a counterpart to a
-data-driven $r$-adaptation technique in @JW25.
-
-[TODO: Mention range of scales, from nanometres [@JA26] to global scale]
+adaptation approach in [@WL22] and in a hybrid approach as a counterpart to a
+data-driven $r$-adaptation technique in [@JW25].
+Further, it was demonstrated that Animate can be used to achieve
+mesh-independent adaptive PDE-constrained optimisation in [@KP25].
 
 # Future development
 
@@ -172,6 +181,7 @@ several other utilities for mesh adaptation, such as mesh quality measures,
 derivative recovery, and the Clément interpolant.
 Work is currently underway to upstream these to PETSc and Firedrake so that the
 wider community may benefit from them.
+[TODO: Update to mention `adapt_common`]
 
 While Mmg supports mesh adaptation for both triangular (2D) and tetrahedral
 (3D) meshes, the MPI parallel ParMmg implementation only supports the latter.
@@ -179,13 +189,20 @@ Work is currently underway in the ParMmg team to implement MPI parallel
 adaptation on triangular meshes, which we will then expose in PETSc and Animate.
 We are also working on exposing Mmg's level-set functionality.
 
+# AI usage disclosure
+
+Generative AI tools have been used in the development of Animate and
+`adapt_common`, mainly for fixing bugs, porting between the repositories, and
+refactoring.
+This includes writing docstrings, although AI was not used for writing long-form
+documentation, nor was it used to write this paper.
+
 # Acknowledgments
 
 This work received funding under the embedded CSE program of the ARCHER2 UK
 National Supercomputing Service
 [https://www.archer2.ac.uk](https://www.archer2.ac.uk).
-Support is also acknowledged from EPSRC under grant EP/R029423/1.
-Ongoing maintenance of Animate has been supported by a grant from Huawei
-Corporation Ltd.
+Support is also acknowledged from EPSRC under grant EP/R029423/1, as well as
+through a grant from Huawei Corporation Ltd.
 
 # References
