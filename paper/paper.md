@@ -140,7 +140,17 @@ based on goal-oriented error indicators.
 It also provides utilities to normalise the metric and interface with PETSc to
 set Mmg parameters and combine with one or more other metrics.
 
-[TODO: Mention `adapt_common`]
+In addition to the core functionality described above, several other utilities
+for mesh adaptation, such as mesh quality measures, derivative recovery, and the
+Clément interpolant have been implemented and previously existed within the
+Animate package.
+More recently, they have been ported to the `adapt_common` package, which is a
+common submodule for Animate and the *Movement* $r$-adaptation package also
+maintained by the authors.
+This move has helped to provide a clear separation of concerns, with Animate
+handling the specifics of metric-based mesh adaptation and the couplings to Mmg
+and ParMmg via PETSc, while `adapt_common` provides functionality for mesh
+adaptation more generally.
 
 Animate and `adapt_common` have automated test suites of unit tests with
 excellent coverage, as well as automated linting workflows.
@@ -156,8 +166,7 @@ the authors.
 
 Animate includes several examples as training materials and showcases of its
 functionality.
-[TODO: Dundo, please could you add the nice bubble shear image you generated
-using Animate as a showcase?]
+[TODO: Include a nice image as a showcase]
 
 An earlier implementation (called *Pyroteus*) included both Animate and the
 goal-oriented error estimation functionality now provided by *Goalie*.
@@ -176,12 +185,12 @@ mesh-independent adaptive PDE-constrained optimisation in [@KP25].
 
 # Future development
 
-In addition to the core functionality described above, Animate implements
-several other utilities for mesh adaptation, such as mesh quality measures,
-derivative recovery, and the Clément interpolant.
+In addition to the core functionality described above, several other utilities
+for mesh adaptation, such as mesh quality measures, derivative recovery, and the
+Clément interpolant have been implemented and currently reside in the
+`adapt_common` package.
 Work is currently underway to upstream these to PETSc and Firedrake so that the
 wider community may benefit from them.
-[TODO: Update to mention `adapt_common`]
 
 While Mmg supports mesh adaptation for both triangular (2D) and tetrahedral
 (3D) meshes, the MPI parallel ParMmg implementation only supports the latter.
