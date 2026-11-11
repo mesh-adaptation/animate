@@ -163,6 +163,8 @@ Animate has also been used to provide training data for a data-driven mesh
 adaptation approach in @WL22 and in a hybrid approach as a counterpart to a
 data-driven $r$-adaptation technique in @JW25.
 
+[TODO: Mention range of scales, from nanometres [@JA26] to global scale]
+
 # Future development
 
 In addition to the core functionality described above, Animate implements
