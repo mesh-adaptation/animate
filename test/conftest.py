@@ -23,6 +23,7 @@ from firedrake.petsc import PETSc
 # Collecting cyclic garbage on all ranks immediately before every PETSc garbage
 # cleanup keeps the garbage consistent across ranks. This can be removed once
 # Firedrake does this itself.
+# See: https://github.com/mesh-adaptation/animate/issues/254
 if COMM_WORLD.size > 1:
     _petsc_garbage_cleanup = PETSc.garbage_cleanup
 
