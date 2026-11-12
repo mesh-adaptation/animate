@@ -1,0 +1,33 @@
+name: 'Render paper'
+
+on:
+  # Run when commits are pushed to main
+  push:
+    branches:
+      - main
+
+  # Run when commits are pushed to a branch or a PR that modifies the paper
+  pull_request:
+    paths:
+      - 'paper/*'
+
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  paper:
+    runs-on: ubuntu-latest
+    name: Paper Draft
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build draft PDF
+        uses: openjournals/openjournals-draft-action@master
+        with:
+          journal: joss
+          paper-path: paper/paper.md
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper
+          path: paper/paper.pdf
