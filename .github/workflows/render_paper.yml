@@ -1,4 +1,18 @@
-on: [push]
+name: 'Render paper'
+
+on:
+  # Run when commits are pushed to main
+  push:
+    branches:
+      - main
+
+  # Run when commits are pushed to a branch or a PR that modifies the paper
+  pull_request:
+    paths:
+      - 'paper/*'
+
+  # Allow manual triggering
+  workflow_dispatch:
 
 jobs:
   paper:
