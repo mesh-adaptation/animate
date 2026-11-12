@@ -11,6 +11,9 @@ animate/cython/*.c
 
 # Specific files
 .coverage
+paper/apa.csl
+paper/compile.sh
+paper/latex.template
 
 # File extensions
 *.h5
