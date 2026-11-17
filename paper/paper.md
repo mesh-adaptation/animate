@@ -38,12 +38,11 @@ bibliography: paper.bib
 
 *Animate* is a Python package providing metric-based mesh adaptation
 functionality for the *Firedrake* finite element package [@Firedrake].
-Standard mesh adaptation approaches only control an element's size, whereas
+Standard mesh adaptation approaches often only control an element's size, whereas
 metric-based adaptation has the key advantage that it can also be used to
 control element orientation and shape.
-As such, it can be used to introduce anisotropic mesh elements that conform to
-features in the domain geometry and/or solution fields, allowing for better
-representations thereof.
+As such, it can be used to introduce anisotropic mesh elements that are able to conform to
+features in the domain geometry and/or solution fields, allowing for more accurate representations of these features.
 
 *Riemannian metric fields* are at the core of the metric-based approach.
 Animate implements these in the *UFL* [@UFL] domain-specific language used by
@@ -188,7 +187,7 @@ mesh-independent adaptive PDE-constrained optimisation in [@KP25].
 In addition to the core functionality described above, several other utilities
 for mesh adaptation, such as mesh quality measures, derivative recovery, and the
 Clément interpolant have been implemented and currently reside in the
-`adapt_common` package.
+`adapt_common` package. [MDP: previous sentence alomst identical to line 142].
 Work is currently underway to upstream these to PETSc and Firedrake so that the
 wider community may benefit from them.
 
