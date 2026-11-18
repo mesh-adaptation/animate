@@ -42,7 +42,7 @@ class TestRecoverySetup(unittest.TestCase):
             self.metric.compute_hessian(f, method="Clement")
         msg = (
             "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree > 0."
+            " Lagrange Functions of degree 1."
         )
         self.assertEqual(str(cm.exception), msg)
 
@@ -52,7 +52,7 @@ class TestRecoverySetup(unittest.TestCase):
             self.metric.compute_hessian(f, method="Clement")
         msg = (
             "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree > 0."
+            " Lagrange Functions of degree 1."
         )
         self.assertEqual(str(cm.exception), msg)
 
@@ -62,7 +62,7 @@ class TestRecoverySetup(unittest.TestCase):
             self.metric.compute_hessian(f, method="Clement")
         msg = (
             "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree > 0."
+            " Lagrange Functions of degree 1."
         )
         self.assertEqual(str(cm.exception), msg)
 
