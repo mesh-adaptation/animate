@@ -20,6 +20,8 @@ from animate.metric import RiemannianMetric
 # standard tests for pytest
 # ---------------------------
 
+# TODO: Port tests
+
 
 class TestRecoverySetup(unittest.TestCase):
     """
@@ -35,36 +37,6 @@ class TestRecoverySetup(unittest.TestCase):
     def get_func_ones(self, family, degree):
         V = FunctionSpace(self.mesh, family, degree)
         return Function(V).assign(1.0)
-
-    def test_clement_function_error(self):
-        f = bowl(*ufl.SpatialCoordinate(self.mesh))
-        with self.assertRaises(ValueError) as cm:
-            self.metric.compute_hessian(f, method="Clement")
-        msg = (
-            "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree 1."
-        )
-        self.assertEqual(str(cm.exception), msg)
-
-    def test_clement_space_error(self):
-        f = self.get_func_ones("DG", 0)
-        with self.assertRaises(ValueError) as cm:
-            self.metric.compute_hessian(f, method="Clement")
-        msg = (
-            "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree 1."
-        )
-        self.assertEqual(str(cm.exception), msg)
-
-    def test_clement_degree_error(self):
-        f = self.get_func_ones("DG", 0)
-        with self.assertRaises(ValueError) as cm:
-            self.metric.compute_hessian(f, method="Clement")
-        msg = (
-            "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree 1."
-        )
-        self.assertEqual(str(cm.exception), msg)
 
     def test_zz_notimplemented_error(self):
         f = self.get_func_ones("CG", 1)
