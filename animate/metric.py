@@ -16,10 +16,7 @@ try:
 except ImportError:
     from petsctools import OptionsManager
 
-from adapt_common.recovery import (
-    recover_hessian_clement,
-    recover_hessian_l2,
-)
+from adapt_common.recovery import recover_hessian
 from adapt_common.reduction import function_data_min, function_data_sum
 from adapt_common.transfer import clement_interpolant
 
@@ -348,23 +345,7 @@ class RiemannianMetric(ffunc.Function):
                 "RiemannianMetric.combine."
             )
             raise ValueError(value_error)
-        if method in ("L2", "mixed_L2"):
-            return self.assign(
-                recover_hessian_l2(
-                    field,
-                    mixed=(method == "mixed_L2"),
-                    target_space=self.function_space(),
-                    **kwargs,
-                )[1]
-            )
-        elif method == "Clement":
-            return self.assign(recover_hessian_clement(field, **kwargs)[1])
-        elif method == "ZZ":
-            raise NotImplementedError(
-                "Zienkiewicz-Zhu recovery not yet implemented."
-            )  # TODO (#130)
-        else:
-            raise ValueError(f"Recovery method '{method}' not recognised.")
+        return self.assign(recover_hessian(field, method=method, **kwargs)[1])
 
     @PETSc.Log.EventDecorator()
     def compute_boundary_hessian(self, field, method="mixed_L2", **kwargs):

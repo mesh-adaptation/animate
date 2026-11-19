@@ -5,9 +5,7 @@ Test derivative recovery techniques.
 import unittest
 
 import ufl
-from adapt_common.norms import errornorm, norm
 from firedrake.assemble import assemble
-from firedrake.constant import Constant
 from firedrake.function import Function
 from firedrake.functionspace import FunctionSpace, TensorFunctionSpace
 from parameterized import parameterized
@@ -19,8 +17,6 @@ from animate.metric import RiemannianMetric
 # ---------------------------
 # standard tests for pytest
 # ---------------------------
-
-# TODO: Port tests
 
 
 class TestRecoverySetup(unittest.TestCase):
@@ -62,67 +58,17 @@ class TestRecoverySetup(unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
 
-class TestRecoveryBowl(unittest.TestCase):
+class TestRecoveryBoundary(unittest.TestCase):
     """
-    Unit tests for recovery applied to a quadratic 'bowl' sensor.
+    Unit tests for boundary recovery applied to a quadratic 'bowl' sensor.
     """
-
-    @staticmethod
-    def metric(mesh):
-        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-        return RiemannianMetric(P1_ten)
-
-    @staticmethod
-    def relative_error(approx, ignore_boundary=False):
-        mesh = approx.function_space().mesh()
-        dim = mesh.topological_dimension
-        P1_ten = TensorFunctionSpace(mesh, "CG", 1)
-        identity = Function(P1_ten).interpolate(ufl.Identity(dim))
-
-        # Check that they agree
-        cond = Constant(1.0)
-        if ignore_boundary:
-            x = ufl.SpatialCoordinate(mesh)
-            cond = ufl.And(x[0] > -0.8, x[0] < 0.8)
-            for i in range(1, dim):
-                cond = ufl.And(cond, ufl.And(x[i] > -0.8, x[i] < 0.8))
-            cond = ufl.conditional(cond, 1, 0)
-        err = errornorm(approx, identity, norm_type="L2", condition=cond)
-        err /= norm(identity, norm_type="L2", condition=cond)
-        return err
-
-    @parameterized.expand(
-        [
-            (2, "L2"),
-            (2, "mixed_L2"),
-            (3, "L2"),
-            (3, "mixed_L2"),
-        ]
-    )
-    def test_interior_L2_quadratic(self, dim, method):
-        # TODO: parallel version (#33)
-        mesh = mesh_for_sensors(dim, 4)
-        f = bowl(*mesh.coordinates)
-        if method == "L2":
-            f = Function(FunctionSpace(mesh, "CG", 2)).interpolate(f)
-        metric = self.metric(mesh)
-        metric.compute_hessian(f, method=method)
-        self.assertLess(self.relative_error(metric), 1.0e-07)
-
-    @parameterized.expand([[2], [3]])
-    def test_interior_Clement_linear(self, dim):
-        mesh = mesh_for_sensors(dim, 20)
-        f = Function(FunctionSpace(mesh, "CG", 1)).interpolate(bowl(*mesh.coordinates))
-        metric = self.metric(mesh)
-        metric.compute_hessian(f, method="Clement")
-        self.assertLess(self.relative_error(metric, ignore_boundary=True), 1.0e-05)
 
     @parameterized.expand([[2]])
     def test_boundary_mixed_L2(self, dim):
         # FIXME: 3D case for test_boundary_mixed_L2
         mesh = mesh_for_sensors(dim, 4)
         f = bowl(*mesh.coordinates)
-        metric = self.metric(mesh)
+        metric = RiemannianMetric(TensorFunctionSpace(mesh, "CG", 1))
         metric.compute_boundary_hessian(f, method="mixed_L2")
 
         # Check its directional derivatives in boundaries are zero
@@ -134,7 +80,7 @@ class TestRecoveryBowl(unittest.TestCase):
     def test_boundary_Clement(self, dim):
         mesh = mesh_for_sensors(dim, 20)
         f = bowl(*mesh.coordinates)
-        metric = self.metric(mesh)
+        metric = RiemannianMetric(TensorFunctionSpace(mesh, "CG", 1))
         metric.compute_boundary_hessian(f, method="Clement")
 
         # Check its directional derivatives in boundaries are zero
