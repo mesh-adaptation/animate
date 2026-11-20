@@ -3,17 +3,13 @@ Driver functions for mesh-to-mesh data transfer.
 """
 
 import firedrake
-import numpy as np
-import pyop3 as op3
-import ufl
-from adapt_common.quality import QualityMeasure
 from adapt_common.utility import assemble_mass_matrix, cofunction2function
-from firedrake.functionspaceimpl import FiredrakeDualSpace, WithGeometry
+from firedrake.functionspaceimpl import WithGeometry
 from firedrake.petsc import PETSc
 from firedrake.supermeshing import assemble_mixed_mass_matrix
 from petsc4py import PETSc as petsc4py
 
-__all__ = ["transfer", "interpolate", "project", "clement_interpolant"]
+__all__ = ["transfer", "interpolate", "project"]
 
 
 @PETSc.Log.EventDecorator()
@@ -174,150 +170,3 @@ def project(source, target, bounded=False, **kwargs):
                 ksp.solveTranspose(vs, residual)
                 mixed_mass.mult(residual, vt)  # NOTE: already transposed above
             t.dat.data_with_halos[:] = tf.dat.data_with_halos
-
-
-@PETSc.Log.EventDecorator()
-def clement_interpolant(source, target_space=None, boundary=False):
-    r"""
-    Compute the Clement interpolant of a :math:`\mathbb P0` source field, i.e. take the
-    volume average over neighbouring cells at each vertex. See :cite:`Clement:1975`.
-
-    :arg source: the :math:`\mathbb P0` source field
-    :type source: :class:`firedrake.function.Function`
-    :kwarg target_space: the :math:`\mathbb P1` space to interpolate into
-    :type target_space: :class:`firedrake.functionspaceimpl.FunctionSpace`
-    :kwarg boundary: interpolate over boundary facets or cells?
-    :type boundary: :class:`bool`
-    """
-    if not isinstance(source, (firedrake.Cofunction, firedrake.Function)):
-        raise TypeError(f"Expected Cofunction or Function, got '{type(source)}'.")
-
-    # Map Cofunctions to Functions for the interpolation
-    is_cofunction = isinstance(source, firedrake.Cofunction)
-    if is_cofunction:
-        data = source.dat.data_with_halos
-        source = firedrake.Function(source.function_space().dual())
-        source.dat.data_with_halos[:] = data
-
-    # Process source space
-    Vs = source.function_space()
-    Vs_e = Vs.ufl_element()
-    if not (Vs_e.family() == "Discontinuous Lagrange" and Vs_e.degree() == 0):
-        raise ValueError("Source function provided must be from a P0 space.")
-    rank = len(Vs.value_shape)
-    if rank not in (0, 1, 2):
-        raise ValueError(f"Rank-{rank + 1} tensors are not supported.")
-    mesh = Vs.mesh()
-    dim = mesh.topological_dimension
-
-    # Process target space
-    Vt = target_space
-    if Vt is None:
-        Vt = {
-            0: firedrake.FunctionSpace,
-            1: firedrake.VectorFunctionSpace,
-            2: firedrake.TensorFunctionSpace,
-        }[rank](mesh, "CG", 1)
-    elif isinstance(Vt, FiredrakeDualSpace):
-        Vt = Vt.dual()
-    else:
-        is_cofunction = False
-    Vt_e = Vt.ufl_element()
-    if not (Vt_e.family() == "Lagrange" and Vt_e.degree() == 1):
-        raise ValueError("Target space provided must be P1.")
-    target = firedrake.Function(Vt)
-
-    # Scalar P0 and P1 spaces to hold volumes, etc.
-    P0 = firedrake.FunctionSpace(mesh, "DG", 0)
-    P1 = firedrake.FunctionSpace(mesh, "CG", 1)
-
-    # Determine target domain
-    tdomain = {
-        0: "{[i]: 0 <= i < t.dofs}",
-        1: f"{{[i, j]: 0 <= i < t.dofs and 0 <= j < {dim}}}",
-        2: f"{{[i, j, k]: 0 <= i < t.dofs and 0 <= j < {dim} and 0 <= k < {dim}}}",
-    }[rank]
-
-    # Compute the patch volume at each vertex
-    if not boundary:
-        dX = ufl.dx(domain=mesh)
-        volume = QualityMeasure(mesh)("volume")
-
-        # Compute patch volume
-        patch_volume = firedrake.Function(P1)
-        domain = "{[i]: 0 <= i < patch.dofs}"
-        instructions = "patch[i, 0] = patch[i, 0] + vol[0, 0]"
-        keys = {"vol": (volume, op3.READ), "patch": (patch_volume, op3.RW)}
-        firedrake.par_loop((domain, instructions), dX, keys)
-
-        # Take weighted average
-        instructions = {
-            0: "t[i, 0] = t[i, 0] + v[0, 0] * s[0, 0]",
-            1: "t[i, j] = t[i, j] + v[0, 0] * s[0, j]",
-            2: (
-                f"t[i, {dim} * j + k] ="
-                f" t[i, {dim} * j + k] + v[0, 0] * s[0, {dim} * j + k]"
-            ),
-        }[rank]
-        keys = {
-            "s": (source, op3.READ),
-            "v": (volume, op3.READ),
-            "t": (target, op3.RW),
-        }
-        firedrake.par_loop((tdomain, instructions), dX, keys)
-    else:
-        dX = ufl.ds(domain=mesh)
-
-        # Indicate appropriate boundary
-        bnd_indicator = firedrake.Function(P1)
-        firedrake.DirichletBC(P1, 1, "on_boundary").apply(bnd_indicator)
-
-        # Determine facet area for boundary edges
-        v = firedrake.TestFunction(P0)
-        u = firedrake.TrialFunction(P0)
-        bnd_volume = firedrake.Function(P0)
-        mass_term = v * u * dX
-        rhs = v * ufl.FacetArea(mesh) * dX
-        sp = {"snes_type": "ksponly", "ksp_type": "preonly", "pc_type": "jacobi"}
-        firedrake.solve(mass_term == rhs, bnd_volume, solver_parameters=sp)
-
-        # Compute patch volume
-        patch_volume = firedrake.Function(P1)
-        domain = "{[i]: 0 <= i < patch.dofs}"
-        instructions = "patch[i, 0] = patch[i, 0] + indicator[i, 0] * bnd_vol[0, 0]"
-        keys = {
-            "bnd_vol": (bnd_volume, op3.READ),
-            "indicator": (bnd_indicator, op3.READ),
-            "patch": (patch_volume, op3.RW),
-        }
-        firedrake.par_loop((domain, instructions), dX, keys)
-
-        # Take weighted average
-        instructions = {
-            0: "t[i, 0] = t[i, 0] + v[0, 0] * b[i, 0] * s[0, 0]",
-            1: "t[i, j] = t[i, j] + v[0, 0] * b[i, 0] * s[0, j]",
-            2: (
-                f"t[i, {dim} * j + k] = "
-                f"t[i, {dim} * j + k] + v[0, 0] * b[i, 0] * s[0, {dim} * j + k]"
-            ),
-        }[rank]
-        keys = {
-            "s": (source, op3.READ),
-            "v": (bnd_volume, op3.READ),
-            "b": (bnd_indicator, op3.READ),
-            "t": (target, op3.RW),
-        }
-        firedrake.par_loop((tdomain, instructions), dX, keys)
-
-    # Divide by patch volume and ensure finite
-    target.interpolate(target / patch_volume)
-    target.dat.data_with_halos[:] = np.nan_to_num(
-        target.dat.data_with_halos, posinf=0, neginf=0
-    )
-
-    # Map back to Cofunction, if one was passed originally
-    if is_cofunction:
-        data = target.dat.data_with_halos
-        target = firedrake.Cofunction(target.function_space().dual())
-        target.dat.data_with_halos[:] = data
-    return target

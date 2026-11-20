@@ -7,9 +7,9 @@ import ufl
 from adapt_common.quality import QualityMeasure
 from adapt_common.recovery import recover_gradient_l2
 from adapt_common.reduction import function_data_max
+from adapt_common.transfer import clement_interpolant, clement_interpolant_boundary
 from firedrake.petsc import PETSc
 
-from .interpolation import clement_interpolant
 from .math import construct_basis
 
 __all__ = ["recover_hessian_clement", "recover_boundary_hessian"]
@@ -97,6 +97,7 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
     v = firedrake.TestFunction(P1)
     l2_proj = [[firedrake.Function(P1) for i in range(d - 1)] for j in range(d - 1)]
     P0 = firedrake.FunctionSpace(mesh, "DG", 0)
+    p1test = firedrake.TestFunction(P1)
     h = firedrake.Function(P0).interpolate(ufl.CellDiameter(mesh))
     h = firedrake.Constant(1 / function_data_max(h) ** 2)
     sp = {
@@ -133,23 +134,20 @@ def recover_boundary_hessian(f, method="Clement", target_space=None, **kwargs):
 
     elif method == "Clement":
         P0_vec = firedrake.VectorFunctionSpace(mesh, "DG", 0)
+        p0test = firedrake.TestFunction(P0_vec)
         P0_ten = firedrake.TensorFunctionSpace(mesh, "DG", 0)
         P1_vec = firedrake.VectorFunctionSpace(mesh, "CG", 1)
-        H = firedrake.Function(P1_ten)
-        p0test = firedrake.TestFunction(P0_vec)
-        p1test = firedrake.TestFunction(P1)
         fa = QualityMeasure(mesh)("facet_area")
 
         source = firedrake.assemble(ufl.inner(p0test, ufl.grad(f)) / fa * ufl.ds)
 
         # Recover gradient
-        c = clement_interpolant(source, boundary=True, target_space=P1_vec)
+        c = clement_interpolant_boundary(source, target=P1_vec)
 
         # Recover Hessian
-        H += clement_interpolant(
+        H = clement_interpolant_boundary(
             firedrake.Function(P0_ten).interpolate(ufl.grad(c)),
-            boundary=True,
-            target_space=P1_ten,
+            target=P1_ten,
         )
 
         # Compute tangential components
