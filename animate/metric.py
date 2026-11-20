@@ -16,12 +16,12 @@ try:
 except ImportError:
     from petsctools import OptionsManager
 
-from adapt_common.recovery import recover_gradient_l2
+from adapt_common.recovery import recover_hessian
 from adapt_common.reduction import function_data_min, function_data_sum
 from adapt_common.transfer import clement_interpolant
 
 from ._kernel import get_metric_kernel
-from .recovery import recover_boundary_hessian, recover_hessian_clement
+from .recovery import recover_boundary_hessian
 
 __all__ = ["RiemannianMetric", "determine_metric_complexity", "intersect_on_boundary"]
 
@@ -336,10 +336,6 @@ class RiemannianMetric(ffunc.Function):
         :rtype: :class:`~.RiemannianMetric`
 
         All other keyword arguments are passed to the chosen recovery routine.
-
-        In the case of the `'L2'` method, the `target_space` keyword argument is used
-        for the gradient recovery. The target space for the Hessian recovery is
-        inherited from the metric itself.
         """
         if len(field.ufl_shape) > 0:
             value_error = (
@@ -349,25 +345,7 @@ class RiemannianMetric(ffunc.Function):
                 "RiemannianMetric.combine."
             )
             raise ValueError(value_error)
-        if method == "L2":
-            gradient = recover_gradient_l2(
-                field, target_space=kwargs.get("target_space")
-            )
-            return self.assign(
-                recover_gradient_l2(gradient, target_space=self.function_space())
-            )
-        elif method == "mixed_L2":
-            return self.interpolate(
-                self._compute_gradient_and_hessian(field, **kwargs)[1]
-            )
-        elif method == "Clement":
-            return self.assign(recover_hessian_clement(field, **kwargs)[1])
-        elif method == "ZZ":
-            raise NotImplementedError(
-                "Zienkiewicz-Zhu recovery not yet implemented."
-            )  # TODO (#130)
-        else:
-            raise ValueError(f"Recovery method '{method}' not recognised.")
+        return self.assign(recover_hessian(field, method=method, **kwargs)[1])
 
     @PETSc.Log.EventDecorator()
     def compute_boundary_hessian(self, field, method="mixed_L2", **kwargs):
@@ -382,55 +360,6 @@ class RiemannianMetric(ffunc.Function):
         :rtype: :class:`~.RiemannianMetric`
         """
         return self.assign(recover_boundary_hessian(field, method=method, **kwargs))
-
-    def _compute_gradient_and_hessian(self, field, solver_parameters=None):
-        mesh = self.function_space().mesh()
-        V = ffs.VectorFunctionSpace(mesh, "CG", 1)
-        W = V * self.function_space()
-        g, H = firedrake.TrialFunctions(W)
-        phi, tau = firedrake.TestFunctions(W)
-        sol = ffunc.Function(W)
-        n = ufl.FacetNormal(mesh)
-
-        a = (
-            ufl.inner(tau, H) * ufl.dx
-            + ufl.inner(ufl.div(tau), g) * ufl.dx
-            - ufl.dot(g, ufl.dot(tau, n)) * ufl.ds
-            - ufl.dot(ufl.avg(g), ufl.jump(tau, n)) * ufl.dS
-            + ufl.inner(phi, g) * ufl.dx
-        )
-        L = (
-            field * ufl.dot(phi, n) * ufl.ds
-            + ufl.avg(field) * ufl.jump(phi, n) * ufl.dS
-            - field * ufl.div(phi) * ufl.dx
-        )
-        if solver_parameters is None:
-            solver_parameters = {
-                "mat_type": "aij",
-                "ksp_type": "gmres",
-                "ksp_max_it": 20,
-                "pc_type": "fieldsplit",
-                "pc_fieldsplit_type": "schur",
-                "pc_fieldsplit_0_fields": "1",
-                "pc_fieldsplit_1_fields": "0",
-                "pc_fieldsplit_schur_precondition": "selfp",
-                "fieldsplit_0_ksp_type": "preonly",
-                "fieldsplit_1_ksp_type": "preonly",
-                "fieldsplit_1_pc_type": "gamg",
-                "fieldsplit_1_mg_levels_ksp_max_it": 5,
-            }
-            if firedrake.COMM_WORLD.size == 1:
-                solver_parameters["fieldsplit_0_pc_type"] = "ilu"
-                solver_parameters["fieldsplit_1_mg_levels_pc_type"] = "ilu"
-            else:
-                solver_parameters["fieldsplit_0_pc_type"] = "bjacobi"
-                solver_parameters["fieldsplit_0_sub_ksp_type"] = "preonly"
-                solver_parameters["fieldsplit_0_sub_pc_type"] = "ilu"
-                solver_parameters["fieldsplit_1_mg_levels_pc_type"] = "bjacobi"
-                solver_parameters["fieldsplit_1_mg_levels_sub_ksp_type"] = "preonly"
-                solver_parameters["fieldsplit_1_mg_levels_sub_pc_type"] = "ilu"
-        firedrake.solve(a == L, sol, solver_parameters=solver_parameters)
-        return sol.subfunctions
 
     # --- Methods for processing metrics
 
