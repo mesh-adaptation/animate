@@ -16,7 +16,6 @@ import os
 import re
 
 import pyop3 as op3
-from firedrake.slate.slac.compiler import BLASLAPACK_INCLUDE, BLASLAPACK_LIB
 
 _PREAMBLE_BEGIN = "/* PREAMBLE-BEGIN */"
 _PREAMBLE_END = "/* PREAMBLE-END */"
@@ -105,6 +104,5 @@ def get_metric_kernel(func, dim, args):
             ("10_blaslapack", "#include <petscblaslapack.h>"),
             ("20_metric", preamble),
         ],
-        include_dirs=BLASLAPACK_INCLUDE,
-        libs=BLASLAPACK_LIB,
+        libraries=op3.LIBBLASLAPACK,
     )
