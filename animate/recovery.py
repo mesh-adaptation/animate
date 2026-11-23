@@ -5,61 +5,13 @@ Driver functions for derivative recovery.
 import firedrake
 import ufl
 from adapt_common.quality import QualityMeasure
-from adapt_common.recovery import recover_gradient_l2
 from adapt_common.reduction import function_data_max
-from adapt_common.transfer import clement_interpolant, clement_interpolant_boundary
+from adapt_common.transfer import clement_interpolant_boundary
 from firedrake.petsc import PETSc
 
 from .math import construct_basis
 
-__all__ = ["recover_hessian_clement", "recover_boundary_hessian"]
-
-
-@PETSc.Log.EventDecorator()
-def recover_hessian_clement(f):
-    r"""
-    Recover the gradient and Hessian of a scalar field using two applications of
-    Clement interpolation.
-
-    Note that if the field is of degree 2 then projection will be used to obtain the
-    gradient. If the field is of degree 3 or greater then projection will be used
-    for the Hessian recovery, too.
-
-    :arg f: the scalar field whose derivatives we seek to recover
-    :type f: :class:`firedrake.function.Function`
-    :returns: recovered Hessian
-    :rtype: :class:`firedrake.function.Function`
-    """
-    if not isinstance(f, firedrake.Function):
-        raise ValueError(
-            "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree > 0."
-        )
-    family = f.ufl_element().family()
-    degree = f.ufl_element().degree()
-    if family not in ("Lagrange", "Discontinuous Lagrange") or degree == 0:
-        raise ValueError(
-            "Clement interpolation can only be used to compute gradients of"
-            " Lagrange Functions of degree > 0."
-        )
-    mesh = f.function_space().mesh()
-
-    # Recover gradient
-    if degree <= 1:
-        V = firedrake.VectorFunctionSpace(mesh, "DG", 0)
-        g = clement_interpolant(firedrake.project(ufl.grad(f), V))
-    else:
-        V = firedrake.VectorFunctionSpace(mesh, "DG", degree - 1)
-        g = recover_gradient_l2(f, target_space=V)
-
-    # Recover Hessian
-    if degree <= 2:
-        W = firedrake.TensorFunctionSpace(mesh, "DG", 0)
-        H = clement_interpolant(firedrake.project(ufl.grad(g), W))
-    else:
-        W = firedrake.TensorFunctionSpace(mesh, "DG", degree - 2)
-        H = recover_gradient_l2(g, target_space=W)
-    return g, H
+__all__ = ["recover_boundary_hessian"]
 
 
 @PETSc.Log.EventDecorator()
