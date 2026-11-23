@@ -104,5 +104,5 @@ def get_metric_kernel(func, dim, args):
             ("10_blaslapack", "#include <petscblaslapack.h>"),
             ("20_metric", preamble),
         ],
-        libraries=op3.cc.LIBBLASLAPACK,
+        libraries=(op3.cc.LIBBLASLAPACK,),
     )
